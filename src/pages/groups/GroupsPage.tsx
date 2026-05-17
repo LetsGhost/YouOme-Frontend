@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AddIcon from "@mui/icons-material/Add";
 import SettingsIcon from "@mui/icons-material/Settings";
@@ -21,52 +21,70 @@ import {
   DialogActions,
   InputAdornment,
   Divider,
+  Alert,
+  Skeleton,
 } from "@mui/material";
+
+import { useAppState } from "../../app/AppStateContext";
+import { createGroup } from "../../shared/api/backend";
+import { formatCount, formatMoney } from "../../shared/lib/format";
 
 export function GroupsPage() {
   const navigate = useNavigate();
+  const { backendUrl, groups, isBootstrapping, reloadGroups, session } = useAppState();
   const [searchTerm, setSearchTerm] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newGroup, setNewGroup] = useState({ name: "", description: "" });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Mock data - will be replaced with real API data
-  const groups = [
-    {
-      id: "1",
-      name: "Apartment Expenses",
-      description: "Shared apartment costs for 2024",
-      members: 3,
-      totalExpense: "€ 1,245.50",
-      yourShare: "€ 415.17",
-    },
-    {
-      id: "2",
-      name: "Weekend Trip",
-      description: "Summer getaway to the coast",
-      members: 5,
-      totalExpense: "€ 850.00",
-      yourShare: "€ 170.00",
-    },
-    {
-      id: "3",
-      name: "Dinner Nights",
-      description: "Monthly friend dinners",
-      members: 4,
-      totalExpense: "€ 320.75",
-      yourShare: "€ 80.19",
-    },
-  ];
+  const filteredGroups = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
 
-  const filteredGroups = groups.filter((group) =>
-    group.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+    if (!term) {
+      return groups;
+    }
 
-  const handleCreateGroup = (e: React.FormEvent) => {
+    return groups.filter((group) => {
+      const searchableText = `${group.name} ${group.description || ""}`.toLowerCase();
+      return searchableText.includes(term);
+    });
+  }, [groups, searchTerm]);
+
+  const handleCreateGroup = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Call API to create group
-    setShowCreateModal(false);
-    setNewGroup({ name: "", description: "" });
+
+    const name = newGroup.name.trim();
+
+    if (!name) {
+      setErrorMessage("Group name is required.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setErrorMessage(null);
+
+    try {
+      await createGroup(
+        backendUrl,
+        {
+          name,
+          description: newGroup.description.trim() || undefined,
+        },
+        session?.accessToken
+      );
+
+      await reloadGroups();
+      setShowCreateModal(false);
+      setNewGroup({ name: "", description: "" });
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Failed to create group.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  const isLoading = isBootstrapping && groups.length === 0;
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
@@ -126,8 +144,18 @@ export function GroupsPage() {
         }}
       />
 
+      {errorMessage && <Alert severity="error">{errorMessage}</Alert>}
+
       {/* Groups Grid */}
-      {filteredGroups.length > 0 ? (
+      {isLoading ? (
+        <Grid container spacing={3}>
+          {Array.from({ length: 3 }).map((_, index) => (
+            <Grid item xs={12} md={6} lg={4} key={index}>
+              <Skeleton variant="rounded" height={260} />
+            </Grid>
+          ))}
+        </Grid>
+      ) : filteredGroups.length > 0 ? (
         <Grid container spacing={3}>
           {filteredGroups.map((group) => (
             <Grid item xs={12} md={6} lg={4} key={group.id}>
@@ -204,7 +232,7 @@ export function GroupsPage() {
                           Members
                         </Typography>
                         <Typography variant="h6" sx={{ fontWeight: "bold" }}>
-                          {group.members}
+                          {formatCount(group.memberCount ?? group.members?.length ?? 0)}
                         </Typography>
                       </Grid>
                       <Grid item xs={4}>
@@ -212,7 +240,7 @@ export function GroupsPage() {
                           Total
                         </Typography>
                         <Typography variant="h6" sx={{ fontWeight: "bold" }}>
-                          {group.totalExpense}
+                          {formatMoney(group.totalExpense)}
                         </Typography>
                       </Grid>
                       <Grid item xs={4}>
@@ -220,7 +248,7 @@ export function GroupsPage() {
                           Your Share
                         </Typography>
                         <Typography variant="h6" sx={{ fontWeight: "bold", color: "#4f46e5" }}>
-                          {group.yourShare}
+                          {formatMoney(group.yourShare)}
                         </Typography>
                       </Grid>
                     </Grid>
@@ -322,6 +350,7 @@ export function GroupsPage() {
           <Button
             onClick={handleCreateGroup}
             variant="contained"
+            disabled={isSubmitting}
             sx={{
               bgcolor: "#4f46e5",
               color: "white",
@@ -332,7 +361,7 @@ export function GroupsPage() {
               },
             }}
           >
-            Create Group
+            {isSubmitting ? "Creating..." : "Create Group"}
           </Button>
         </DialogActions>
       </Dialog>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import AddIcon from "@mui/icons-material/Add";
@@ -19,93 +19,145 @@ import {
   TextField,
   Divider,
   Chip,
+  Alert,
+  Skeleton,
 } from "@mui/material";
+
+import { useAppState } from "../../app/AppStateContext";
+import { createExpense, getGroup, type Group } from "../../shared/api/backend";
+import { formatMoney } from "../../shared/lib/format";
 
 export function GroupDetailsPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const { backendUrl, currentUser, session } = useAppState();
+  const [group, setGroup] = useState<Group | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showExpenseDialog, setShowExpenseDialog] = useState(false);
   const [expenseData, setExpenseData] = useState({
     title: "",
     amount: "",
-    paidBy: "you",
+    paidBy: "",
     description: "",
   });
 
-  // Mock data - will be replaced with real API data
-  const group = {
-    id,
-    name: "Apartment Expenses",
-    description: "Shared apartment costs for 2024",
-    members: [
-      { id: "1", name: "You", email: "you@example.com", avatar: "Y" },
-      { id: "2", name: "Sarah", email: "sarah@example.com", avatar: "S" },
-      { id: "3", name: "Emma", email: "emma@example.com", avatar: "E" },
-    ],
-  };
+  useEffect(() => {
+    if (!id) {
+      setErrorMessage("Missing group id.");
+      setIsLoading(false);
+      return;
+    }
 
-  const debts = [
-    { id: "1", from: "You", to: "Sarah", amount: "€ 150.00" },
-    { id: "2", from: "Emma", to: "You", amount: "€ 75.50" },
-    { id: "3", from: "You", to: "Emma", amount: "€ 45.00" },
-  ];
+    let isMounted = true;
 
-  const debtHistory = [
-    {
-      id: "1",
-      date: "2024-03-15",
-      type: "expense",
-      description: "Monthly rent - Sarah paid",
-      amount: "€ 1,500.00",
-      participants: ["You", "Sarah", "Emma"],
-    },
-    {
-      id: "2",
-      date: "2024-03-10",
-      type: "expense",
-      description: "Groceries - Emma paid",
-      amount: "€ 125.30",
-      participants: ["You", "Sarah", "Emma"],
-    },
-    {
-      id: "3",
-      date: "2024-03-05",
-      type: "settlement",
-      description: "Sarah paid You",
-      amount: "€ 200.00",
-      participants: ["Sarah", "You"],
-    },
-  ];
+    const loadGroup = async () => {
+      setIsLoading(true);
+      setErrorMessage(null);
+
+      try {
+        const snapshot = await getGroup(backendUrl, id, session?.accessToken);
+
+        if (isMounted) {
+          setGroup(snapshot);
+          setExpenseData((current) => ({
+            ...current,
+            paidBy:
+              current.paidBy || snapshot.members?.find((member) => member.email === currentUser?.email)?.id ||
+              snapshot.members?.[0]?.id ||
+              "",
+          }));
+        }
+      } catch (error) {
+        if (isMounted) {
+          setErrorMessage(error instanceof Error ? error.message : "Failed to load the group.");
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void loadGroup();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [backendUrl, currentUser?.email, id, session?.accessToken]);
+
+  const members = group?.members ?? [];
+  const expenses = group?.expenses ?? [];
+
+  const balanceValue = useMemo(() => {
+    const parsed = typeof group?.balance === "number" ? group.balance : Number(String(group?.balance ?? 0).replace(/[^0-9.-]/g, ""));
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }, [group?.balance]);
+
+  const youOwe = Math.max(balanceValue, 0);
+  const owedToYou = Math.max(-balanceValue, 0);
 
   const handleCreateExpense = (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Call API to create expense
-    setShowExpenseDialog(false);
-    setExpenseData({ title: "", amount: "", paidBy: "you", description: "" });
+
+    if (!id) {
+      setErrorMessage("Missing group id.");
+      return;
+    }
+
+    const amount = Number(expenseData.amount);
+
+    if (Number.isNaN(amount) || amount <= 0) {
+      setErrorMessage("Enter a valid expense amount.");
+      return;
+    }
+
+    void (async () => {
+      setErrorMessage(null);
+
+      try {
+        await createExpense(
+          backendUrl,
+          {
+            groupId: id,
+            title: expenseData.title.trim(),
+            amount,
+            paidBy: expenseData.paidBy || currentUser?.id,
+            description: expenseData.description.trim() || undefined,
+          },
+          session?.accessToken
+        );
+
+        const refreshed = await getGroup(backendUrl, id, session?.accessToken);
+        setGroup(refreshed);
+        setShowExpenseDialog(false);
+        setExpenseData({ title: "", amount: "", paidBy: currentUser?.id || "", description: "" });
+      } catch (error) {
+        setErrorMessage(error instanceof Error ? error.message : "Failed to create expense.");
+      }
+    })();
   };
 
-  const youOwe = debts
-    .filter((d) => d.from === "You")
-    .reduce((sum, d) => sum + parseFloat(d.amount.replace("€ ", "").replace(",", ".")), 0);
-
-  const owedToYou = debts
-    .filter((d) => d.to === "You")
-    .reduce((sum, d) => sum + parseFloat(d.amount.replace("€ ", "").replace(",", ".")), 0);
+  const expenseSummary = expenses.length > 0 ? `${expenses.length} tracked expense${expenses.length === 1 ? "" : "s"}` : "No expenses yet";
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      {errorMessage && <Alert severity="error">{errorMessage}</Alert>}
+
       {/* Header with Back Button */}
       <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 1 }}>
         <IconButton onClick={() => navigate("/groups")} sx={{ color: "text.secondary" }}>
           <ArrowBackIcon />
         </IconButton>
         <Box>
-          <Typography variant="h4" sx={{ fontWeight: "bold" }}>
-            {group.name}
-          </Typography>
-          <Typography variant="body2" sx={{ color: "text.secondary" }}>
-            {group.description}
-          </Typography>
+          {isLoading ? (
+            <Skeleton variant="text" width={260} height={42} />
+          ) : (
+            <Typography variant="h4" sx={{ fontWeight: "bold" }}>
+              {group?.name || "Group"}
+            </Typography>
+          )}
+          {isLoading ? <Skeleton variant="text" width={220} /> : <Typography variant="body2" sx={{ color: "text.secondary" }}>{group?.description || "No description provided."}</Typography>}
         </Box>
       </Box>
 
@@ -123,7 +175,7 @@ export function GroupDetailsPage() {
               You Owe
             </Typography>
             <Typography variant="h5" sx={{ fontWeight: "bold", color: "#991b1b" }}>
-              € {youOwe.toFixed(2)}
+              {formatMoney(youOwe)}
             </Typography>
           </CardContent>
         </Card>
@@ -134,7 +186,7 @@ export function GroupDetailsPage() {
               Owed to You
             </Typography>
             <Typography variant="h5" sx={{ fontWeight: "bold", color: "#166534" }}>
-              € {owedToYou.toFixed(2)}
+              {formatMoney(owedToYou)}
             </Typography>
           </CardContent>
         </Card>
@@ -145,7 +197,7 @@ export function GroupDetailsPage() {
               Members
             </Typography>
             <Typography variant="h5" sx={{ fontWeight: "bold", color: "#312e81" }}>
-              {group.members.length}
+              {members.length}
             </Typography>
           </CardContent>
         </Card>
@@ -182,7 +234,7 @@ export function GroupDetailsPage() {
           </Box>
 
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            {group.members.map((member) => (
+            {members.map((member) => (
               <Box
                 key={member.id}
                 sx={{
@@ -196,40 +248,45 @@ export function GroupDetailsPage() {
                 }}
               >
                 <Avatar sx={{ bgcolor: "#4f46e5", color: "white", fontWeight: "bold" }}>
-                  {member.avatar}
+                  {member.avatar || member.name[0]}
                 </Avatar>
                 <Box sx={{ flex: 1 }}>
                   <Typography variant="body2" sx={{ fontWeight: "bold" }}>
                     {member.name}
                   </Typography>
                   <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                    {member.email}
+                    {member.email || "No email available"}
                   </Typography>
                 </Box>
-                {member.id === "1" && (
+                {(member.id === currentUser?.id || member.email === currentUser?.email) && (
                   <Chip label="You" size="small" sx={{ bgcolor: "#e0e7ff", color: "#4f46e5" }} />
                 )}
               </Box>
             ))}
+            {members.length === 0 && !isLoading && (
+              <Typography variant="body2" sx={{ color: "text.secondary", textAlign: "center", py: 2 }}>
+                No members found in this group.
+              </Typography>
+            )}
           </Box>
         </CardContent>
       </Card>
 
-      {/* Current Debts */}
+      {/* Recent Expenses */}
       <Card sx={{ borderRadius: 3 }}>
         <CardContent sx={{ p: 3 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
             <TrendingUpIcon sx={{ color: "#4f46e5" }} />
             <Typography variant="h6" sx={{ fontWeight: "bold" }}>
-              Current Debts
+              Recent Expenses
             </Typography>
           </Box>
 
-          {debts.length > 0 ? (
+          {expenses.length > 0 ? (
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-              {debts.map((debt) => (
+              {expenses.map((expense) => (
                 <Box
-                  key={debt.id}
+                  key={expense.id}
                   sx={{
                     display: "flex",
                     alignItems: "center",
@@ -240,28 +297,29 @@ export function GroupDetailsPage() {
                     border: "1px solid #e2e8f0",
                   }}
                 >
-                  <Box>
+                  <Box sx={{ minWidth: 0 }}>
                     <Typography variant="body2" sx={{ fontWeight: "bold" }}>
-                      {debt.from}
-                      <span style={{ color: "text.secondary", fontWeight: "normal" }}> owes </span>
-                      {debt.to}
+                      {expense.description || "Expense"}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
+                      {expenseSummary}
                     </Typography>
                   </Box>
                   <Typography
                     variant="body2"
                     sx={{
                       fontWeight: "bold",
-                      color: debt.from === "You" ? "#dc2626" : "#16a34a",
+                      color: "#4f46e5",
                     }}
                   >
-                    {debt.amount}
+                    {formatMoney(expense.amount)}
                   </Typography>
                 </Box>
               ))}
             </Box>
           ) : (
             <Typography variant="body2" sx={{ color: "text.secondary", textAlign: "center", py: 2 }}>
-              No active debts
+              No expenses found for this group.
             </Typography>
           )}
         </CardContent>
@@ -359,12 +417,14 @@ export function GroupDetailsPage() {
               onChange={(e) => setExpenseData({ ...expenseData, paidBy: e.target.value })}
               variant="outlined"
             >
-              <option value="you">You</option>
-              {group.members.filter((m) => m.id !== "1").map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name}
-                </option>
-              ))}
+              <option value={currentUser?.id || "you"}>You</option>
+              {members
+                .filter((member) => member.id !== currentUser?.id)
+                .map((member) => (
+                  <option key={member.id} value={member.id}>
+                    {member.name}
+                  </option>
+                ))}
             </TextField>
             <TextField
               label="Description (optional)"

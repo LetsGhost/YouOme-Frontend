@@ -13,6 +13,52 @@ export type CurrentUser = {
   role: string;
 };
 
+export type GroupMember = {
+  id: string;
+  name: string;
+  email?: string;
+  avatar?: string;
+  role?: string;
+};
+
+export type GroupExpense = {
+  id: string;
+  description?: string;
+  amount?: number | string;
+  paidBy?: string | GroupMember | { id: string; name?: string };
+  status?: string;
+  createdAt?: string;
+  date?: string;
+  participants?: Array<string | GroupMember | { id: string; name?: string }>;
+};
+
+export type Group = {
+  id: string;
+  name: string;
+  description?: string | null;
+  members?: GroupMember[];
+  memberCount?: number;
+  totalExpense?: number | string;
+  yourShare?: number | string;
+  balance?: number | string;
+  expenses?: GroupExpense[];
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type CreateGroupInput = {
+  name: string;
+  description?: string;
+};
+
+export type CreateExpenseInput = {
+  groupId: string;
+  title: string;
+  amount: number | string;
+  paidBy?: string;
+  description?: string;
+};
+
 export type AuthSession = {
   user: CurrentUser;
   accessToken: string;
@@ -88,6 +134,34 @@ export function saveSession(session: AuthSession | null) {
 
 export function normalizeBaseUrl(baseUrl: string) {
   return baseUrl.trim().replace(/\/+$/, "");
+}
+
+export async function listGroups(backendUrl: string, token?: string) {
+  return fetchJson<Group[]>(`${backendUrl}/api/groups`, {
+    token,
+  });
+}
+
+export async function getGroup(backendUrl: string, groupId: string, token?: string) {
+  return fetchJson<Group>(`${backendUrl}/api/groups/${groupId}`, {
+    token,
+  });
+}
+
+export async function createGroup(backendUrl: string, input: CreateGroupInput, token?: string) {
+  return fetchJson<Group>(`${backendUrl}/api/groups`, {
+    method: "POST",
+    json: input,
+    token,
+  });
+}
+
+export async function createExpense(backendUrl: string, input: CreateExpenseInput, token?: string) {
+  return fetchJson<GroupExpense>(`${backendUrl}/api/expenses`, {
+    method: "POST",
+    json: input,
+    token,
+  });
 }
 
 export async function fetchJson<T>(url: string, options: ApiRequestOptions = {}): Promise<T> {

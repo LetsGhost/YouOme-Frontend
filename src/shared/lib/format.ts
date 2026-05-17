@@ -16,3 +16,29 @@ export function formatTimestamp(value: string) {
     timeStyle: "short",
   });
 }
+
+export function formatMoney(value: number | string | null | undefined) {
+  if (value === null || value === undefined || value === "") {
+    return "€ 0.00";
+  }
+
+  const parsed = typeof value === "number" ? value : Number(String(value).replace(/[^0-9.-]/g, ""));
+
+  if (Number.isNaN(parsed)) {
+    return String(value);
+  }
+
+  return new Intl.NumberFormat("de-DE", {
+    style: "currency",
+    currency: "EUR",
+    maximumFractionDigits: 2,
+  }).format(parsed);
+}
+
+export function formatCount(value: number | string | null | undefined) {
+  if (value === null || value === undefined || value === "") {
+    return "0";
+  }
+
+  return String(value);
+}

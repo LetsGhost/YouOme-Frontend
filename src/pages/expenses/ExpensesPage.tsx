@@ -3,7 +3,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import ReceiptIcon from "@mui/icons-material/Receipt";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import FilterListIcon from "@mui/icons-material/FilterList";
-import { useState } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import {
   Box,
   Button,
@@ -17,46 +17,115 @@ import {
   FormControl,
   InputAdornment,
   Avatar,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  InputLabel,
+  FormHelperText,
 } from "@mui/material";
 
+import { useAppState } from "../../app/AppStateContext";
+import { createExpense } from "../../shared/api/backend";
+import { formatMoney } from "../../shared/lib/format";
+
 export function ExpensesPage() {
+  const { backendUrl, groups, reloadGroups, session, isBootstrapping } = useAppState();
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState<"all" | "paid" | "pending">("all");
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [newExpense, setNewExpense] = useState({
+    groupId: "",
+    title: "",
+    amount: "",
+    paidBy: "",
+    description: "",
+  });
 
-  // Mock data
-  const expenses = [
-    {
-      id: "1",
-      description: "Pizza dinner",
-      amount: "€ 45.00",
-      group: "Dinner Nights",
-      paidBy: "You",
-      date: "Today",
-      status: "settled",
-    },
-    {
-      id: "2",
-      description: "Gas & tolls",
-      amount: "€ 82.50",
-      group: "Weekend Trip",
-      paidBy: "John",
-      date: "Yesterday",
-      status: "pending",
-    },
-    {
-      id: "3",
-      description: "Groceries",
-      amount: "€ 156.75",
-      group: "Apartment Expenses",
-      paidBy: "Sarah",
-      date: "2 days ago",
-      status: "pending",
-    },
-  ];
-
-  const filteredExpenses = expenses.filter((expense) =>
-    expense.description.toLowerCase().includes(searchTerm.toLowerCase())
+  const expenses = useMemo(
+    () =>
+      groups.flatMap((group) =>
+        (group.expenses ?? []).map((expense) => ({
+          ...expense,
+          groupId: group.id,
+          groupName: group.name,
+          paidByName: typeof expense.paidBy === "object" && expense.paidBy ? expense.paidBy.name || "Someone" : String(expense.paidBy || "Someone"),
+        }))
+      ),
+    [groups]
   );
+
+  const filteredExpenses = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+
+    return expenses.filter((expense) => {
+      const matchesSearch = !term || `${expense.description || ""} ${expense.groupName}`.toLowerCase().includes(term);
+
+      if (!matchesSearch) {
+        return false;
+      }
+
+      const normalizedStatus = (expense.status || "pending").toLowerCase();
+
+      if (filter === "paid") {
+        return normalizedStatus === "settled" || normalizedStatus === "paid" || normalizedStatus === "completed";
+      }
+
+      if (filter === "pending") {
+        return normalizedStatus !== "settled" && normalizedStatus !== "paid" && normalizedStatus !== "completed";
+      }
+
+      return true;
+    });
+  }, [expenses, filter, searchTerm]);
+
+  const handleCreateExpense = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!newExpense.groupId) {
+      setErrorMessage("Pick a group first.");
+      return;
+    }
+
+    if (!newExpense.title.trim()) {
+      setErrorMessage("Expense title is required.");
+      return;
+    }
+
+    const amount = Number(newExpense.amount);
+
+    if (Number.isNaN(amount) || amount <= 0) {
+      setErrorMessage("Enter a valid amount.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setErrorMessage(null);
+
+    try {
+      await createExpense(
+        backendUrl,
+        {
+          groupId: newExpense.groupId,
+          title: newExpense.title.trim(),
+          amount,
+          paidBy: newExpense.paidBy.trim() || session?.user.id,
+          description: newExpense.description.trim() || undefined,
+        },
+        session?.accessToken
+      );
+
+      await reloadGroups();
+      setShowCreateDialog(false);
+      setNewExpense({ groupId: groups[0]?.id || "", title: "", amount: "", paidBy: session?.user.id || "", description: "" });
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Failed to create expense.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
@@ -84,6 +153,15 @@ export function ExpensesPage() {
         <Button
           variant="contained"
           startIcon={<AddIcon />}
+          onClick={() => {
+            setErrorMessage(null);
+            setNewExpense((current) => ({
+              ...current,
+              groupId: current.groupId || groups[0]?.id || "",
+              paidBy: current.paidBy || session?.user.id || "",
+            }));
+            setShowCreateDialog(true);
+          }}
           sx={{
             bgcolor: "#4f46e5",
             color: "white",
@@ -96,6 +174,12 @@ export function ExpensesPage() {
         >
           New Expense
         </Button>
+
+        {errorMessage && (
+          <Box sx={{ color: "error.main", fontSize: "0.875rem", fontWeight: 600 }}>
+            {errorMessage}
+          </Box>
+        )}
       </Box>
 
       {/* Search & Filter */}
@@ -159,17 +243,17 @@ export function ExpensesPage() {
 
                   <Box sx={{ flex: 1, minWidth: 0 }}>
                     <Typography variant="subtitle2" sx={{ fontWeight: "bold" }}>
-                      {expense.description}
+                      {expense.description || "Expense"}
                     </Typography>
                     <Box sx={{ display: "flex", gap: 1, mt: 0.5, flexWrap: "wrap" }}>
                       <Chip
-                        label={expense.group}
+                        label={expense.groupName}
                         size="small"
                         variant="outlined"
                         sx={{ fontSize: "0.75rem" }}
                       />
                       <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                        Paid by {expense.paidBy}
+                        Paid by {expense.paidByName}
                       </Typography>
                     </Box>
                   </Box>
@@ -177,23 +261,106 @@ export function ExpensesPage() {
 
                 <Box sx={{ textAlign: "right" }}>
                   <Typography variant="h6" sx={{ fontWeight: "bold" }}>
-                    {expense.amount}
+                    {formatMoney(expense.amount)}
                   </Typography>
                   <Typography
                     variant="caption"
                     sx={{
                       fontWeight: "bold",
-                      color: expense.status === "settled" ? "#22c55e" : "#f59e0b",
+                      color:
+                        (expense.status || "pending") === "settled" ||
+                        (expense.status || "pending") === "paid" ||
+                        (expense.status || "pending") === "completed"
+                          ? "#22c55e"
+                          : "#f59e0b",
                     }}
                   >
-                    {expense.status === "settled" ? "✓ Settled" : "⏳ Pending"}
+                    {(expense.status || "pending") === "settled" ||
+                    (expense.status || "pending") === "paid" ||
+                    (expense.status || "pending") === "completed"
+                      ? "✓ Settled"
+                      : "⏳ Pending"}
                   </Typography>
                 </Box>
               </Box>
             </CardContent>
           </Card>
         ))}
+
+        {!isBootstrapping && filteredExpenses.length === 0 && (
+          <Box sx={{ textAlign: "center", py: 4 }}>
+            <ReceiptIcon sx={{ fontSize: 64, color: "text.disabled", mb: 2 }} />
+            <Typography variant="h6" sx={{ fontWeight: "bold", mb: 1 }}>
+              No expenses found
+            </Typography>
+            <Typography sx={{ color: "text.secondary", mb: 2 }}>
+              Create an expense in one of your groups to populate this feed.
+            </Typography>
+          </Box>
+        )}
       </Box>
+
+      <Dialog open={showCreateDialog} onClose={() => setShowCreateDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontWeight: "bold" }}>New Expense</DialogTitle>
+        <form onSubmit={handleCreateExpense}>
+          <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
+            <TextField
+              select
+              label="Group"
+              value={newExpense.groupId}
+              onChange={(event) => setNewExpense((current) => ({ ...current, groupId: event.target.value }))}
+              required
+              fullWidth
+            >
+              {groups.map((group) => (
+                <MenuItem key={group.id} value={group.id}>
+                  {group.name}
+                </MenuItem>
+              ))}
+            </TextField>
+            <TextField
+              label="Title"
+              value={newExpense.title}
+              onChange={(event) => setNewExpense((current) => ({ ...current, title: event.target.value }))}
+              required
+              fullWidth
+            />
+            <TextField
+              label="Amount"
+              type="number"
+              value={newExpense.amount}
+              onChange={(event) => setNewExpense((current) => ({ ...current, amount: event.target.value }))}
+              required
+              fullWidth
+              inputProps={{ min: 0, step: "0.01" }}
+            />
+            <TextField
+              label="Paid by"
+              value={newExpense.paidBy}
+              onChange={(event) => setNewExpense((current) => ({ ...current, paidBy: event.target.value }))}
+              fullWidth
+              helperText="Use a member id or leave empty to default to your current user id."
+            />
+            <TextField
+              label="Description"
+              value={newExpense.description}
+              onChange={(event) => setNewExpense((current) => ({ ...current, description: event.target.value }))}
+              fullWidth
+              multiline
+              rows={3}
+            />
+            <FormHelperText sx={{ m: 0 }}>
+              This uses the real <code>/api/expenses</code> create endpoint.
+            </FormHelperText>
+          </DialogContent>
+          <DialogActions sx={{ p: 2 }}>
+            <Button onClick={() => setShowCreateDialog(false)}>Cancel</Button>
+            <Button type="submit" variant="contained" disabled={isSubmitting} sx={{ bgcolor: "#4f46e5" }}>
+              {isSubmitting ? "Creating..." : "Create Expense"}
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
     </Box>
   );
 }

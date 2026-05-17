@@ -6,11 +6,13 @@ import {
   BackendState,
   CurrentUser,
   DEFAULT_API_BASE_URL,
+  Group,
   HealthResponse,
   RegisteredJob,
   RegisteredRoute,
   fetchJson,
   getApiBaseUrl,
+  listGroups,
   normalizeBaseUrl,
   readSession,
   saveSession,
@@ -48,6 +50,7 @@ type AppStateValue = {
   health: HealthResponse | null;
   session: AuthSession | null;
   currentUser: CurrentUser | null;
+  groups: Group[];
   notice: Notice;
   isBootstrapping: boolean;
   admin: AdminBundle;
@@ -59,6 +62,7 @@ type AppStateValue = {
   logout: () => Promise<void>;
   probeDevSession: (token?: string) => Promise<void>;
   reloadHealth: () => Promise<void>;
+  reloadGroups: () => Promise<void>;
   reloadAdminState: () => Promise<void>;
   clearSession: () => void;
 };
@@ -82,6 +86,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [session, setSession] = useState<AuthSession | null>(() => readSession());
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(() => readSession()?.user ?? null);
+  const [groups, setGroups] = useState<Group[]>([]);
   const [notice, setNotice] = useState<Notice>(defaultNotice);
   const [isBootstrapping, setIsBootstrapping] = useState(true);
   const [admin, setAdmin] = useState<AdminBundle>(defaultAdminState);
@@ -101,6 +106,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setHealth(healthSnapshot);
     return;
   }, [backendUrl]);
+
+  const reloadGroups = useCallback(async () => {
+    try {
+      const groupsSnapshot = await listGroups(backendUrl, session?.accessToken);
+      setGroups(groupsSnapshot);
+    } catch {
+      setGroups([]);
+    }
+  }, [backendUrl, session?.accessToken]);
 
   const bootstrapCurrentUser = useCallback(async () => {
     const storedSession = readSession();
@@ -134,6 +148,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
         setHealth(healthSnapshot);
         await bootstrapCurrentUser();
+        await reloadGroups();
       } catch {
         setNotice({ tone: "warning", message: "Backend unreachable or no active session found." });
       } finally {
@@ -144,11 +159,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     void bootstrap();
 
     return () => controller.abort();
-  }, [backendUrl, bootstrapCurrentUser]);
+  }, [backendUrl, bootstrapCurrentUser, reloadGroups]);
+
+  useEffect(() => {
+    void reloadGroups();
+  }, [reloadGroups]);
 
   const login = useCallback(
     async ({ email, password }: LoginInput) => {
-      const result = await fetchJson<AuthSession>(`${backendUrl}/api/authentications/login`, {
+      const result = await fetchJson<AuthSession>(`${backendUrl}/api/auth/login`, {
         method: "POST",
         json: { email, password },
       });
@@ -290,6 +309,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     health,
     session,
     currentUser,
+    groups,
     notice,
     isBootstrapping,
     admin,
@@ -312,6 +332,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     },
     reloadHealth: async () => {
       await reloadHealth();
+    },
+    reloadGroups: async () => {
+      await reloadGroups();
     },
     reloadAdminState: async () => {
       await reloadAdminState();

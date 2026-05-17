@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import PeopleIcon from "@mui/icons-material/People";
 import WarningIcon from "@mui/icons-material/Warning";
@@ -15,9 +16,79 @@ import {
 import { Link } from "react-router-dom";
 
 import { useAppState } from "../../app/AppStateContext";
+import { formatCount, formatMoney } from "../../shared/lib/format";
 
 export function HomePage() {
-  const { currentUser } = useAppState();
+  const { currentUser, groups } = useAppState();
+
+  const dashboardStats = useMemo(() => {
+    const uniqueMembers = new Map<string, string>();
+    const recentActivities: Array<{ user: string; action: string; group: string; time: string }> = [];
+
+    let totalSpent = 0;
+    let totalYourShare = 0;
+    let totalPendingExpenses = 0;
+
+    for (const group of groups) {
+      const memberList = group.members ?? [];
+
+      for (const member of memberList) {
+        if (member.email === currentUser?.email || member.id === currentUser?.id) {
+          continue;
+        }
+
+        uniqueMembers.set(member.id, member.name);
+      }
+
+      const groupTotal = typeof group.totalExpense === "number" ? group.totalExpense : Number(String(group.totalExpense ?? 0).replace(/[^0-9.-]/g, ""));
+      const groupShare = typeof group.yourShare === "number" ? group.yourShare : Number(String(group.yourShare ?? 0).replace(/[^0-9.-]/g, ""));
+
+      if (!Number.isNaN(groupTotal)) {
+        totalSpent += groupTotal;
+      }
+
+      if (!Number.isNaN(groupShare)) {
+        totalYourShare += groupShare;
+      }
+
+      const expenses = group.expenses ?? [];
+
+      for (const expense of expenses.slice(0, 2)) {
+        if (expense.status && expense.status !== "settled") {
+          totalPendingExpenses += 1;
+        }
+
+        recentActivities.push({
+          user: typeof expense.paidBy === "object" && expense.paidBy ? expense.paidBy.name || "Someone" : String(expense.paidBy || "Someone"),
+          action: "added expense in",
+          group: group.name,
+          time: expense.createdAt || expense.date || "Recently",
+        });
+      }
+    }
+
+    if (recentActivities.length === 0) {
+      for (const group of groups.slice(0, 3)) {
+        recentActivities.push({
+          user: group.name[0] || "G",
+          action: "group loaded from",
+          group: group.name,
+          time: group.updatedAt || group.createdAt || "Recently",
+        });
+      }
+    }
+
+    return {
+      groupsCount: groups.length,
+      membersCount: uniqueMembers.size,
+      totalSpent,
+      totalYourShare,
+      totalPendingExpenses,
+      recentActivities,
+    };
+  }, [currentUser?.email, currentUser?.id, groups]);
+
+  const totalBalance = dashboardStats.totalSpent - dashboardStats.totalYourShare;
 
   return (
     <Box
@@ -56,7 +127,7 @@ export function HomePage() {
           <StatCard
             icon={<TrendingUpIcon sx={{ fontSize: 32, color: "#4f46e5" }} />}
             label="You owe"
-            value="€ 245.50"
+            value={formatMoney(Math.max(totalBalance, 0))}
             bgColor="#eef2ff"
           />
         </Box>
@@ -64,7 +135,7 @@ export function HomePage() {
           <StatCard
             icon={<FavoriteBorderIcon sx={{ fontSize: 32, color: "#22c55e" }} />}
             label="Owed to you"
-            value="€ 112.75"
+            value={formatMoney(Math.max(-totalBalance, 0))}
             bgColor="#f0fdf4"
           />
         </Box>
@@ -72,7 +143,7 @@ export function HomePage() {
           <StatCard
             icon={<WarningIcon sx={{ fontSize: 32, color: "#f59e0b" }} />}
             label="Pending"
-            value="3 payments"
+            value={`${formatCount(dashboardStats.totalPendingExpenses)} payments`}
             bgColor="#fffbeb"
           />
         </Box>
@@ -80,7 +151,7 @@ export function HomePage() {
           <StatCard
             icon={<PeopleIcon sx={{ fontSize: 32, color: "#3b82f6" }} />}
             label="Groups"
-            value="5 active"
+            value={`${formatCount(dashboardStats.groupsCount)} active`}
             bgColor="#eff6ff"
           />
         </Box>
@@ -97,26 +168,7 @@ export function HomePage() {
           </Box>
 
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            {[
-              {
-                user: "Sarah",
-                action: "added you to",
-                group: "Weekend Trip",
-                time: "2 hours ago",
-              },
-              {
-                user: "John",
-                action: "settled payment with",
-                group: "You",
-                time: "Yesterday",
-              },
-              {
-                user: "Emma",
-                action: "added expense to",
-                group: "Apartment Expenses",
-                time: "2 days ago",
-              },
-            ].map((activity, idx) => (
+            {dashboardStats.recentActivities.map((activity, idx) => (
               <Box
                 key={idx}
                 sx={{
@@ -133,20 +185,12 @@ export function HomePage() {
                   },
                 }}
               >
-                <Avatar
-                  sx={{
-                    bgcolor: "#4f46e5",
-                    color: "white",
-                    fontWeight: "bold",
-                    flexShrink: 0,
-                  }}
-                >
+                
                   {activity.user[0]}
-                </Avatar>
+                  {activity.user[0]}
                 <Box sx={{ flex: 1 }}>
                   <Typography variant="body2">
                     <strong>{activity.user}</strong> {activity.action}{" "}
-                    <strong>{activity.group}</strong>
                   </Typography>
                   <Typography
                     variant="caption"

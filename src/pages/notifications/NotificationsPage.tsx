@@ -3,7 +3,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import WarningIcon from "@mui/icons-material/Warning";
 import PeopleIcon from "@mui/icons-material/People";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Box,
   Card,
@@ -14,41 +14,52 @@ import {
   Button,
 } from "@mui/material";
 
+import { useAppState } from "../../app/AppStateContext";
+
+type NotificationItem = {
+  id: string;
+  type: "invite" | "payment" | "expense" | "group";
+  message: string;
+  time: string;
+  read: boolean;
+  icon: typeof PeopleIcon;
+};
+
 export function NotificationsPage() {
-  const [notifications, setNotifications] = useState([
-    {
-      id: "1",
-      type: "invite",
-      message: "Sarah added you to the group Weekend Trip",
-      time: "5 minutes ago",
-      read: false,
-      icon: PeopleIcon,
-    },
-    {
-      id: "2",
-      type: "payment",
-      message: "John settled a payment of €65.50 with you",
-      time: "1 hour ago",
-      read: false,
-      icon: CheckCircleIcon,
-    },
-    {
-      id: "3",
-      type: "expense",
-      message: "Emma added an expense in Apartment Expenses",
-      time: "3 hours ago",
-      read: true,
-      icon: WarningIcon,
-    },
-    {
-      id: "4",
-      type: "invite",
-      message: "Mike added you to the group Dinner Nights",
-      time: "Yesterday",
-      read: true,
-      icon: PeopleIcon,
-    },
-  ]);
+  const { groups } = useAppState();
+  const derivedNotifications = useMemo<NotificationItem[]>(() => {
+    const items: NotificationItem[] = [];
+
+    for (const group of groups) {
+      items.push({
+        id: `group-${group.id}`,
+        type: "group",
+        message: `You can now access ${group.name}`,
+        time: group.updatedAt || group.createdAt || "Recently",
+        read: true,
+        icon: PeopleIcon,
+      });
+
+      for (const expense of group.expenses ?? []) {
+        items.push({
+          id: `expense-${group.id}-${expense.id}`,
+          type: "expense",
+          message: `${expense.description || "An expense"} was added in ${group.name}`,
+          time: expense.createdAt || expense.date || "Recently",
+          read: expense.status === "settled" || expense.status === "paid" || expense.status === "completed",
+          icon: WarningIcon,
+        });
+      }
+    }
+
+    return items.slice(0, 10);
+  }, [groups]);
+
+  const [notifications, setNotifications] = useState<NotificationItem[]>(derivedNotifications);
+
+  useEffect(() => {
+    setNotifications(derivedNotifications);
+  }, [derivedNotifications]);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 

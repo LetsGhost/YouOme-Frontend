@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import PeopleIcon from "@mui/icons-material/People";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import ChatIcon from "@mui/icons-material/Chat";
@@ -15,36 +15,52 @@ import {
   InputAdornment,
 } from "@mui/material";
 
+import { useAppState } from "../../app/AppStateContext";
+
 export function FriendsPage() {
   const [searchTerm, setSearchTerm] = useState("");
+  const { currentUser, groups } = useAppState();
 
-  // Mock data - will be replaced with real API data
-  const friends = [
-    {
-      id: "1",
-      name: "Sarah Johnson",
-      email: "sarah@example.com",
-      mutualGroups: 2,
-      totalOwed: "€ 45.50",
-    },
-    {
-      id: "2",
-      name: "John Smith",
-      email: "john@example.com",
-      mutualGroups: 1,
-      totalOwed: "-€ 30.00",
-    },
-    {
-      id: "3",
-      name: "Emma Davis",
-      email: "emma@example.com",
-      mutualGroups: 3,
-      totalOwed: "€ 12.75",
-    },
-  ];
+  const friends = useMemo(() => {
+    const map = new Map<
+      string,
+      {
+        id: string;
+        name: string;
+        email: string;
+        mutualGroups: number;
+        lastGroup: string;
+      }
+    >();
+
+    for (const group of groups) {
+      for (const member of group.members ?? []) {
+        if (member.id === currentUser?.id || member.email === currentUser?.email) {
+          continue;
+        }
+
+        const existing = map.get(member.id);
+
+        if (existing) {
+          existing.mutualGroups += 1;
+          continue;
+        }
+
+        map.set(member.id, {
+          id: member.id,
+          name: member.name,
+          email: member.email || "No email provided",
+          mutualGroups: 1,
+          lastGroup: group.name,
+        });
+      }
+    }
+
+    return Array.from(map.values());
+  }, [currentUser?.email, currentUser?.id, groups]);
 
   const filteredFriends = friends.filter((friend) =>
-    friend.name.toLowerCase().includes(searchTerm.toLowerCase())
+    `${friend.name} ${friend.email} ${friend.lastGroup}`.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -120,16 +136,13 @@ export function FriendsPage() {
                   <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 1 }}>
                     <Box sx={{ textAlign: "right" }}>
                       <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
-                        Balance
+                        Shared groups
                       </Typography>
-                      <Typography
-                        variant="h6"
-                        sx={{
-                          fontWeight: "bold",
-                          color: friend.totalOwed.startsWith("-") ? "#ef4444" : "#22c55e",
-                        }}
-                      >
-                        {friend.totalOwed}
+                      <Typography variant="h6" sx={{ fontWeight: "bold", color: "#22c55e" }}>
+                        {friend.mutualGroups}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
+                        Latest in {friend.lastGroup}
                       </Typography>
                     </Box>
 

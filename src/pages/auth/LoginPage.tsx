@@ -167,7 +167,6 @@ export function LoginPage() {
               mt: 3,
             }}
           >
-            Test credentials: user@example.com / 12345678
           </Typography>
         </Paper>
       </Container>
