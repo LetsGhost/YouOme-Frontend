@@ -32,6 +32,15 @@ export type GroupExpense = {
   participants?: Array<string | GroupMember | { id: string; name?: string }>;
 };
 
+export type DebtHistoryEntry = {
+  id: string;
+  description: string;
+  date: string;
+  amount: string | number;
+  type: "settlement" | "expense";
+  participants: string[];
+};
+
 export type Group = {
   id: string;
   name: string;
@@ -42,8 +51,39 @@ export type Group = {
   yourShare?: number | string;
   balance?: number | string;
   expenses?: GroupExpense[];
+  debtHistory?: DebtHistoryEntry[];
   createdAt?: string;
   updatedAt?: string;
+};
+
+export type FriendSummary = {
+  id: string;
+  name: string;
+  email: string;
+  blocked: boolean;
+};
+
+export type FriendInvite = {
+  _id: string;
+  fromUserId: string;
+  toUserId: string;
+  status: "pending" | "accepted" | "rejected";
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type NotificationRecord = {
+  _id: string;
+  userId: string;
+  type: string;
+  payload?: Record<string, unknown>;
+  readAt?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type SendFriendInviteInput = {
+  toUserEmail: string;
 };
 
 export type CreateGroupInput = {
@@ -138,6 +178,50 @@ export function normalizeBaseUrl(baseUrl: string) {
 
 export async function listGroups(backendUrl: string, token?: string) {
   return fetchJson<Group[]>(`${backendUrl}/api/groups`, {
+    token,
+  });
+}
+
+export async function listFriendSummaries(backendUrl: string, token?: string) {
+  return fetchJson<FriendSummary[]>(`${backendUrl}/api/friend-lists/summary`, {
+    token,
+  });
+}
+
+export async function sendFriendInvite(
+  backendUrl: string,
+  input: SendFriendInviteInput,
+  token?: string
+) {
+  return fetchJson<FriendInvite>(`${backendUrl}/api/friend-invites`, {
+    method: "POST",
+    json: input,
+    token,
+  });
+}
+
+export async function respondToFriendInvite(
+  backendUrl: string,
+  inviteId: string,
+  accept: boolean,
+  token?: string
+) {
+  return fetchJson<FriendInvite>(`${backendUrl}/api/friend-invites/${inviteId}/respond`, {
+    method: "PATCH",
+    json: { accept },
+    token,
+  });
+}
+
+export async function listNotifications(backendUrl: string, token?: string) {
+  return fetchJson<NotificationRecord[]>(`${backendUrl}/api/notifications`, {
+    token,
+  });
+}
+
+export async function markNotificationRead(backendUrl: string, notificationId: string, token?: string) {
+  return fetchJson<NotificationRecord>(`${backendUrl}/api/notifications/${notificationId}/read`, {
+    method: "PATCH",
     token,
   });
 }

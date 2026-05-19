@@ -88,6 +88,7 @@ export function GroupDetailsPage() {
 
   const members = group?.members ?? [];
   const expenses = group?.expenses ?? [];
+  const debtHistory = group?.debtHistory ?? [];
 
   const balanceValue = useMemo(() => {
     const parsed = typeof group?.balance === "number" ? group.balance : Number(String(group?.balance ?? 0).replace(/[^0-9.-]/g, ""));
@@ -332,57 +333,63 @@ export function GroupDetailsPage() {
             Debt History
           </Typography>
 
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            {debtHistory.map((entry, idx) => (
-              <Box key={entry.id}>
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "flex-start",
-                    p: 1.5,
-                    borderRadius: 1,
-                    bgcolor: entry.type === "settlement" ? "#f0fdf4" : "#eff6ff",
-                    border: entry.type === "settlement" ? "1px solid #dcfce7" : "1px solid #e0e7ff",
-                  }}
-                >
-                  <Box sx={{ flex: 1 }}>
-                    <Typography variant="body2" sx={{ fontWeight: "bold", mb: 0.5 }}>
-                      {entry.description}
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 0.5 }}>
-                      {new Date(entry.date).toLocaleDateString()}
-                    </Typography>
-                    <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
-                      {entry.participants.map((participant) => (
-                        <Chip
-                          key={participant}
-                          label={participant}
-                          size="small"
-                          sx={{
-                            bgcolor: "transparent",
-                            border: "1px solid #cbd5e1",
-                            fontSize: "0.75rem",
-                          }}
-                        />
-                      ))}
-                    </Box>
-                  </Box>
-                  <Typography
-                    variant="body2"
+          {debtHistory.length > 0 ? (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              {debtHistory.map((entry, idx) => (
+                <Box key={entry.id}>
+                  <Box
                     sx={{
-                      fontWeight: "bold",
-                      color: entry.type === "settlement" ? "#16a34a" : "#4f46e5",
-                      ml: 2,
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-start",
+                      p: 1.5,
+                      borderRadius: 1,
+                      bgcolor: entry.type === "settlement" ? "#f0fdf4" : "#eff6ff",
+                      border: entry.type === "settlement" ? "1px solid #dcfce7" : "1px solid #e0e7ff",
                     }}
                   >
-                    {entry.amount}
-                  </Typography>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="body2" sx={{ fontWeight: "bold", mb: 0.5 }}>
+                        {entry.description}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 0.5 }}>
+                        {new Date(entry.date).toLocaleDateString()}
+                      </Typography>
+                      <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+                        {entry.participants.map((participant) => (
+                          <Chip
+                            key={participant}
+                            label={participant}
+                            size="small"
+                            sx={{
+                              bgcolor: "transparent",
+                              border: "1px solid #cbd5e1",
+                              fontSize: "0.75rem",
+                            }}
+                          />
+                        ))}
+                      </Box>
+                    </Box>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontWeight: "bold",
+                        color: entry.type === "settlement" ? "#16a34a" : "#4f46e5",
+                        ml: 2,
+                      }}
+                    >
+                      {entry.amount}
+                    </Typography>
+                  </Box>
+                  {idx < debtHistory.length - 1 && <Divider sx={{ my: 0 }} />}
                 </Box>
-                {idx < debtHistory.length - 1 && <Divider sx={{ my: 0 }} />}
-              </Box>
-            ))}
-          </Box>
+              ))}
+            </Box>
+          ) : (
+            <Typography variant="body2" sx={{ color: "text.secondary", textAlign: "center", py: 2 }}>
+              No debt history available for this group.
+            </Typography>
+          )}
         </CardContent>
       </Card>
 
@@ -404,7 +411,7 @@ export function GroupDetailsPage() {
               fullWidth
               type="number"
               placeholder="0.00"
-              slotProps={{ input: { step: "0.01", min: "0" } }}
+              slotProps={{ htmlInput: { step: "0.01", min: "0" } }}
               value={expenseData.amount}
               onChange={(e) => setExpenseData({ ...expenseData, amount: e.target.value })}
               required

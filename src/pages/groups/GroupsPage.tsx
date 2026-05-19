@@ -51,6 +51,8 @@ export function GroupsPage() {
     });
   }, [groups, searchTerm]);
 
+  const getGroupId = (group: (typeof groups)[number]) => group.id;
+
   const handleCreateGroup = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -158,9 +160,9 @@ export function GroupsPage() {
       ) : filteredGroups.length > 0 ? (
         <Grid container spacing={3}>
           {filteredGroups.map((group) => (
-            <Grid item xs={12} md={6} lg={4} key={group.id}>
+            <Grid item xs={12} md={6} lg={4} key={getGroupId(group)}>
               <Card
-                onClick={() => navigate(`/groups/${group.id}`)}
+                onClick={() => navigate(`/groups/${getGroupId(group)}`)}
                 sx={{
                   borderRadius: 2,
                   cursor: "pointer",

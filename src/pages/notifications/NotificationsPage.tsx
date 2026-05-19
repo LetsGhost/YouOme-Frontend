@@ -3,6 +3,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import WarningIcon from "@mui/icons-material/Warning";
 import PeopleIcon from "@mui/icons-material/People";
+import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import { useEffect, useMemo, useState } from "react";
 import {
   Box,
@@ -12,54 +13,95 @@ import {
   IconButton,
   Avatar,
   Button,
+  Alert,
+  Divider,
+  Skeleton,
 } from "@mui/material";
 
 import { useAppState } from "../../app/AppStateContext";
+import {
+  listNotifications,
+  markNotificationRead,
+  respondToFriendInvite,
+  type NotificationRecord,
+} from "../../shared/api/backend";
+import { formatTimestamp } from "../../shared/lib/format";
 
 type NotificationItem = {
   id: string;
-  type: "invite" | "payment" | "expense" | "group";
+  type: "invite" | "payment" | "expense" | "group" | "friend-request";
   message: string;
   time: string;
   read: boolean;
   icon: typeof PeopleIcon;
+  actionType?: "friend-request";
+  inviteId?: string;
+  fromUserName?: string;
+  fromUserEmail?: string;
+  notificationId?: string;
 };
 
+function readString(value: unknown) {
+  return typeof value === "string" ? value : "";
+}
+
 export function NotificationsPage() {
-  const { groups } = useAppState();
-  const derivedNotifications = useMemo<NotificationItem[]>(() => {
-    const items: NotificationItem[] = [];
+  const { backendUrl, session, setNotice } = useAppState();
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-    for (const group of groups) {
-      items.push({
-        id: `group-${group.id}`,
-        type: "group",
-        message: `You can now access ${group.name}`,
-        time: group.updatedAt || group.createdAt || "Recently",
-        read: true,
-        icon: PeopleIcon,
-      });
-
-      for (const expense of group.expenses ?? []) {
-        items.push({
-          id: `expense-${group.id}-${expense.id}`,
-          type: "expense",
-          message: `${expense.description || "An expense"} was added in ${group.name}`,
-          time: expense.createdAt || expense.date || "Recently",
-          read: expense.status === "settled" || expense.status === "paid" || expense.status === "completed",
-          icon: WarningIcon,
-        });
-      }
+  const loadNotifications = async () => {
+    if (!session?.accessToken) {
+      setNotifications([]);
+      setIsLoading(false);
+      setErrorMessage("Sign in to view notifications.");
+      return;
     }
 
-    return items.slice(0, 10);
-  }, [groups]);
+    setIsLoading(true);
+    setErrorMessage(null);
 
-  const [notifications, setNotifications] = useState<NotificationItem[]>(derivedNotifications);
+    try {
+      const items = await listNotifications(backendUrl, session.accessToken);
+
+      setNotifications(
+        items.map((notification) => {
+          const payload = notification.payload && typeof notification.payload === "object" ? notification.payload : {};
+          const inviteId = readString(payload.inviteId);
+          const isFriendRequest = notification.type === "friend.request" && Boolean(inviteId);
+
+          return {
+            id: notification._id,
+            notificationId: notification._id,
+            type: isFriendRequest ? "friend-request" : notification.type === "group.created" ? "group" : "expense",
+            message: isFriendRequest
+              ? `Friend request from ${readString(payload.fromUserName) || readString(payload.fromUserEmail) || "someone"}`
+              : notification.type === "group.created"
+                ? `You can now access ${readString(payload.name) || "your new group"}`
+                : `Notification type: ${notification.type}`,
+            time: notification.createdAt || notification.updatedAt || "Recently",
+            read: Boolean(notification.readAt),
+            icon: isFriendRequest ? PeopleIcon : notification.type === "group.created" ? PeopleIcon : WarningIcon,
+            actionType: isFriendRequest ? "friend-request" : undefined,
+            inviteId: isFriendRequest ? inviteId : undefined,
+            fromUserName: readString(payload.fromUserName),
+            fromUserEmail: readString(payload.fromUserEmail),
+          } satisfies NotificationItem;
+        })
+      );
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Failed to load notifications.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    setNotifications(derivedNotifications);
-  }, [derivedNotifications]);
+    void loadNotifications();
+  }, [backendUrl, session?.accessToken]);
+
+  const derivedNotifications = useMemo(() => notifications, [notifications]);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
@@ -73,13 +115,34 @@ export function NotificationsPage() {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
   };
 
+  const handleFriendAction = async (notification: NotificationItem, accept: boolean) => {
+    if (!notification.inviteId || !session?.accessToken) {
+      return;
+    }
+
+    setErrorMessage(null);
+
+    try {
+      await respondToFriendInvite(backendUrl, notification.inviteId, accept, session.accessToken);
+      await markNotificationRead(backendUrl, notification.id, session.accessToken);
+      setNotifications((prev) => prev.filter((item) => item.id !== notification.id));
+      setNotice({
+        tone: accept ? "success" : "info",
+        message: accept ? "Friend request accepted." : "Friend request rejected.",
+      });
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Failed to update friend request.");
+    }
+  };
+
   const handleClearAll = () => {
     setNotifications([]);
   };
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-      {/* Header */}
+      {errorMessage && <Alert severity="warning">{errorMessage}</Alert>}
+
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           <NotificationsIcon sx={{ fontSize: 40, color: "#4f46e5" }} />
@@ -113,8 +176,26 @@ export function NotificationsPage() {
         )}
       </Box>
 
+      <Divider />
+
       {/* Notifications List */}
-      {notifications.length > 0 ? (
+      {isLoading ? (
+        <Box sx={{ display: "grid", gap: 1.5 }}>
+          {Array.from({ length: 3 }).map((_, index) => (
+            <Card key={index} sx={{ borderRadius: 2 }}>
+              <CardContent sx={{ p: 2 }}>
+                <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+                  <Skeleton variant="circular" width={40} height={40} />
+                  <Box sx={{ flex: 1 }}>
+                    <Skeleton width="65%" />
+                    <Skeleton width="35%" />
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
+          ))}
+        </Box>
+      ) : notifications.length > 0 ? (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
           {notifications.map((notification) => {
             const Icon = notification.icon;
@@ -157,6 +238,28 @@ export function NotificationsPage() {
                     </Box>
 
                     <Box sx={{ display: "flex", gap: 0.5, flexShrink: 0 }}>
+                      {notification.actionType === "friend-request" && notification.inviteId && (
+                        <>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            startIcon={<PersonAddIcon />}
+                            onClick={() => void handleFriendAction(notification, true)}
+                            sx={{ textTransform: "none" }}
+                          >
+                            Accept
+                          </Button>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            color="error"
+                            onClick={() => void handleFriendAction(notification, false)}
+                            sx={{ textTransform: "none" }}
+                          >
+                            Reject
+                          </Button>
+                        </>
+                      )}
                       {!notification.read && (
                         <IconButton
                           size="small"
