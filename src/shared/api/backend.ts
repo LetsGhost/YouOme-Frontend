@@ -21,6 +21,20 @@ export type GroupMember = {
   role?: string;
 };
 
+export type ExpenseParticipant = {
+  id: string;
+  expenseId: string;
+  userId: string;
+  shareAmount: number;
+  sharePercent: number;
+  status: "pending" | "payment-submitted" | "payment-confirmed";
+  submissionCount: number;
+  submittedAt?: string;
+  confirmedAt?: string;
+  comment?: string;
+  paidAt?: string;
+};
+
 export type GroupExpense = {
   id: string;
   description?: string;
@@ -30,6 +44,9 @@ export type GroupExpense = {
   createdAt?: string;
   date?: string;
   participants?: Array<string | GroupMember | { id: string; name?: string }>;
+  splitType?: "equal" | "custom" | "percentage";
+  title?: string;
+  totalAmount?: number;
 };
 
 export type DebtHistoryEntry = {
@@ -114,12 +131,21 @@ export type RespondToGroupInviteInput = {
   accept: boolean;
 };
 
+export type ExpenseParticipantInput = {
+  userId: string;
+  shareAmount?: number;
+  sharePercent?: number;
+};
+
 export type CreateExpenseInput = {
   groupId: string;
+  createdByUserId: string;
   title: string;
-  amount: number | string;
-  paidBy?: string;
-  description?: string;
+  totalAmount: number;
+  paidByUserId?: string;
+  splitType?: "equal" | "custom" | "percentage";
+  note?: string;
+  participants?: ExpenseParticipantInput[];
 };
 
 export type AuthSession = {
@@ -310,6 +336,69 @@ export async function createExpense(backendUrl: string, input: CreateExpenseInpu
   return fetchJson<GroupExpense>(`${backendUrl}/api/expenses`, {
     method: "POST",
     json: input,
+    token,
+  });
+}
+
+export async function getExpense(backendUrl: string, expenseId: string, token?: string) {
+  return fetchJson<{ expense: GroupExpense; participants: ExpenseParticipant[] }>(
+    `${backendUrl}/api/expenses/${expenseId}`,
+    {
+      token,
+    }
+  );
+}
+
+export async function submitExpensePayment(
+  backendUrl: string,
+  expenseId: string,
+  userId: string,
+  comment?: string,
+  token?: string
+) {
+  return fetchJson<ExpenseParticipant>(
+    `${backendUrl}/api/expenses/${expenseId}/participant/${userId}/submit-payment`,
+    {
+      method: "POST",
+      json: { comment },
+      token,
+    }
+  );
+}
+
+export async function rejectExpensePayment(
+  backendUrl: string,
+  expenseId: string,
+  userId: string,
+  token?: string
+) {
+  return fetchJson<ExpenseParticipant>(
+    `${backendUrl}/api/expenses/${expenseId}/participant/${userId}/reject-payment`,
+    {
+      method: "POST",
+      token,
+    }
+  );
+}
+
+export async function confirmExpensePayment(
+  backendUrl: string,
+  expenseId: string,
+  userId: string,
+  token?: string
+) {
+  return fetchJson<ExpenseParticipant>(
+    `${backendUrl}/api/expenses/${expenseId}/participant/${userId}/confirm-payment`,
+    {
+      method: "POST",
+      token,
+    }
+  );
+}
+
+export async function confirmExpenseReceipt(backendUrl: string, expenseId: string, token?: string) {
+  return fetchJson<GroupExpense>(`${backendUrl}/api/expenses/${expenseId}/confirm-receipt`, {
+    method: "POST",
     token,
   });
 }

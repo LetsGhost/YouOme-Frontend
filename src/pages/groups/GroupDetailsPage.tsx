@@ -22,11 +22,154 @@ import {
   Chip,
   Alert,
   Skeleton,
+  MenuItem,
 } from "@mui/material";
 
 import { useAppState } from "../../app/AppStateContext";
 import { createExpense, getGroup, listGroupMembers, type Group, type GroupMember } from "../../shared/api/backend";
 import { formatMoney } from "../../shared/lib/format";
+
+type SplitType = "equal" | "custom" | "percentage";
+
+type ExpenseDraft = {
+  title: string;
+  amount: string;
+  paidBy: string;
+  description: string;
+  splitType: SplitType;
+  participantIds: string[];
+  participantShares: Record<string, string>;
+};
+
+function getMemberLabel(member: GroupMember) {
+  return member.name || member.email || member.id;
+}
+
+function toCents(value: number) {
+  return Math.round(value * 100);
+}
+
+function buildEqualShares(totalAmount: number, participantIds: string[]) {
+  const totalCents = toCents(totalAmount);
+  const count = participantIds.length;
+
+  if (count === 0) {
+    return new Map<string, number>();
+  }
+
+  const baseShare = Math.floor(totalCents / count);
+  let remainder = totalCents - baseShare * count;
+  const shares = new Map<string, number>();
+
+  participantIds.forEach((participantId) => {
+    const extraCent = remainder > 0 ? 1 : 0;
+    shares.set(participantId, (baseShare + extraCent) / 100);
+    remainder -= extraCent;
+  });
+
+  return shares;
+}
+
+function seedParticipantShares(totalAmount: number, participantIds: string[], splitType: SplitType) {
+  if (participantIds.length === 0) {
+    return {};
+  }
+
+  if (splitType === "percentage") {
+    const base = (100 / (participantIds.length + 1)).toFixed(2);
+    return participantIds.reduce<Record<string, string>>((result, participantId) => {
+      result[participantId] = base;
+      return result;
+    }, {});
+  }
+
+  const equalShare = (totalAmount / (participantIds.length + 1)).toFixed(2);
+  return participantIds.reduce<Record<string, string>>((result, participantId) => {
+    result[participantId] = equalShare;
+    return result;
+  }, {});
+}
+
+function getParticipantBreakdown(
+  totalAmount: number,
+  splitType: SplitType,
+  participantIds: string[],
+  participantShares: Record<string, string>,
+  paidById: string
+) {
+  if (participantIds.length === 0) {
+    return { error: "Add at least one participant." } as const;
+  }
+
+  if (splitType === "equal") {
+    return { shares: buildEqualShares(totalAmount, paidById ? [paidById, ...participantIds] : participantIds) } as const;
+  }
+
+  if (splitType === "percentage") {
+    const totalCents = toCents(totalAmount);
+    const shares = new Map<string, number>();
+    let selectedCents = 0;
+    let totalPercentage = 0;
+
+    for (const participantId of participantIds) {
+      const percentage = Number(participantShares[participantId] ?? 0);
+
+      if (!Number.isFinite(percentage) || percentage < 0) {
+        return { error: "Enter a valid percentage for each participant." } as const;
+      }
+
+      totalPercentage += percentage;
+
+      const roundedCents = Math.round((totalCents * percentage) / 100);
+      shares.set(participantId, roundedCents / 100);
+      selectedCents += roundedCents;
+    }
+
+    if (totalPercentage > 100.01) {
+      return { error: "Percentages cannot exceed 100%." } as const;
+    }
+
+    const payerCents = totalCents - selectedCents;
+
+    if (payerCents < 0) {
+      return { error: "Percentages cannot exceed the total amount." } as const;
+    }
+
+    if (paidById) {
+      shares.set(paidById, payerCents / 100);
+    }
+
+    return { shares } as const;
+  }
+
+  const shares = new Map<string, number>();
+  const totalCents = toCents(totalAmount);
+  let selectedCents = 0;
+
+  for (const participantId of participantIds) {
+    const shareValue = Number(participantShares[participantId]);
+
+    if (!Number.isFinite(shareValue) || shareValue < 0) {
+      return { error: "Enter a valid share for each participant." } as const;
+    }
+
+    const roundedCents = toCents(shareValue);
+    shares.set(participantId, roundedCents / 100);
+    selectedCents += roundedCents;
+  }
+
+  const payerCents = totalCents - selectedCents;
+
+  if (payerCents < 0) {
+    return { error: "Custom shares cannot exceed the total amount." } as const;
+  }
+
+  if (paidById) {
+    shares.set(paidById, payerCents / 100);
+  }
+
+  return { shares } as const;
+}
 
 export function GroupDetailsPage() {
   const navigate = useNavigate();
@@ -37,11 +180,14 @@ export function GroupDetailsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showExpenseDialog, setShowExpenseDialog] = useState(false);
-  const [expenseData, setExpenseData] = useState({
+  const [expenseData, setExpenseData] = useState<ExpenseDraft>({
     title: "",
     amount: "",
     paidBy: "",
     description: "",
+    splitType: "equal",
+    participantIds: [],
+    participantShares: {},
   });
 
   useEffect(() => {
@@ -107,6 +253,47 @@ export function GroupDetailsPage() {
   const youOwe = Math.max(balanceValue, 0);
   const owedToYou = Math.max(-balanceValue, 0);
 
+  const participantMembers = members.filter((member) => expenseData.participantIds.includes(member.id) && member.id !== expenseData.paidBy);
+  const payerMember = members.find((member) => member.id === expenseData.paidBy) ?? null;
+  const participantBreakdown = useMemo(() => {
+    const amount = Number(expenseData.amount);
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return { shares: new Map<string, number>() } as const;
+    }
+
+    return getParticipantBreakdown(
+      amount,
+      expenseData.splitType,
+      expenseData.participantIds.filter((participantId) => participantId !== expenseData.paidBy),
+      expenseData.participantShares,
+      expenseData.paidBy
+    );
+  }, [expenseData.amount, expenseData.participantIds, expenseData.participantShares, expenseData.paidBy, expenseData.splitType]);
+
+  const previewShares: Map<string, number> =
+    "shares" in participantBreakdown && participantBreakdown.shares
+      ? participantBreakdown.shares
+      : new Map<string, number>();
+  const previewMembers = payerMember ? [payerMember, ...participantMembers] : participantMembers;
+
+  const openExpenseDialog = () => {
+    const defaultPaidBy = currentUser?.id || members[0]?.id || "";
+    const defaultParticipantIds = members.filter((member) => member.id !== defaultPaidBy).map((member) => member.id);
+
+    setErrorMessage(null);
+    setExpenseData({
+      title: "",
+      amount: "",
+      paidBy: defaultPaidBy,
+      description: "",
+      splitType: "equal",
+      participantIds: defaultParticipantIds,
+      participantShares: {},
+    });
+    setShowExpenseDialog(true);
+  };
+
   const handleCreateExpense = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -122,6 +309,25 @@ export function GroupDetailsPage() {
       return;
     }
 
+    const participantIds = expenseData.participantIds.filter((participantId) => participantId !== expenseData.paidBy);
+    const breakdown = getParticipantBreakdown(
+      amount,
+      expenseData.splitType,
+      participantIds,
+      expenseData.participantShares,
+      expenseData.paidBy || currentUser?.id || ""
+    );
+
+    if ("error" in breakdown) {
+      setErrorMessage(breakdown.error ?? "Failed to calculate the split.");
+      return;
+    }
+
+    if (participantIds.length === 0) {
+      setErrorMessage("Select at least one participant.");
+      return;
+    }
+
     void (async () => {
       setErrorMessage(null);
 
@@ -130,10 +336,16 @@ export function GroupDetailsPage() {
           backendUrl,
           {
             groupId: id,
+            createdByUserId: currentUser?.id || "",
             title: expenseData.title.trim(),
-            amount,
-            paidBy: expenseData.paidBy || currentUser?.id,
-            description: expenseData.description.trim() || undefined,
+            totalAmount: amount,
+            paidByUserId: expenseData.paidBy || currentUser?.id,
+            splitType: expenseData.splitType,
+            note: expenseData.description.trim() || undefined,
+            participants: participantIds.map((participantId) => ({
+              userId: participantId,
+              shareAmount: breakdown.shares.get(participantId) ?? 0,
+            })),
           },
           session?.accessToken
         );
@@ -141,7 +353,15 @@ export function GroupDetailsPage() {
         const refreshed = await getGroup(backendUrl, id, session?.accessToken);
         setGroup(refreshed);
         setShowExpenseDialog(false);
-        setExpenseData({ title: "", amount: "", paidBy: currentUser?.id || "", description: "" });
+        setExpenseData({
+          title: "",
+          amount: "",
+          paidBy: currentUser?.id || "",
+          description: "",
+          splitType: "equal",
+          participantIds: [],
+          participantShares: {},
+        });
       } catch (error) {
         setErrorMessage(error instanceof Error ? error.message : "Failed to create expense.");
       }
@@ -227,7 +447,7 @@ export function GroupDetailsPage() {
       <Button
         variant="contained"
         startIcon={<AddIcon />}
-        onClick={() => setShowExpenseDialog(true)}
+        onClick={openExpenseDialog}
         fullWidth
         sx={{
           bgcolor: "#4f46e5",
@@ -441,18 +661,177 @@ export function GroupDetailsPage() {
               select
               fullWidth
               value={expenseData.paidBy}
-              onChange={(e) => setExpenseData({ ...expenseData, paidBy: e.target.value })}
+              onChange={(e) => {
+                const paidBy = e.target.value;
+                const nextParticipantIds = members.filter((member) => member.id !== paidBy).map((member) => member.id);
+
+                setExpenseData((current) => ({
+                  ...current,
+                  paidBy,
+                  participantIds: nextParticipantIds,
+                  participantShares: current.splitType === "equal" ? {} : seedParticipantShares(Number(current.amount) || 0, nextParticipantIds, current.splitType),
+                }));
+              }}
               variant="outlined"
             >
-              <option value={currentUser?.id || "you"}>You</option>
+              <MenuItem value={currentUser?.id || ""}>You</MenuItem>
               {members
                 .filter((member) => member.id !== currentUser?.id)
                 .map((member) => (
-                  <option key={member.id} value={member.id}>
+                  <MenuItem key={member.id} value={member.id}>
                     {member.name}
-                  </option>
+                  </MenuItem>
                 ))}
             </TextField>
+            <TextField
+              label="Split"
+              select
+              fullWidth
+              value={expenseData.splitType}
+              onChange={(e) => {
+                const splitType = e.target.value as SplitType;
+                const participantIds = expenseData.participantIds.filter((participantId) => participantId !== expenseData.paidBy);
+
+                setExpenseData((current) => ({
+                  ...current,
+                  splitType,
+                  participantShares:
+                    splitType === "equal"
+                      ? {}
+                      : seedParticipantShares(Number(current.amount) || 0, participantIds, splitType),
+                }));
+              }}
+            >
+              <MenuItem value="equal">Equal split</MenuItem>
+              <MenuItem value="percentage">By percentage</MenuItem>
+              <MenuItem value="custom">Custom amounts</MenuItem>
+            </TextField>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                Who participated?
+              </Typography>
+              <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                Pick everyone who should owe part of this expense. The payer's share is added automatically.
+              </Typography>
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                {members.filter((member) => member.id !== expenseData.paidBy).map((member) => {
+                  const selected = expenseData.participantIds.includes(member.id);
+
+                  return (
+                    <Chip
+                      key={member.id}
+                      label={getMemberLabel(member)}
+                      clickable
+                      color={selected ? "primary" : "default"}
+                      variant={selected ? "filled" : "outlined"}
+                      onClick={() => {
+                        setExpenseData((current) => {
+                          const participantIds = current.participantIds.includes(member.id)
+                            ? current.participantIds.filter((participantId) => participantId !== member.id)
+                            : [...current.participantIds, member.id];
+
+                          return {
+                            ...current,
+                            participantIds,
+                            participantShares:
+                              current.splitType === "equal"
+                                ? {}
+                                : seedParticipantShares(Number(current.amount) || 0, participantIds, current.splitType),
+                          };
+                        });
+                      }}
+                    />
+                  );
+                })}
+              </Box>
+            </Box>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                Split preview
+              </Typography>
+              {previewMembers.length > 0 && Number(expenseData.amount) > 0 ? (
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                  {expenseData.splitType === "equal" &&
+                    previewMembers.map((member) => (
+                      <Box key={member.id} sx={{ display: "flex", justifyContent: "space-between", gap: 2, bgcolor: member.id === expenseData.paidBy ? "#eff6ff" : "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 1, px: 1.5, py: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                          {member.id === expenseData.paidBy ? `${getMemberLabel(member)} (paid upfront)` : getMemberLabel(member)}
+                        </Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                          {formatMoney(previewShares.get(member.id) ?? 0)}
+                        </Typography>
+                      </Box>
+                    ))}
+
+                  {expenseData.splitType === "percentage" && previewMembers.map((member) => (
+                    <Box key={member.id} sx={{ display: "grid", gridTemplateColumns: "1fr 120px 120px", gap: 1, alignItems: "center", bgcolor: member.id === expenseData.paidBy ? "#eff6ff" : "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 1, px: 1.5, py: 1 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {member.id === expenseData.paidBy ? `${getMemberLabel(member)} (paid upfront)` : getMemberLabel(member)}
+                      </Typography>
+                      {member.id === expenseData.paidBy ? (
+                        <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                          Included automatically
+                        </Typography>
+                      ) : (
+                        <TextField
+                          label="Percent"
+                          type="number"
+                          size="small"
+                          value={expenseData.participantShares[member.id] ?? ""}
+                          onChange={(event) =>
+                            setExpenseData((current) => ({
+                              ...current,
+                              participantShares: {
+                                ...current.participantShares,
+                                [member.id]: event.target.value,
+                              },
+                            }))
+                          }
+                          slotProps={{ htmlInput: { min: 0, max: 100, step: "0.01" } }}
+                        />
+                      )}
+                      <Typography variant="body2" sx={{ fontWeight: 700, textAlign: "right" }}>
+                        {formatMoney(previewShares.get(member.id) ?? 0)}
+                      </Typography>
+                    </Box>
+                  ))}
+
+                  {expenseData.splitType === "custom" && previewMembers.map((member) => (
+                    <Box key={member.id} sx={{ display: "grid", gridTemplateColumns: "1fr 160px", gap: 1, alignItems: "center", bgcolor: member.id === expenseData.paidBy ? "#eff6ff" : "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 1, px: 1.5, py: 1 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {member.id === expenseData.paidBy ? `${getMemberLabel(member)} (paid upfront)` : getMemberLabel(member)}
+                      </Typography>
+                      {member.id === expenseData.paidBy ? (
+                        <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 700, textAlign: "right" }}>
+                          {formatMoney(previewShares.get(member.id) ?? 0)}
+                        </Typography>
+                      ) : (
+                        <TextField
+                          label="Amount"
+                          type="number"
+                          size="small"
+                          value={expenseData.participantShares[member.id] ?? ""}
+                          onChange={(event) =>
+                            setExpenseData((current) => ({
+                              ...current,
+                              participantShares: {
+                                ...current.participantShares,
+                                [member.id]: event.target.value,
+                              },
+                            }))
+                          }
+                          slotProps={{ htmlInput: { min: 0, step: "0.01" } }}
+                        />
+                      )}
+                    </Box>
+                  ))}
+                </Box>
+              ) : (
+                <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                  Add an amount and participants to see the split breakdown.
+                </Typography>
+              )}
+            </Box>
             <TextField
               label="Description (optional)"
               fullWidth

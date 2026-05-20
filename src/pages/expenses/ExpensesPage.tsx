@@ -109,10 +109,12 @@ export function ExpensesPage() {
         backendUrl,
         {
           groupId: newExpense.groupId,
+          createdByUserId: session?.user.id || "",
           title: newExpense.title.trim(),
-          amount,
-          paidBy: newExpense.paidBy.trim() || session?.user.id,
-          description: newExpense.description.trim() || undefined,
+          totalAmount: amount,
+          paidByUserId: newExpense.paidBy.trim() || session?.user.id,
+          splitType: "equal",
+          note: newExpense.description.trim() || undefined,
         },
         session?.accessToken
       );
@@ -195,12 +197,14 @@ export function ExpensesPage() {
           placeholder="Search expenses..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            },
           }}
           sx={{
             "& .MuiOutlinedInput-root": {
@@ -332,7 +336,7 @@ export function ExpensesPage() {
               onChange={(event) => setNewExpense((current) => ({ ...current, amount: event.target.value }))}
               required
               fullWidth
-              inputProps={{ min: 0, step: "0.01" }}
+              slotProps={{ htmlInput: { min: 0, step: "0.01" } }}
             />
             <TextField
               label="Paid by"
