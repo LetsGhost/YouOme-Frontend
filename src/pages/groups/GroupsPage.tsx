@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import AddIcon from "@mui/icons-material/Add";
 import SettingsIcon from "@mui/icons-material/Settings";
 import DeleteIcon from "@mui/icons-material/Delete";
-import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import SearchIcon from "@mui/icons-material/Search";
 import PeopleIcon from "@mui/icons-material/People";
 import {
@@ -217,10 +216,23 @@ export function GroupsPage() {
                       </Box>
                     </Box>
                     <Box sx={{ display: "flex", gap: 0.5 }}>
-                      <IconButton size="small" sx={{ color: "text.secondary" }}>
+                      <IconButton
+                        size="small"
+                        sx={{ color: "text.secondary" }}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          navigate(`/groups/${getGroupId(group)}/settings`);
+                        }}
+                      >
                         <SettingsIcon />
                       </IconButton>
-                      <IconButton size="small" sx={{ color: "error.main" }}>
+                      <IconButton
+                        size="small"
+                        sx={{ color: "error.main" }}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                        }}
+                      >
                         <DeleteIcon />
                       </IconButton>
                     </Box>
@@ -257,23 +269,6 @@ export function GroupsPage() {
                   </Box>
 
                   {/* Actions */}
-                  <Button
-                    variant="contained"
-                    fullWidth
-                    startIcon={<PersonAddIcon />}
-                    sx={{
-                      mt: 2,
-                      bgcolor: "#eef2ff",
-                      color: "#4f46e5",
-                      fontWeight: "bold",
-                      textTransform: "none",
-                      "&:hover": {
-                        bgcolor: "#dbeafe",
-                      },
-                    }}
-                  >
-                    Invite members
-                  </Button>
                 </CardContent>
               </Card>
             </Grid>

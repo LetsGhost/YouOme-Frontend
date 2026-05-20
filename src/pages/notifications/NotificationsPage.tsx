@@ -5,6 +5,7 @@ import WarningIcon from "@mui/icons-material/Warning";
 import PeopleIcon from "@mui/icons-material/People";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Card,
@@ -22,6 +23,7 @@ import { useAppState } from "../../app/AppStateContext";
 import {
   listNotifications,
   markNotificationRead,
+  respondToGroupInvite,
   respondToFriendInvite,
   type NotificationRecord,
 } from "../../shared/api/backend";
@@ -29,15 +31,17 @@ import { formatTimestamp } from "../../shared/lib/format";
 
 type NotificationItem = {
   id: string;
-  type: "invite" | "payment" | "expense" | "group" | "friend-request";
+  type: "invite" | "payment" | "expense" | "group" | "friend-request" | "group-invite";
   message: string;
   time: string;
   read: boolean;
   icon: typeof PeopleIcon;
-  actionType?: "friend-request";
+  actionType?: "friend-request" | "group-invite";
   inviteId?: string;
   fromUserName?: string;
   fromUserEmail?: string;
+  groupId?: string;
+  groupName?: string;
   notificationId?: string;
 };
 
@@ -46,7 +50,8 @@ function readString(value: unknown) {
 }
 
 export function NotificationsPage() {
-  const { backendUrl, session, setNotice } = useAppState();
+  const navigate = useNavigate();
+  const { backendUrl, session, setNotice, reloadGroups } = useAppState();
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -70,21 +75,26 @@ export function NotificationsPage() {
           const payload = notification.payload && typeof notification.payload === "object" ? notification.payload : {};
           const inviteId = readString(payload.inviteId);
           const isFriendRequest = notification.type === "friend.request" && Boolean(inviteId);
+            const isGroupInvite = notification.type === "group.invite" && Boolean(inviteId);
 
           return {
             id: notification._id,
             notificationId: notification._id,
-            type: isFriendRequest ? "friend-request" : notification.type === "group.created" ? "group" : "expense",
+              type: isFriendRequest ? "friend-request" : isGroupInvite ? "group-invite" : notification.type === "group.created" ? "group" : "expense",
             message: isFriendRequest
               ? `Friend request from ${readString(payload.fromUserName) || readString(payload.fromUserEmail) || "someone"}`
+                : isGroupInvite
+                  ? `${readString(payload.invitedByUserName) || "Someone"} invited you to ${readString(payload.groupName) || "a group"}`
               : notification.type === "group.created"
                 ? `You can now access ${readString(payload.name) || "your new group"}`
                 : `Notification type: ${notification.type}`,
             time: notification.createdAt || notification.updatedAt || "Recently",
             read: Boolean(notification.readAt),
-            icon: isFriendRequest ? PeopleIcon : notification.type === "group.created" ? PeopleIcon : WarningIcon,
-            actionType: isFriendRequest ? "friend-request" : undefined,
-            inviteId: isFriendRequest ? inviteId : undefined,
+              icon: isFriendRequest || isGroupInvite ? PeopleIcon : notification.type === "group.created" ? PeopleIcon : WarningIcon,
+              actionType: isFriendRequest ? "friend-request" : isGroupInvite ? "group-invite" : undefined,
+            inviteId: isFriendRequest || isGroupInvite ? inviteId : undefined,
+              groupId: isGroupInvite ? readString(payload.groupId) : undefined,
+              groupName: isGroupInvite ? readString(payload.groupName) : undefined,
             fromUserName: readString(payload.fromUserName),
             fromUserEmail: readString(payload.fromUserEmail),
           } satisfies NotificationItem;
@@ -132,6 +142,31 @@ export function NotificationsPage() {
       });
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Failed to update friend request.");
+    }
+  };
+
+  const handleGroupInviteAction = async (notification: NotificationItem, accept: boolean) => {
+    if (!notification.inviteId || !session?.accessToken) {
+      return;
+    }
+
+    setErrorMessage(null);
+
+    try {
+      await respondToGroupInvite(backendUrl, notification.inviteId, { accept }, session.accessToken);
+      await markNotificationRead(backendUrl, notification.id, session.accessToken);
+      await reloadGroups();
+      setNotifications((prev) => prev.filter((item) => item.id !== notification.id));
+      setNotice({
+        tone: accept ? "success" : "info",
+        message: accept ? "Group invite accepted." : "Group invite rejected.",
+      });
+
+      if (accept && notification.groupId) {
+        navigate(`/groups/${notification.groupId}`);
+      }
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Failed to update group invite.");
     }
   };
 
@@ -254,6 +289,28 @@ export function NotificationsPage() {
                             variant="outlined"
                             color="error"
                             onClick={() => void handleFriendAction(notification, false)}
+                            sx={{ textTransform: "none" }}
+                          >
+                            Reject
+                          </Button>
+                        </>
+                      )}
+                      {notification.actionType === "group-invite" && notification.inviteId && (
+                        <>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            startIcon={<PersonAddIcon />}
+                            onClick={() => void handleGroupInviteAction(notification, true)}
+                            sx={{ textTransform: "none" }}
+                          >
+                            Accept
+                          </Button>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            color="error"
+                            onClick={() => void handleGroupInviteAction(notification, false)}
                             sx={{ textTransform: "none" }}
                           >
                             Reject

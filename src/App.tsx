@@ -11,6 +11,7 @@ import { LoginPage } from "./pages/auth/LoginPage";
 import { RegisterPage } from "./pages/auth/RegisterPage";
 import { GroupsPage } from "./pages/groups/GroupsPage";
 import { GroupDetailsPage } from "./pages/groups/GroupDetailsPage";
+import { GroupSettingsPage } from "./pages/groups/GroupSettingsPage";
 import { FriendsPage } from "./pages/friends/FriendsPage";
 import { ExpensesPage } from "./pages/expenses/ExpensesPage";
 import { SettlementsPage } from "./pages/settlements/SettlementsPage";
@@ -54,6 +55,7 @@ export default function App() {
             <Route path="/dashboard" element={<HomePage />} />
             <Route path="/groups" element={<GroupsPage />} />
             <Route path="/groups/:id" element={<GroupDetailsPage />} />
+            <Route path="/groups/:id/settings" element={<GroupSettingsPage />} />
             <Route path="/friends" element={<FriendsPage />} />
             <Route path="/expenses" element={<ExpensesPage />} />
             <Route path="/settlements" element={<SettlementsPage />} />

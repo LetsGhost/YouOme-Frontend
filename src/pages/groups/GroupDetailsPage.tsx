@@ -4,6 +4,7 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import AddIcon from "@mui/icons-material/Add";
 import PeopleIcon from "@mui/icons-material/People";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
+import SettingsIcon from "@mui/icons-material/Settings";
 import {
   Box,
   Button,
@@ -24,7 +25,7 @@ import {
 } from "@mui/material";
 
 import { useAppState } from "../../app/AppStateContext";
-import { createExpense, getGroup, type Group } from "../../shared/api/backend";
+import { createExpense, getGroup, listGroupMembers, type Group, type GroupMember } from "../../shared/api/backend";
 import { formatMoney } from "../../shared/lib/format";
 
 export function GroupDetailsPage() {
@@ -32,6 +33,7 @@ export function GroupDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const { backendUrl, currentUser, session } = useAppState();
   const [group, setGroup] = useState<Group | null>(null);
+  const [groupMembers, setGroupMembers] = useState<GroupMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showExpenseDialog, setShowExpenseDialog] = useState(false);
@@ -56,14 +58,21 @@ export function GroupDetailsPage() {
       setErrorMessage(null);
 
       try {
-        const snapshot = await getGroup(backendUrl, id, session?.accessToken);
+        const [snapshot, memberList] = await Promise.all([
+          getGroup(backendUrl, id, session?.accessToken),
+          session?.accessToken ? listGroupMembers(backendUrl, id, session.accessToken) : Promise.resolve([]),
+        ]);
 
         if (isMounted) {
           setGroup(snapshot);
+          setGroupMembers(memberList);
           setExpenseData((current) => ({
             ...current,
             paidBy:
-              current.paidBy || snapshot.members?.find((member) => member.email === currentUser?.email)?.id ||
+              current.paidBy ||
+              memberList.find((member) => member.email === currentUser?.email)?.id ||
+              memberList[0]?.id ||
+              snapshot.members?.find((member) => member.email === currentUser?.email)?.id ||
               snapshot.members?.[0]?.id ||
               "",
           }));
@@ -86,7 +95,7 @@ export function GroupDetailsPage() {
     };
   }, [backendUrl, currentUser?.email, id, session?.accessToken]);
 
-  const members = group?.members ?? [];
+  const members = groupMembers.length > 0 ? groupMembers : group?.members ?? [];
   const expenses = group?.expenses ?? [];
   const debtHistory = group?.debtHistory ?? [];
 
@@ -146,20 +155,31 @@ export function GroupDetailsPage() {
       {errorMessage && <Alert severity="error">{errorMessage}</Alert>}
 
       {/* Header with Back Button */}
-      <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 1 }}>
-        <IconButton onClick={() => navigate("/groups")} sx={{ color: "text.secondary" }}>
-          <ArrowBackIcon />
-        </IconButton>
-        <Box>
-          {isLoading ? (
-            <Skeleton variant="text" width={260} height={42} />
-          ) : (
-            <Typography variant="h4" sx={{ fontWeight: "bold" }}>
-              {group?.name || "Group"}
-            </Typography>
-          )}
-          {isLoading ? <Skeleton variant="text" width={220} /> : <Typography variant="body2" sx={{ color: "text.secondary" }}>{group?.description || "No description provided."}</Typography>}
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 2, mb: 1 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <IconButton onClick={() => navigate("/groups")} sx={{ color: "text.secondary" }}>
+            <ArrowBackIcon />
+          </IconButton>
+          <Box>
+            {isLoading ? (
+              <Skeleton variant="text" width={260} height={42} />
+            ) : (
+              <Typography variant="h4" sx={{ fontWeight: "bold" }}>
+                {group?.name || "Group"}
+              </Typography>
+            )}
+            {isLoading ? <Skeleton variant="text" width={220} /> : <Typography variant="body2" sx={{ color: "text.secondary" }}>{group?.description || "No description provided."}</Typography>}
+          </Box>
         </Box>
+
+        <Button
+          variant="outlined"
+          startIcon={<SettingsIcon />}
+          onClick={() => navigate(`/groups/${id}/settings`)}
+          sx={{ textTransform: "none", fontWeight: 700, whiteSpace: "nowrap" }}
+        >
+          Settings
+        </Button>
       </Box>
 
       {/* Quick Stats */}

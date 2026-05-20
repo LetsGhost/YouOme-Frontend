@@ -72,6 +72,19 @@ export type FriendInvite = {
   updatedAt?: string;
 };
 
+export type GroupInvite = {
+  _id: string;
+  groupId: string;
+  invitedUserId?: string;
+  invitedByUserId?: string;
+  status: "pending" | "accepted" | "rejected";
+  message?: string;
+  expiresAt?: string;
+  actedAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
 export type NotificationRecord = {
   _id: string;
   userId: string;
@@ -89,6 +102,16 @@ export type SendFriendInviteInput = {
 export type CreateGroupInput = {
   name: string;
   description?: string;
+};
+
+export type CreateGroupInviteInput = {
+  groupId: string;
+  invitedUserId: string;
+  message?: string;
+};
+
+export type RespondToGroupInviteInput = {
+  accept: boolean;
 };
 
 export type CreateExpenseInput = {
@@ -132,6 +155,7 @@ export type BackendState = {
 export const STORAGE_KEYS = {
   session: "youome.session",
   apiBaseUrl: "youome.apiBaseUrl",
+  devUserId: "youome.devUserId",
 } as const;
 
 export const DEFAULT_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
@@ -176,6 +200,21 @@ export function normalizeBaseUrl(baseUrl: string) {
   return baseUrl.trim().replace(/\/+$/, "");
 }
 
+function ensureDevUserId() {
+  const existing = localStorage.getItem(STORAGE_KEYS.devUserId);
+
+  if (existing) {
+    return existing;
+  }
+
+  const generated =
+    globalThis.crypto?.randomUUID?.().replace(/-/g, "").slice(0, 24) ??
+    `${Date.now().toString(16)}${Math.random().toString(16).slice(2)}`.slice(0, 24).padEnd(24, "0");
+
+  localStorage.setItem(STORAGE_KEYS.devUserId, generated);
+  return generated;
+}
+
 export async function listGroups(backendUrl: string, token?: string) {
   return fetchJson<Group[]>(`${backendUrl}/api/groups`, {
     token,
@@ -184,6 +223,12 @@ export async function listGroups(backendUrl: string, token?: string) {
 
 export async function listFriendSummaries(backendUrl: string, token?: string) {
   return fetchJson<FriendSummary[]>(`${backendUrl}/api/friend-lists/summary`, {
+    token,
+  });
+}
+
+export async function listGroupMembers(backendUrl: string, groupId: string, token?: string) {
+  return fetchJson<GroupMember[]>(`${backendUrl}/api/group-members/group/${groupId}`, {
     token,
   });
 }
@@ -240,6 +285,27 @@ export async function createGroup(backendUrl: string, input: CreateGroupInput, t
   });
 }
 
+export async function createGroupInvite(backendUrl: string, input: CreateGroupInviteInput, token?: string) {
+  return fetchJson<GroupInvite>(`${backendUrl}/api/group-invites`, {
+    method: "POST",
+    json: input,
+    token,
+  });
+}
+
+export async function respondToGroupInvite(
+  backendUrl: string,
+  inviteId: string,
+  input: RespondToGroupInviteInput,
+  token?: string
+) {
+  return fetchJson<GroupInvite>(`${backendUrl}/api/group-invites/${inviteId}/respond`, {
+    method: "PATCH",
+    json: input,
+    token,
+  });
+}
+
 export async function createExpense(backendUrl: string, input: CreateExpenseInput, token?: string) {
   return fetchJson<GroupExpense>(`${backendUrl}/api/expenses`, {
     method: "POST",
@@ -258,6 +324,8 @@ export async function fetchJson<T>(url: string, options: ApiRequestOptions = {})
 
   if (options.token) {
     headers.set("Authorization", `Bearer ${options.token}`);
+  } else {
+    headers.set("X-Dev-User-Id", ensureDevUserId());
   }
 
   const response = await fetch(url, {
