@@ -28,6 +28,7 @@ import {
 import { useAppState } from "../../app/AppStateContext";
 import { createExpense, getGroup, listGroupMembers, type Group, type GroupMember } from "../../shared/api/backend";
 import { formatMoney } from "../../shared/lib/format";
+import { GroupDebtWidget } from "../../widgets/module/group/GroupDebtWidget";
 
 type SplitType = "equal" | "custom" | "percentage";
 
@@ -512,6 +513,13 @@ export function GroupDetailsPage() {
           </Box>
         </CardContent>
       </Card>
+
+      <GroupDebtWidget
+        backendUrl={backendUrl}
+        groupId={id || ""}
+        currentUserId={currentUser?.id}
+        accessToken={session?.accessToken}
+      />
 
       {/* Recent Expenses */}
       <Card sx={{ borderRadius: 3 }}>

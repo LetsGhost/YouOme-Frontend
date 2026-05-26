@@ -49,6 +49,45 @@ export type GroupExpense = {
   totalAmount?: number;
 };
 
+export type GroupDebtParticipant = {
+  id: string;
+  userId: string;
+  name: string;
+  email?: string;
+  shareAmount: number;
+  status: "pending" | "payment-submitted" | "payment-confirmed" | string;
+  submissionCount: number;
+  submittedAt?: string;
+  confirmedAt?: string;
+  paidAt?: string;
+  comment?: string;
+  isCurrentUser: boolean;
+};
+
+export type GroupDebtExpense = {
+  id: string;
+  groupId: string;
+  createdByUserId: string;
+  title: string;
+  description: string;
+  totalAmount: number;
+  paidByUserId: string;
+  paidByName: string;
+  status: string;
+  splitType?: string;
+  createdAt?: string;
+  date: string;
+  participants: GroupDebtParticipant[];
+};
+
+export type GroupDebtBoard = {
+  groupId: string;
+  groupName: string;
+  creatorId: string;
+  currentUserId: string;
+  expenses: GroupDebtExpense[];
+};
+
 export type DebtHistoryEntry = {
   id: string;
   description: string;
@@ -299,6 +338,12 @@ export async function markNotificationRead(backendUrl: string, notificationId: s
 
 export async function getGroup(backendUrl: string, groupId: string, token?: string) {
   return fetchJson<Group>(`${backendUrl}/api/groups/${groupId}`, {
+    token,
+  });
+}
+
+export async function getGroupDebtBoard(backendUrl: string, groupId: string, token?: string) {
+  return fetchJson<GroupDebtBoard>(`${backendUrl}/api/groups/${groupId}/debts`, {
     token,
   });
 }

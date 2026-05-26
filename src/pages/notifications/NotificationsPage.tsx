@@ -74,27 +74,45 @@ export function NotificationsPage() {
         items.map((notification) => {
           const payload = notification.payload && typeof notification.payload === "object" ? notification.payload : {};
           const inviteId = readString(payload.inviteId);
+          const paymentExpenseTitle = readString(payload.title) || "an expense";
           const isFriendRequest = notification.type === "friend.request" && Boolean(inviteId);
-            const isGroupInvite = notification.type === "group.invite" && Boolean(inviteId);
+          const isGroupInvite = notification.type === "group.invite" && Boolean(inviteId);
+          const isPaymentEvent = notification.type.startsWith("expense.payment");
 
           return {
             id: notification._id,
             notificationId: notification._id,
-              type: isFriendRequest ? "friend-request" : isGroupInvite ? "group-invite" : notification.type === "group.created" ? "group" : "expense",
+            type: isFriendRequest
+              ? "friend-request"
+              : isGroupInvite
+                ? "group-invite"
+                : notification.type === "group.created"
+                  ? "group"
+                  : isPaymentEvent
+                    ? "payment"
+                    : "expense",
             message: isFriendRequest
               ? `Friend request from ${readString(payload.fromUserName) || readString(payload.fromUserEmail) || "someone"}`
-                : isGroupInvite
-                  ? `${readString(payload.invitedByUserName) || "Someone"} invited you to ${readString(payload.groupName) || "a group"}`
-              : notification.type === "group.created"
-                ? `You can now access ${readString(payload.name) || "your new group"}`
-                : `Notification type: ${notification.type}`,
+              : isGroupInvite
+                ? `${readString(payload.invitedByUserName) || "Someone"} invited you to ${readString(payload.groupName) || "a group"}`
+                : notification.type === "group.created"
+                  ? `You can now access ${readString(payload.name) || "your new group"}`
+                  : notification.type === "expense.payment_due"
+                    ? `${paymentExpenseTitle} is waiting for your payment in ${readString(payload.groupName) || "a group"}`
+                    : notification.type === "expense.payment_submitted"
+                      ? `${readString(payload.userName) || "A member"} submitted payment for ${paymentExpenseTitle}`
+                      : notification.type === "expense.payment_rejected"
+                        ? `Your payment for ${paymentExpenseTitle} was rejected`
+                        : notification.type === "expense.payment_confirmed"
+                          ? `Your payment for ${paymentExpenseTitle} was approved`
+                          : `Notification type: ${notification.type}`,
             time: notification.createdAt || notification.updatedAt || "Recently",
             read: Boolean(notification.readAt),
-              icon: isFriendRequest || isGroupInvite ? PeopleIcon : notification.type === "group.created" ? PeopleIcon : WarningIcon,
-              actionType: isFriendRequest ? "friend-request" : isGroupInvite ? "group-invite" : undefined,
+            icon: isFriendRequest || isGroupInvite || notification.type === "group.created" ? PeopleIcon : isPaymentEvent ? CheckCircleIcon : WarningIcon,
+            actionType: isFriendRequest ? "friend-request" : isGroupInvite ? "group-invite" : undefined,
             inviteId: isFriendRequest || isGroupInvite ? inviteId : undefined,
-              groupId: isGroupInvite ? readString(payload.groupId) : undefined,
-              groupName: isGroupInvite ? readString(payload.groupName) : undefined,
+            groupId: isGroupInvite || isPaymentEvent ? readString(payload.groupId) : undefined,
+            groupName: isGroupInvite || isPaymentEvent ? readString(payload.groupName) : undefined,
             fromUserName: readString(payload.fromUserName),
             fromUserEmail: readString(payload.fromUserEmail),
           } satisfies NotificationItem;
