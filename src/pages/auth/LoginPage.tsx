@@ -1,5 +1,5 @@
-import { FormEvent, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { FormEvent, useEffect, useState } from "react";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Box,
   Button,
@@ -18,8 +18,18 @@ export function LoginPage() {
   const [isBusy, setIsBusy] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const locationState = location.state as { from?: string; email?: string } | null;
 
-  const returnTo = (location.state as { from?: string } | null)?.from || "/dashboard";
+  const returnTo = locationState?.from || "/dashboard";
+
+  useEffect(() => {
+    const email = searchParams.get("email") || locationState?.email;
+
+    if (email) {
+      setForm((current) => (current.email ? current : { ...current, email }));
+    }
+  }, [locationState?.email, searchParams]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -29,9 +39,20 @@ export function LoginPage() {
       await login(form);
       navigate(returnTo, { replace: true });
     } catch (error) {
+      const message = error instanceof Error ? error.message : "Login failed.";
+
+      if (message.toLowerCase().includes("email not verified")) {
+        navigate(`/verify-email?email=${encodeURIComponent(form.email)}`, { replace: true });
+        setNotice({
+          tone: "warning",
+          message: "Verify your email before signing in.",
+        });
+        return;
+      }
+
       setNotice({
         tone: "error",
-        message: error instanceof Error ? error.message : "Login failed.",
+        message,
       });
     } finally {
       setIsBusy(false);
@@ -113,7 +134,7 @@ export function LoginPage() {
             />
 
             {notice.message && (
-              <Alert severity={notice.tone === "error" ? "error" : "success"}>
+              <Alert severity={notice.tone === "idle" ? "info" : notice.tone}>
                 {notice.message}
               </Alert>
             )}

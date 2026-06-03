@@ -11,6 +11,7 @@ export type CurrentUser = {
   email: string;
   name: string;
   role: string;
+  emailVerifiedAt?: string | null;
 };
 
 export type GroupMember = {
@@ -193,6 +194,41 @@ export type AuthSession = {
   refreshToken: string;
 };
 
+export type LoginInput = {
+  email: string;
+  password: string;
+};
+
+export type RegisterInput = {
+  email: string;
+  name: string;
+  password: string;
+};
+
+export type VerifyEmailInput = {
+  email: string;
+  code: string;
+};
+
+export type VerifyEmailResponse = {
+  message: string;
+  user: CurrentUser;
+};
+
+export type RegisterResponse = {
+  message: string;
+  email: string;
+  verificationRequired?: boolean;
+  user?: CurrentUser;
+  accessToken?: string;
+  refreshToken?: string;
+};
+
+export type ResendVerificationResponse = {
+  message: string;
+  email: string;
+};
+
 export type ApiError = {
   message?: string;
 };
@@ -265,6 +301,34 @@ export function normalizeBaseUrl(baseUrl: string) {
   return baseUrl.trim().replace(/\/+$/, "");
 }
 
+export async function login(backendUrl: string, input: LoginInput) {
+  return fetchJson<AuthSession>(`${backendUrl}/api/auth/login`, {
+    method: "POST",
+    json: input,
+  });
+}
+
+export async function register(backendUrl: string, input: RegisterInput) {
+  return fetchJson<RegisterResponse>(`${backendUrl}/api/auth/register`, {
+    method: "POST",
+    json: input,
+  });
+}
+
+export async function verifyEmail(backendUrl: string, input: VerifyEmailInput) {
+  return fetchJson<VerifyEmailResponse>(`${backendUrl}/api/auth/verify-email`, {
+    method: "POST",
+    json: input,
+  });
+}
+
+export async function resendVerificationCode(backendUrl: string, email: string) {
+  return fetchJson<ResendVerificationResponse>(`${backendUrl}/api/auth/resend-verification`, {
+    method: "POST",
+    json: { email },
+  });
+}
+
 function ensureDevUserId() {
   const existing = localStorage.getItem(STORAGE_KEYS.devUserId);
 
@@ -332,6 +396,27 @@ export async function listNotifications(backendUrl: string, token?: string) {
 export async function markNotificationRead(backendUrl: string, notificationId: string, token?: string) {
   return fetchJson<NotificationRecord>(`${backendUrl}/api/notifications/${notificationId}/read`, {
     method: "PATCH",
+    token,
+  });
+}
+
+export async function markAllNotificationsRead(backendUrl: string, token?: string) {
+  return fetchJson<NotificationRecord[]>(`${backendUrl}/api/notifications/read-all`, {
+    method: "PATCH",
+    token,
+  });
+}
+
+export async function deleteNotification(backendUrl: string, notificationId: string, token?: string) {
+  return fetchJson<void>(`${backendUrl}/api/notifications/${notificationId}`, {
+    method: "DELETE",
+    token,
+  });
+}
+
+export async function clearNotifications(backendUrl: string, token?: string) {
+  return fetchJson<void>(`${backendUrl}/api/notifications`, {
+    method: "DELETE",
     token,
   });
 }

@@ -15,8 +15,12 @@ import {
   listGroups,
   normalizeBaseUrl,
   readSession,
+  register as registerUser,
   saveSession,
   setApiBaseUrl as persistApiBaseUrl,
+  login as loginUser,
+  verifyEmail as verifyUserEmail,
+  resendVerificationCode as resendUserVerificationCode,
 } from "../shared/api/backend";
 
 export type NotificationTone = "idle" | "success" | "warning" | "error" | "info";
@@ -35,6 +39,17 @@ type RegisterInput = {
   email: string;
   name: string;
   password: string;
+};
+
+type VerifyEmailInput = {
+  email: string;
+  code: string;
+};
+
+type RegisterResult = {
+  message: string;
+  email: string;
+  verificationRequired?: boolean;
 };
 
 type AdminBundle = {
@@ -57,7 +72,9 @@ type AppStateValue = {
   setApiBaseUrl: (value: string) => void;
   setNotice: (value: Notice) => void;
   login: (input: LoginInput) => Promise<void>;
-  register: (input: RegisterInput) => Promise<void>;
+  register: (input: RegisterInput) => Promise<RegisterResult>;
+  verifyEmail: (input: VerifyEmailInput) => Promise<void>;
+  resendVerificationCode: (email: string) => Promise<void>;
   refreshSession: () => Promise<void>;
   logout: () => Promise<void>;
   probeDevSession: (token?: string) => Promise<void>;
@@ -167,10 +184,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     async ({ email, password }: LoginInput) => {
-      const result = await fetchJson<AuthSession>(`${backendUrl}/api/auth/login`, {
-        method: "POST",
-        json: { email, password },
-      });
+      const result = await loginUser(backendUrl, { email, password });
 
       setSession(result);
       setCurrentUser(result.user);
@@ -181,14 +195,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const register = useCallback(
     async ({ email, name, password }: RegisterInput) => {
-      type RegisterResponse = Partial<AuthSession> & {
-        message?: string;
-      };
-
-      const result = await fetchJson<RegisterResponse>(`${backendUrl}/api/auth/register`, {
-        method: "POST",
-        json: { email, name, password },
-      });
+      const result = await registerUser(backendUrl, { email, name, password });
 
       if (result.user && result.accessToken && result.refreshToken) {
         setSession({
@@ -198,13 +205,49 @@ export function AppProvider({ children }: { children: ReactNode }) {
         });
         setCurrentUser(result.user);
         setNotice({ tone: "success", message: `Registered and signed in as ${result.user.email}.` });
-        return;
+        return {
+          message: result.message || `Registered and signed in as ${result.user.email}.`,
+          email: result.user.email,
+          verificationRequired: false,
+        };
       }
 
       setNotice({
-        tone: "success",
-        message: result.message || "Registration submitted. Please sign in.",
+        tone: "info",
+        message: result.message || "Registration submitted. Check your email for the verification code.",
       });
+
+      return {
+        message: result.message || "Registration submitted. Check your email for the verification code.",
+        email,
+        verificationRequired: result.verificationRequired ?? true,
+      };
+    },
+    [backendUrl]
+  );
+
+  const verifyEmail = useCallback(
+    async ({ email, code }: VerifyEmailInput) => {
+      const result = await verifyUserEmail(backendUrl, { email, code });
+
+      setNotice({ tone: "success", message: result.message });
+      setCurrentUser((current) =>
+        current
+          ? {
+              ...current,
+              emailVerifiedAt: new Date().toISOString(),
+            }
+          : current
+      );
+    },
+    [backendUrl]
+  );
+
+  const resendVerificationCode = useCallback(
+    async (email: string) => {
+      const result = await resendUserVerificationCode(backendUrl, email);
+
+      setNotice({ tone: "info", message: result.message });
     },
     [backendUrl]
   );
@@ -319,7 +362,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       await login(input);
     },
     register: async (input) => {
-      await register(input);
+      return await register(input);
+    },
+    verifyEmail: async (input) => {
+      await verifyEmail(input);
+    },
+    resendVerificationCode: async (email) => {
+      await resendVerificationCode(email);
     },
     refreshSession: async () => {
       await refreshSession();

@@ -29,15 +29,16 @@ export function RegisterPage() {
     setIsBusy(true);
 
     try {
-      await register(form);
-      navigate("/dashboard", { replace: true });
+      const result = await register(form);
+      if (result.verificationRequired) {
+        navigate(`/verify-email?email=${encodeURIComponent(result.email)}`, { replace: true });
+      } else {
+        navigate("/dashboard", { replace: true });
+      }
     } catch (error) {
       setNotice({
         tone: "error",
-        message:
-          error instanceof Error
-            ? error.message
-            : "Registration failed.",
+        message: error instanceof Error ? error.message : "Registration failed.",
       });
     } finally {
       setIsBusy(false);
@@ -128,7 +129,6 @@ export function RegisterPage() {
                 label="Password"
                 type={showPassword ? "text" : "password"}
                 required
-                minLength={8}
                 value={form.password}
                 onChange={(event) =>
                   setForm((current) => ({ ...current, password: event.target.value }))
@@ -151,7 +151,7 @@ export function RegisterPage() {
               />
 
               {notice.message && (
-                <Alert severity={notice.tone === "error" ? "error" : "warning"}>
+                <Alert severity={notice.tone === "idle" ? "info" : notice.tone}>
                   {notice.message}
                 </Alert>
               )}
@@ -178,7 +178,7 @@ export function RegisterPage() {
                     Creating account...
                   </>
                 ) : (
-                  <>  
+                  <>
                     <PersonAdd sx={{ mr: 1 }} />
                     Create account
                   </>
