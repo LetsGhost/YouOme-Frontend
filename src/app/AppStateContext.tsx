@@ -14,6 +14,7 @@ import {
   getApiBaseUrl,
   listGroups,
   normalizeBaseUrl,
+  deleteCurrentUser as deleteCurrentUserRequest,
   readSession,
   register as registerUser,
   saveSession,
@@ -77,6 +78,7 @@ type AppStateValue = {
   resendVerificationCode: (email: string) => Promise<void>;
   refreshSession: () => Promise<void>;
   logout: () => Promise<void>;
+  deleteCurrentUser: () => Promise<void>;
   probeDevSession: (token?: string) => Promise<void>;
   reloadHealth: () => Promise<void>;
   reloadGroups: () => Promise<void>;
@@ -295,6 +297,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setNotice({ tone: "info", message: "Session cleared from the browser." });
   }, [backendUrl, session?.accessToken]);
 
+  const deleteCurrentUser = useCallback(async () => {
+    await deleteCurrentUserRequest(backendUrl, session?.accessToken);
+
+    setCurrentUser(null);
+    setSession(null);
+    saveSession(null);
+    setNotice({ tone: "success", message: "Account deleted successfully." });
+  }, [backendUrl, session?.accessToken]);
+
   const probeDevSession = useCallback(
     async (token?: string) => {
       const currentUserSnapshot = await fetchJson<CurrentUser>(`${backendUrl}/api/auth/me`, {
@@ -375,6 +386,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     },
     logout: async () => {
       await logout();
+    },
+    deleteCurrentUser: async () => {
+      await deleteCurrentUser();
     },
     probeDevSession: async (token?: string) => {
       await probeDevSession(token);

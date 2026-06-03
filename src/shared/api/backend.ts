@@ -329,6 +329,13 @@ export async function resendVerificationCode(backendUrl: string, email: string) 
   });
 }
 
+export async function deleteCurrentUser(backendUrl: string, token?: string) {
+  return fetchJson<{ message: string }>(`${backendUrl}/api/auth/me`, {
+    method: "DELETE",
+    token,
+  });
+}
+
 function ensureDevUserId() {
   const existing = localStorage.getItem(STORAGE_KEYS.devUserId);
 

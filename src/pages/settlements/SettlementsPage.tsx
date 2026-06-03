@@ -7,7 +7,6 @@ import {
   Box,
   Card,
   CardContent,
-  Grid,
   Typography,
   Avatar,
   Button,
@@ -61,8 +60,8 @@ export function SettlementsPage() {
       </Box>
 
       {/* Summary Stats */}
-      <Grid container spacing={2}>
-        <Grid item xs={12} sm={6} md={4}>
+      <Box sx={{ display: "grid", gap: 2, gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))", md: "repeat(3, minmax(0, 1fr))" } }}>
+        <Box>
           <Card sx={{ borderRadius: 2 }}>
             <CardContent sx={{ p: 2 }}>
               <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 0.5 }}>
@@ -76,9 +75,9 @@ export function SettlementsPage() {
               </Typography>
             </CardContent>
           </Card>
-        </Grid>
+        </Box>
 
-        <Grid item xs={12} sm={6} md={4}>
+        <Box>
           <Card sx={{ borderRadius: 2 }}>
             <CardContent sx={{ p: 2 }}>
               <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 0.5 }}>
@@ -92,9 +91,9 @@ export function SettlementsPage() {
               </Typography>
             </CardContent>
           </Card>
-        </Grid>
+        </Box>
 
-        <Grid item xs={12} sm={6} md={4}>
+        <Box>
           <Card sx={{ borderRadius: 2 }}>
             <CardContent sx={{ p: 2 }}>
               <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 0.5 }}>
@@ -108,8 +107,8 @@ export function SettlementsPage() {
               </Typography>
             </CardContent>
           </Card>
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
 
       {/* Settlements List */}
       <Box>

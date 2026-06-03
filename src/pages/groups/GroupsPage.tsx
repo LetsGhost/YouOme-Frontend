@@ -11,7 +11,6 @@ import {
   TextField,
   Card,
   CardContent,
-  Grid,
   Typography,
   IconButton,
   Dialog,
@@ -131,12 +130,14 @@ export function GroupsPage() {
         placeholder="Search groups..."
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchIcon />
-            </InputAdornment>
-          ),
+        slotProps={{
+          input: {
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            ),
+          },
         }}
         sx={{
           "& .MuiOutlinedInput-root": {
@@ -149,17 +150,17 @@ export function GroupsPage() {
 
       {/* Groups Grid */}
       {isLoading ? (
-        <Grid container spacing={3}>
+        <Box sx={{ display: "grid", gap: 3, gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))", lg: "repeat(3, minmax(0, 1fr))" } }}>
           {Array.from({ length: 3 }).map((_, index) => (
-            <Grid item xs={12} md={6} lg={4} key={index}>
+            <Box key={index}>
               <Skeleton variant="rounded" height={260} />
-            </Grid>
+            </Box>
           ))}
-        </Grid>
+        </Box>
       ) : filteredGroups.length > 0 ? (
-        <Grid container spacing={3}>
+        <Box sx={{ display: "grid", gap: 3, gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))", lg: "repeat(3, minmax(0, 1fr))" } }}>
           {filteredGroups.map((group) => (
-            <Grid item xs={12} md={6} lg={4} key={getGroupId(group)}>
+            <Box key={getGroupId(group)}>
               <Card
                 onClick={() => navigate(`/groups/${getGroupId(group)}`)}
                 sx={{
@@ -240,40 +241,40 @@ export function GroupsPage() {
 
                   {/* Stats */}
                   <Box sx={{ py: 2, borderTop: "1px solid #e5e7eb", borderBottom: "1px solid #e5e7eb" }}>
-                    <Grid container spacing={1}>
-                      <Grid item xs={4}>
+                    <Box sx={{ display: "grid", gap: 1, gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}>
+                      <Box>
                         <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 0.5 }}>
                           Members
                         </Typography>
                         <Typography variant="h6" sx={{ fontWeight: "bold" }}>
                           {formatCount(group.memberCount ?? group.members?.length ?? 0)}
                         </Typography>
-                      </Grid>
-                      <Grid item xs={4}>
+                      </Box>
+                      <Box>
                         <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 0.5 }}>
                           Total
                         </Typography>
                         <Typography variant="h6" sx={{ fontWeight: "bold" }}>
                           {formatMoney(group.totalExpense)}
                         </Typography>
-                      </Grid>
-                      <Grid item xs={4}>
+                      </Box>
+                      <Box>
                         <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 0.5 }}>
                           Your Share
                         </Typography>
                         <Typography variant="h6" sx={{ fontWeight: "bold", color: "#4f46e5" }}>
                           {formatMoney(group.yourShare)}
                         </Typography>
-                      </Grid>
-                    </Grid>
+                      </Box>
+                    </Box>
                   </Box>
 
                   {/* Actions */}
                 </CardContent>
               </Card>
-            </Grid>
+            </Box>
           ))}
-        </Grid>
+        </Box>
       ) : (
         <Box sx={{ textAlign: "center", py: 4 }}>
           <PeopleIcon sx={{ fontSize: 64, color: "text.disabled", mb: 2 }} />

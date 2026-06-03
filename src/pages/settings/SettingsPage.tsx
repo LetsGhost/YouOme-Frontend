@@ -2,45 +2,56 @@ import { useState } from "react";
 import SettingsIcon from "@mui/icons-material/Settings";
 import LogoutIcon from "@mui/icons-material/Logout";
 import WarningIcon from "@mui/icons-material/Warning";
-import SaveIcon from "@mui/icons-material/Save";
-import PublicIcon from "@mui/icons-material/Public";
+import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
+import ArticleIcon from "@mui/icons-material/Article";
+import ShieldIcon from "@mui/icons-material/Shield";
 import {
   Box,
   Card,
   CardContent,
   Typography,
   Button,
-  TextField,
   Chip,
-  Alert,
   Divider,
   Container,
   Paper,
 } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 
 import { useAppState } from "../../app/AppStateContext";
 
 export function SettingsPage() {
-  const { apiBaseUrl, setApiBaseUrl, currentUser, clearSession } = useAppState();
-  const [draftBaseUrl, setDraftBaseUrl] = useState(apiBaseUrl);
-  const [isSaved, setIsSaved] = useState(false);
-
-  const handleSaveUrl = () => {
-    setApiBaseUrl(draftBaseUrl);
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 2000);
-  };
+  const navigate = useNavigate();
+  const { currentUser, clearSession, deleteCurrentUser } = useAppState();
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleClearSession = () => {
     if (confirm("Are you sure you want to clear your session? You will be logged out.")) {
       clearSession();
+      navigate("/login", { replace: true });
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!confirm("This will permanently delete your account. Continue?")) {
+      return;
+    }
+
+    setIsDeleting(true);
+
+    try {
+      await deleteCurrentUser();
+      navigate("/login", { replace: true });
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Failed to delete account.");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
   return (
     <Container maxWidth="sm" sx={{ py: 4 }}>
       <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-        {/* Header */}
         <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 1 }}>
           <SettingsIcon sx={{ fontSize: 40, color: "#4f46e5" }} />
           <Box>
@@ -53,7 +64,6 @@ export function SettingsPage() {
           </Box>
         </Box>
 
-        {/* Account Settings */}
         <Card sx={{ borderRadius: 2 }}>
           <CardContent sx={{ p: 3 }}>
             <Typography variant="h6" sx={{ fontWeight: "bold", mb: 2 }}>
@@ -62,7 +72,10 @@ export function SettingsPage() {
 
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
               <Box>
-                <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: "bold", display: "block", mb: 0.5 }}>
+                <Typography
+                  variant="caption"
+                  sx={{ color: "text.secondary", fontWeight: "bold", display: "block", mb: 0.5 }}
+                >
                   Name
                 </Typography>
                 <Paper
@@ -74,14 +87,15 @@ export function SettingsPage() {
                     borderRadius: 1,
                   }}
                 >
-                  <Typography variant="body2">
-                    {currentUser?.name || "Not set"}
-                  </Typography>
+                  <Typography variant="body2">{currentUser?.name || "Not set"}</Typography>
                 </Paper>
               </Box>
 
               <Box>
-                <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: "bold", display: "block", mb: 0.5 }}>
+                <Typography
+                  variant="caption"
+                  sx={{ color: "text.secondary", fontWeight: "bold", display: "block", mb: 0.5 }}
+                >
                   Email
                 </Typography>
                 <Paper
@@ -93,14 +107,15 @@ export function SettingsPage() {
                     borderRadius: 1,
                   }}
                 >
-                  <Typography variant="body2">
-                    {currentUser?.email || "Not set"}
-                  </Typography>
+                  <Typography variant="body2">{currentUser?.email || "Not set"}</Typography>
                 </Paper>
               </Box>
 
               <Box>
-                <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: "bold", display: "block", mb: 0.5 }}>
+                <Typography
+                  variant="caption"
+                  sx={{ color: "text.secondary", fontWeight: "bold", display: "block", mb: 0.5 }}
+                >
                   Role
                 </Typography>
                 <Chip
@@ -129,61 +144,47 @@ export function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Backend Settings */}
         <Card sx={{ borderRadius: 2 }}>
           <CardContent sx={{ p: 3 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-              <PublicIcon sx={{ color: "#4f46e5", fontSize: 24 }} />
+              <ShieldIcon sx={{ color: "#4f46e5", fontSize: 24 }} />
               <Typography variant="h6" sx={{ fontWeight: "bold" }}>
-                Backend Configuration
+                Terms of Service & Data Safety
               </Typography>
             </Box>
 
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              <Box>
-                <TextField
-                  fullWidth
-                  label="API Base URL"
-                  value={draftBaseUrl}
-                  onChange={(e) => setDraftBaseUrl(e.target.value)}
-                  placeholder="http://localhost:3000"
-                  variant="outlined"
-                  size="small"
-                />
-                <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mt: 0.5 }}>
-                  Used for all API requests from this browser
-                </Typography>
+              <Box sx={{ display: "flex", gap: 1.5 }}>
+                <ArticleIcon sx={{ color: "#4f46e5", mt: 0.25 }} />
+                <Box>
+                  <Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 0.5 }}>
+                    Terms of Service
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                    YouOme is intended for personal and small-group expense tracking. Keep your account
+                    details accurate and use shared spaces responsibly.
+                  </Typography>
+                </Box>
               </Box>
 
-              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2 }}>
-                <Button
-                  variant="contained"
-                  startIcon={<SaveIcon />}
-                  onClick={handleSaveUrl}
-                  sx={{
-                    bgcolor: "#4f46e5",
-                    color: "white",
-                    textTransform: "none",
-                    fontWeight: "bold",
-                    "&:hover": {
-                      bgcolor: "#4338ca",
-                    },
-                  }}
-                >
-                  {isSaved ? "Saved!" : "Save URL"}
-                </Button>
+              <Divider />
 
-                {isSaved && (
-                  <Typography variant="caption" sx={{ color: "#22c55e", fontWeight: "bold" }}>
-                    ✓ Configuration updated
+              <Box sx={{ display: "flex", gap: 1.5 }}>
+                <ShieldIcon sx={{ color: "#16a34a", mt: 0.25 }} />
+                <Box>
+                  <Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 0.5 }}>
+                    Data Safety
                   </Typography>
-                )}
+                  <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                    Your session is stored locally in this browser. Deleting your account removes the
+                    backend user record, invalidates cached access, and clears the local session.
+                  </Typography>
+                </Box>
               </Box>
             </Box>
           </CardContent>
         </Card>
 
-        {/* Danger Zone */}
         <Paper
           sx={{
             borderRadius: 2,
@@ -204,22 +205,45 @@ export function SettingsPage() {
             </Box>
           </Box>
 
-          <Button
-            variant="contained"
-            startIcon={<LogoutIcon />}
-            onClick={handleClearSession}
-            sx={{
-              bgcolor: "#dc2626",
-              color: "white",
-              textTransform: "none",
-              fontWeight: "bold",
-              "&:hover": {
-                bgcolor: "#b91c1c",
-              },
-            }}
-          >
-            Clear session & logout
-          </Button>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+            <Button
+              variant="contained"
+              startIcon={<LogoutIcon />}
+              onClick={handleClearSession}
+              sx={{
+                bgcolor: "#dc2626",
+                color: "white",
+                textTransform: "none",
+                fontWeight: "bold",
+                alignSelf: "flex-start",
+                "&:hover": {
+                  bgcolor: "#b91c1c",
+                },
+              }}
+            >
+              Clear session & logout
+            </Button>
+
+            <Button
+              variant="outlined"
+              startIcon={<DeleteForeverIcon />}
+              onClick={handleDeleteAccount}
+              disabled={isDeleting}
+              sx={{
+                borderColor: "#dc2626",
+                color: "#dc2626",
+                textTransform: "none",
+                fontWeight: "bold",
+                alignSelf: "flex-start",
+                "&:hover": {
+                  borderColor: "#b91c1c",
+                  bgcolor: "rgba(220, 38, 38, 0.04)",
+                },
+              }}
+            >
+              {isDeleting ? "Deleting..." : "Delete account"}
+            </Button>
+          </Box>
         </Paper>
       </Box>
     </Container>

@@ -190,12 +190,14 @@ export function FriendsPage() {
               placeholder="friend@example.com"
               value={inviteEmail}
               onChange={(event) => setInviteEmail(event.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <PersonAddIcon />
-                  </InputAdornment>
-                ),
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <PersonAddIcon />
+                    </InputAdornment>
+                  ),
+                },
               }}
             />
 
@@ -230,12 +232,14 @@ export function FriendsPage() {
                 placeholder="Search friends"
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon fontSize="small" />
-                    </InputAdornment>
-                  ),
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon fontSize="small" />
+                      </InputAdornment>
+                    ),
+                  },
                 }}
                 sx={{ minWidth: { xs: 0, sm: 280 } }}
               />
