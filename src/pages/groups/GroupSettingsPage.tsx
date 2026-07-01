@@ -5,6 +5,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import GroupsIcon from "@mui/icons-material/Groups";
 import SettingsIcon from "@mui/icons-material/Settings";
+import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import {
   Box,
   Button,
@@ -17,6 +18,8 @@ import {
   IconButton,
   InputAdornment,
   Skeleton,
+  Switch,
+  FormControlLabel,
   TextField,
   Typography,
 } from "@mui/material";
@@ -25,11 +28,15 @@ import { useAppState } from "../../app/AppStateContext";
 import {
   createGroupInvite,
   getGroup,
+  getGroupPolicy,
   listFriendSummaries,
   listGroupMembers,
+  updateGroupPolicy,
   type FriendSummary,
   type Group,
   type GroupMember,
+  type GroupPolicy,
+  type GroupPolicyFields,
 } from "../../shared/api/backend";
 import { formatCount } from "../../shared/lib/format";
 
@@ -49,6 +56,10 @@ export function GroupSettingsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [sentInvites, setSentInvites] = useState<Record<string, boolean>>({});
+  const [policy, setPolicy] = useState<GroupPolicy | null>(null);
+  const [isPolicyLoading, setIsPolicyLoading] = useState(false);
+  const [isPolicySaving, setIsPolicySaving] = useState(false);
+  const [policyError, setPolicyError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) {
@@ -95,6 +106,84 @@ export function GroupSettingsPage() {
 
   const members = groupMembers.length > 0 ? groupMembers : group?.members ?? [];
   const memberIds = useMemo(() => new Set(members.map((member) => member.id)), [members]);
+
+  const isOwnerOrAdmin = useMemo(() => {
+    const membership = members.find(
+      (member) => member.id === currentUser?.id || member.email === currentUser?.email
+    );
+    return membership?.role === "owner" || membership?.role === "admin";
+  }, [members, currentUser?.id, currentUser?.email]);
+
+  useEffect(() => {
+    if (!id || !isOwnerOrAdmin || !session?.accessToken) {
+      return;
+    }
+
+    let isMounted = true;
+
+    const loadPolicy = async () => {
+      setIsPolicyLoading(true);
+      setPolicyError(null);
+
+      try {
+        const policySnapshot = await getGroupPolicy(backendUrl, id, session.accessToken);
+        if (isMounted) {
+          setPolicy(policySnapshot);
+        }
+      } catch (error) {
+        if (isMounted) {
+          setPolicyError(error instanceof Error ? error.message : "Failed to load group policy.");
+        }
+      } finally {
+        if (isMounted) {
+          setIsPolicyLoading(false);
+        }
+      }
+    };
+
+    void loadPolicy();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [backendUrl, id, isOwnerOrAdmin, session?.accessToken]);
+
+  const handlePolicyFieldChange = (field: keyof GroupPolicyFields, value: boolean | string) => {
+    setPolicy((current) => (current ? { ...current, [field]: value } : current));
+  };
+
+  const handleSavePolicy = async () => {
+    if (!id || !session?.accessToken || !policy) {
+      return;
+    }
+
+    setIsPolicySaving(true);
+    setPolicyError(null);
+
+    try {
+      const updated = await updateGroupPolicy(
+        backendUrl,
+        id,
+        {
+          canMembersInvite: policy.canMembersInvite,
+          canEditorsAddExpense: policy.canEditorsAddExpense,
+          canModeratorsAddExpense: policy.canModeratorsAddExpense,
+          visibilityMode: policy.visibilityMode,
+          canViewParticipatedExpenseDetails: policy.canViewParticipatedExpenseDetails,
+          requireReceiverConfirmationForSettlement: policy.requireReceiverConfirmationForSettlement,
+          allowMemberRoleSelfLeave: policy.allowMemberRoleSelfLeave,
+        },
+        session.accessToken
+      );
+
+      setPolicy(updated);
+      setNotice({ tone: "success", message: "Group policy updated." });
+    } catch (error) {
+      setPolicyError(error instanceof Error ? error.message : "Failed to update group policy.");
+    } finally {
+      setIsPolicySaving(false);
+    }
+  };
 
   const visibleFriends = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
@@ -325,6 +414,119 @@ export function GroupSettingsPage() {
           </CardContent>
         </Card>
       </Box>
+
+      {isOwnerOrAdmin && (
+        <Card sx={{ borderRadius: 3 }}>
+          <CardContent sx={{ display: "grid", gap: 2 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <AdminPanelSettingsIcon sx={{ color: "#4f46e5" }} />
+              <Box>
+                <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                  Group policy
+                </Typography>
+                <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                  Owner/admin-only rules that govern how this group behaves.
+                </Typography>
+              </Box>
+            </Box>
+
+            <Divider />
+
+            {policyError && <Alert severity="warning">{policyError}</Alert>}
+
+            {isPolicyLoading || !policy ? (
+              <Box sx={{ display: "grid", gap: 1.5 }}>
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <Skeleton key={index} variant="rounded" height={40} />
+                ))}
+              </Box>
+            ) : (
+              <Box sx={{ display: "grid", gap: 1.5 }}>
+                <Box sx={{ display: "grid", gap: 1, gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" } }}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={policy.canMembersInvite}
+                        onChange={(event) => handlePolicyFieldChange("canMembersInvite", event.target.checked)}
+                      />
+                    }
+                    label="Members can invite others"
+                  />
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={policy.canEditorsAddExpense}
+                        onChange={(event) => handlePolicyFieldChange("canEditorsAddExpense", event.target.checked)}
+                      />
+                    }
+                    label="Editors can add expenses"
+                  />
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={policy.canModeratorsAddExpense}
+                        onChange={(event) => handlePolicyFieldChange("canModeratorsAddExpense", event.target.checked)}
+                      />
+                    }
+                    label="Moderators can add expenses"
+                  />
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={policy.canViewParticipatedExpenseDetails}
+                        onChange={(event) =>
+                          handlePolicyFieldChange("canViewParticipatedExpenseDetails", event.target.checked)
+                        }
+                      />
+                    }
+                    label="Members can view details of expenses they're in"
+                  />
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={policy.requireReceiverConfirmationForSettlement}
+                        onChange={(event) =>
+                          handlePolicyFieldChange("requireReceiverConfirmationForSettlement", event.target.checked)
+                        }
+                      />
+                    }
+                    label="Require receiver confirmation for settlements"
+                  />
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={policy.allowMemberRoleSelfLeave}
+                        onChange={(event) => handlePolicyFieldChange("allowMemberRoleSelfLeave", event.target.checked)}
+                      />
+                    }
+                    label="Members can leave the group themselves"
+                  />
+                </Box>
+
+                <TextField
+                  label="Visibility mode"
+                  size="small"
+                  value={policy.visibilityMode}
+                  onChange={(event) => handlePolicyFieldChange("visibilityMode", event.target.value)}
+                  helperText="Free-text visibility mode used by this group (e.g. private, members)."
+                  sx={{ maxWidth: 320 }}
+                />
+
+                <Box>
+                  <Button
+                    variant="contained"
+                    onClick={() => void handleSavePolicy()}
+                    disabled={isPolicySaving}
+                    sx={{ textTransform: "none", fontWeight: 700 }}
+                  >
+                    {isPolicySaving ? "Saving..." : "Save policy"}
+                  </Button>
+                </Box>
+              </Box>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </Box>
   );
 }

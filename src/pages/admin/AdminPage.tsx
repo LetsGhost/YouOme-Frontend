@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, CheckCircle2, Database, Radar, RefreshCcw, Server, TimerReset, Users, type LucideIcon } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Database, Megaphone, Radar, RefreshCcw, Server, TimerReset, Users, type LucideIcon } from "lucide-react";
 
 import { useAppState } from "../../app/AppStateContext";
 import { formatSeconds, formatTimestamp } from "../../shared/lib/format";
-import type { RegisteredRoute } from "../../shared/api/backend";
+import { broadcastNotification, type RegisteredRoute } from "../../shared/api/backend";
 
 type MongoStatus = {
   label: string;
@@ -12,8 +12,11 @@ type MongoStatus = {
 };
 
 export function AdminPage() {
-  const { health, admin, currentUser, reloadAdminState, notice, setNotice } = useAppState();
+  const { backendUrl, session, health, admin, currentUser, reloadAdminState, notice, setNotice } = useAppState();
   const [isLoading, setIsLoading] = useState(false);
+  const [broadcastTitle, setBroadcastTitle] = useState("");
+  const [broadcastMessage, setBroadcastMessage] = useState("");
+  const [isBroadcasting, setIsBroadcasting] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -52,6 +55,32 @@ export function AdminPage() {
       detail: "Backend health is unavailable, so MongoDB status cannot be inferred.",
     };
   }, [health]);
+
+  const handleSendBroadcast = async () => {
+    const title = broadcastTitle.trim();
+    const message = broadcastMessage.trim();
+
+    if (!title || !message) {
+      setNotice({ tone: "warning", message: "Enter a title and a message before sending." });
+      return;
+    }
+
+    setIsBroadcasting(true);
+
+    try {
+      const result = await broadcastNotification(backendUrl, { title, message }, session?.accessToken);
+      setNotice({ tone: "success", message: `Notification sent to ${result.count} user(s).` });
+      setBroadcastTitle("");
+      setBroadcastMessage("");
+    } catch (error) {
+      setNotice({
+        tone: "error",
+        message: error instanceof Error ? error.message : "Failed to send the notification.",
+      });
+    } finally {
+      setIsBroadcasting(false);
+    }
+  };
 
   const adminAreas = [
     { title: "Authentication", description: "Login, refresh, logout, and current-user session surface.", icon: Users },
@@ -112,6 +141,57 @@ export function AdminPage() {
               </div>
             </article>
           ))}
+        </div>
+      </section>
+
+      <section className="panel admin-section">
+        <div className="panel-head">
+          <div>
+            <p className="eyebrow">Sysadmin broadcast</p>
+            <h4>Send a notification to every user</h4>
+          </div>
+        </div>
+
+        <div className="admin-columns">
+          <article className="subpanel">
+            <h5>
+              <Megaphone size={16} style={{ verticalAlign: "middle", marginRight: 6 }} />
+              Public notification
+            </h5>
+            <form
+              className="form-stack"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void handleSendBroadcast();
+              }}
+            >
+              <label className="field">
+                <span>Title</span>
+                <input
+                  type="text"
+                  value={broadcastTitle}
+                  onChange={(event) => setBroadcastTitle(event.target.value)}
+                  placeholder="Scheduled maintenance"
+                  disabled={isBroadcasting}
+                  required
+                />
+              </label>
+              <label className="field">
+                <span>Message</span>
+                <textarea
+                  value={broadcastMessage}
+                  onChange={(event) => setBroadcastMessage(event.target.value)}
+                  placeholder="The app will be briefly unavailable tonight at 22:00 UTC."
+                  rows={3}
+                  disabled={isBroadcasting}
+                  required
+                />
+              </label>
+              <button type="submit" className="button button-primary" disabled={isBroadcasting}>
+                {isBroadcasting ? "Sending..." : "Send to all users"}
+              </button>
+            </form>
+          </article>
         </div>
       </section>
 

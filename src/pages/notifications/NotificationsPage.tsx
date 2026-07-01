@@ -97,6 +97,7 @@ export function NotificationsPage() {
           const isFriendRequest = notification.type === "friend.request" && Boolean(inviteId);
           const isGroupInvite = notification.type === "group.invite" && Boolean(inviteId);
           const isPaymentEvent = notification.type.startsWith("expense.payment");
+          const isAnnouncement = notification.type === "system.announcement";
 
           return {
             id: notification._id,
@@ -124,7 +125,9 @@ export function NotificationsPage() {
                         ? `Your payment for ${paymentExpenseTitle} was rejected`
                         : notification.type === "expense.payment_confirmed"
                           ? `Your payment for ${paymentExpenseTitle} was approved`
-                          : `Notification type: ${notification.type}`,
+                          : isAnnouncement
+                            ? `${readString(payload.title) || "Announcement"}: ${readString(payload.message) || ""}`
+                            : `Notification type: ${notification.type}`,
             time: notification.createdAt || notification.updatedAt || "Recently",
             read: Boolean(notification.readAt),
             icon: isFriendRequest || isGroupInvite || notification.type === "group.created" ? PeopleIcon : isPaymentEvent ? CheckCircleIcon : WarningIcon,

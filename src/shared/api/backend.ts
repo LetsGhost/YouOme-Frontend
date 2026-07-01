@@ -113,6 +113,36 @@ export type Group = {
   updatedAt?: string;
 };
 
+export type GroupPolicy = {
+  _id: string;
+  groupId: string;
+  canMembersInvite: boolean;
+  canEditorsAddExpense: boolean;
+  canModeratorsAddExpense: boolean;
+  visibilityMode: string;
+  canViewParticipatedExpenseDetails: boolean;
+  requireReceiverConfirmationForSettlement: boolean;
+  allowMemberRoleSelfLeave: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type GroupPolicyFields = {
+  canMembersInvite?: boolean;
+  canEditorsAddExpense?: boolean;
+  canModeratorsAddExpense?: boolean;
+  visibilityMode?: string;
+  canViewParticipatedExpenseDetails?: boolean;
+  requireReceiverConfirmationForSettlement?: boolean;
+  allowMemberRoleSelfLeave?: boolean;
+};
+
+export type CreateGroupPolicyInput = GroupPolicyFields & {
+  groupId: string;
+};
+
+export type UpdateGroupPolicyInput = GroupPolicyFields;
+
 export type FriendSummary = {
   id: string;
   name: string;
@@ -150,6 +180,15 @@ export type NotificationRecord = {
   readAt?: string | null;
   createdAt?: string;
   updatedAt?: string;
+};
+
+export type BroadcastNotificationInput = {
+  title: string;
+  message: string;
+};
+
+export type BroadcastNotificationResponse = {
+  count: number;
 };
 
 export type SendFriendInviteInput = {
@@ -369,6 +408,37 @@ export async function listGroupMembers(backendUrl: string, groupId: string, toke
   });
 }
 
+export async function getGroupPolicy(backendUrl: string, groupId: string, token?: string) {
+  return fetchJson<GroupPolicy>(`${backendUrl}/api/group-policys/group/${groupId}`, {
+    token,
+  });
+}
+
+export async function createGroupPolicy(
+  backendUrl: string,
+  input: CreateGroupPolicyInput,
+  token?: string
+) {
+  return fetchJson<GroupPolicy>(`${backendUrl}/api/group-policys`, {
+    method: "POST",
+    json: input,
+    token,
+  });
+}
+
+export async function updateGroupPolicy(
+  backendUrl: string,
+  groupId: string,
+  input: UpdateGroupPolicyInput,
+  token?: string
+) {
+  return fetchJson<GroupPolicy>(`${backendUrl}/api/group-policys/group/${groupId}`, {
+    method: "PATCH",
+    json: input,
+    token,
+  });
+}
+
 export async function sendFriendInvite(
   backendUrl: string,
   input: SendFriendInviteInput,
@@ -424,6 +494,18 @@ export async function deleteNotification(backendUrl: string, notificationId: str
 export async function clearNotifications(backendUrl: string, token?: string) {
   return fetchJson<void>(`${backendUrl}/api/notifications`, {
     method: "DELETE",
+    token,
+  });
+}
+
+export async function broadcastNotification(
+  backendUrl: string,
+  input: BroadcastNotificationInput,
+  token?: string
+) {
+  return fetchJson<BroadcastNotificationResponse>(`${backendUrl}/api/notifications/broadcast`, {
+    method: "POST",
+    json: input,
     token,
   });
 }

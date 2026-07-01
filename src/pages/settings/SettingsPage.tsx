@@ -22,12 +22,12 @@ import { useAppState } from "../../app/AppStateContext";
 
 export function SettingsPage() {
   const navigate = useNavigate();
-  const { currentUser, clearSession, deleteCurrentUser } = useAppState();
+  const { currentUser, logout, deleteCurrentUser } = useAppState();
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const handleClearSession = () => {
+  const handleClearSession = async () => {
     if (confirm("Are you sure you want to clear your session? You will be logged out.")) {
-      clearSession();
+      await logout();
       navigate("/login", { replace: true });
     }
   };
@@ -128,19 +128,6 @@ export function SettingsPage() {
                 />
               </Box>
             </Box>
-
-            <Divider sx={{ my: 2 }} />
-
-            <Button
-              variant="outlined"
-              sx={{
-                textTransform: "none",
-                fontWeight: "bold",
-                color: "text.primary",
-              }}
-            >
-              Edit profile
-            </Button>
           </CardContent>
         </Card>
 

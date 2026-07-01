@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AddIcon from "@mui/icons-material/Add";
 import SettingsIcon from "@mui/icons-material/Settings";
-import DeleteIcon from "@mui/icons-material/Delete";
 import SearchIcon from "@mui/icons-material/Search";
 import PeopleIcon from "@mui/icons-material/People";
 import {
@@ -226,15 +225,6 @@ export function GroupsPage() {
                         }}
                       >
                         <SettingsIcon />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        sx={{ color: "error.main" }}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                        }}
-                      >
-                        <DeleteIcon />
                       </IconButton>
                     </Box>
                   </Box>

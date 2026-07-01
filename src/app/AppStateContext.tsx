@@ -280,6 +280,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setNotice({ tone: "success", message: "Session refreshed." });
   }, [backendUrl, session?.refreshToken]);
 
+  useEffect(() => {
+    if (!session?.refreshToken) {
+      return;
+    }
+
+    const refreshIntervalMs = 12 * 60 * 1000;
+    const intervalId = setInterval(() => {
+      void refreshSession().catch(() => {
+        void 0;
+      });
+    }, refreshIntervalMs);
+
+    return () => clearInterval(intervalId);
+  }, [session?.refreshToken, refreshSession]);
+
   const logout = useCallback(async () => {
     if (session?.accessToken) {
       try {

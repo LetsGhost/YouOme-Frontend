@@ -36,7 +36,8 @@ body {
 }
 
 button,
-input {
+input,
+textarea {
   font: inherit;
 }
 
@@ -44,7 +45,8 @@ button {
   cursor: pointer;
 }
 
-input {
+input,
+textarea {
   width: 100%;
   border: 1px solid rgba(19, 34, 56, 0.12);
   border-radius: 16px;
@@ -54,7 +56,8 @@ input {
   transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
 
-input:focus {
+input:focus,
+textarea:focus {
   outline: none;
   border-color: rgba(44, 107, 237, 0.44);
   box-shadow: 0 0 0 4px rgba(44, 107, 237, 0.12);

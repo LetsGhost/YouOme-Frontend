@@ -18,7 +18,7 @@ import { ExpensesPage } from "./pages/expenses/ExpensesPage";
 import { SettlementsPage } from "./pages/settlements/SettlementsPage";
 import { NotificationsPage } from "./pages/notifications/NotificationsPage";
 import { SettingsPage } from "./pages/settings/SettingsPage";
-import { ProtectedRoute, PublicOnlyRoute } from "./app/RouteGuards";
+import { AdminRoute, ProtectedRoute, PublicOnlyRoute } from "./app/RouteGuards";
 
 export default function App() {
   return (
@@ -70,7 +70,14 @@ export default function App() {
             <Route path="/settlements" element={<SettlementsPage />} />
             <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/admin" element={<AdminPage />} />
+            <Route
+              path="/admin"
+              element={
+                <AdminRoute>
+                  <AdminPage />
+                </AdminRoute>
+              }
+            />
           </Route>
 
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

@@ -18,6 +18,25 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+export function AdminRoute({ children }: { children: ReactNode }) {
+  const { currentUser, isBootstrapping } = useAppState();
+  const location = useLocation();
+
+  if (isBootstrapping) {
+    return <div className="auth-screen"><div className="auth-card panel">Session wird geladen...</div></div>;
+  }
+
+  if (!currentUser) {
+    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  }
+
+  if (currentUser.role !== "admin") {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <>{children}</>;
+}
+
 export function PublicOnlyRoute({ children }: { children: ReactNode }) {
   const { currentUser, isBootstrapping } = useAppState();
 
