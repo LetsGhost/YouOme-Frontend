@@ -29,12 +29,8 @@ export function RegisterPage() {
     setIsBusy(true);
 
     try {
-      const result = await register(form);
-      if (result.verificationRequired) {
-        navigate(`/verify-email?email=${encodeURIComponent(result.email)}`, { replace: true });
-      } else {
-        navigate("/dashboard", { replace: true });
-      }
+      await register(form);
+      navigate("/dashboard", { replace: true });
     } catch (error) {
       setNotice({
         tone: "error",

@@ -41,15 +41,6 @@ export function LoginPage() {
     } catch (error) {
       const message = error instanceof Error ? error.message : "Login failed.";
 
-      if (message.toLowerCase().includes("email not verified")) {
-        navigate(`/verify-email?email=${encodeURIComponent(form.email)}`, { replace: true });
-        setNotice({
-          tone: "warning",
-          message: "Verify your email before signing in.",
-        });
-        return;
-      }
-
       setNotice({
         tone: "error",
         message,

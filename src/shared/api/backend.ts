@@ -11,7 +11,6 @@ export type CurrentUser = {
   email: string;
   name: string;
   role: string;
-  emailVerifiedAt?: string | null;
 };
 
 export type GroupMember = {
@@ -244,28 +243,11 @@ export type RegisterInput = {
   password: string;
 };
 
-export type VerifyEmailInput = {
-  email: string;
-  code: string;
-};
-
-export type VerifyEmailResponse = {
-  message: string;
-  user: CurrentUser;
-};
-
 export type RegisterResponse = {
   message: string;
-  email: string;
-  verificationRequired?: boolean;
-  user?: CurrentUser;
-  accessToken?: string;
-  refreshToken?: string;
-};
-
-export type ResendVerificationResponse = {
-  message: string;
-  email: string;
+  user: CurrentUser;
+  accessToken: string;
+  refreshToken: string;
 };
 
 export type ApiError = {
@@ -351,20 +333,6 @@ export async function register(backendUrl: string, input: RegisterInput) {
   return fetchJson<RegisterResponse>(`${backendUrl}/api/auth/register`, {
     method: "POST",
     json: input,
-  });
-}
-
-export async function verifyEmail(backendUrl: string, input: VerifyEmailInput) {
-  return fetchJson<VerifyEmailResponse>(`${backendUrl}/api/auth/verify-email`, {
-    method: "POST",
-    json: input,
-  });
-}
-
-export async function resendVerificationCode(backendUrl: string, email: string) {
-  return fetchJson<ResendVerificationResponse>(`${backendUrl}/api/auth/resend-verification`, {
-    method: "POST",
-    json: { email },
   });
 }
 

@@ -20,8 +20,6 @@ import {
   saveSession,
   setApiBaseUrl as persistApiBaseUrl,
   login as loginUser,
-  verifyEmail as verifyUserEmail,
-  resendVerificationCode as resendUserVerificationCode,
 } from "../shared/api/backend";
 
 export type NotificationTone = "idle" | "success" | "warning" | "error" | "info";
@@ -42,15 +40,9 @@ type RegisterInput = {
   password: string;
 };
 
-type VerifyEmailInput = {
-  email: string;
-  code: string;
-};
-
 type RegisterResult = {
   message: string;
   email: string;
-  verificationRequired?: boolean;
 };
 
 type AdminBundle = {
@@ -74,8 +66,6 @@ type AppStateValue = {
   setNotice: (value: Notice) => void;
   login: (input: LoginInput) => Promise<void>;
   register: (input: RegisterInput) => Promise<RegisterResult>;
-  verifyEmail: (input: VerifyEmailInput) => Promise<void>;
-  resendVerificationCode: (email: string) => Promise<void>;
   refreshSession: () => Promise<void>;
   logout: () => Promise<void>;
   deleteCurrentUser: () => Promise<void>;
@@ -199,57 +189,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     async ({ email, name, password }: RegisterInput) => {
       const result = await registerUser(backendUrl, { email, name, password });
 
-      if (result.user && result.accessToken && result.refreshToken) {
-        setSession({
-          user: result.user,
-          accessToken: result.accessToken,
-          refreshToken: result.refreshToken,
-        });
-        setCurrentUser(result.user);
-        setNotice({ tone: "success", message: `Registered and signed in as ${result.user.email}.` });
-        return {
-          message: result.message || `Registered and signed in as ${result.user.email}.`,
-          email: result.user.email,
-          verificationRequired: false,
-        };
-      }
-
-      setNotice({
-        tone: "info",
-        message: result.message || "Registration submitted. Check your email for the verification code.",
+      setSession({
+        user: result.user,
+        accessToken: result.accessToken,
+        refreshToken: result.refreshToken,
       });
+      setCurrentUser(result.user);
+      setNotice({ tone: "success", message: `Registered and signed in as ${result.user.email}.` });
 
       return {
-        message: result.message || "Registration submitted. Check your email for the verification code.",
-        email,
-        verificationRequired: result.verificationRequired ?? true,
+        message: result.message || `Registered and signed in as ${result.user.email}.`,
+        email: result.user.email,
       };
-    },
-    [backendUrl]
-  );
-
-  const verifyEmail = useCallback(
-    async ({ email, code }: VerifyEmailInput) => {
-      const result = await verifyUserEmail(backendUrl, { email, code });
-
-      setNotice({ tone: "success", message: result.message });
-      setCurrentUser((current) =>
-        current
-          ? {
-              ...current,
-              emailVerifiedAt: new Date().toISOString(),
-            }
-          : current
-      );
-    },
-    [backendUrl]
-  );
-
-  const resendVerificationCode = useCallback(
-    async (email: string) => {
-      const result = await resendUserVerificationCode(backendUrl, email);
-
-      setNotice({ tone: "info", message: result.message });
     },
     [backendUrl]
   );
@@ -389,12 +340,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     },
     register: async (input) => {
       return await register(input);
-    },
-    verifyEmail: async (input) => {
-      await verifyEmail(input);
-    },
-    resendVerificationCode: async (email) => {
-      await resendVerificationCode(email);
     },
     refreshSession: async () => {
       await refreshSession();

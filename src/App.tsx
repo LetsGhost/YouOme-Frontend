@@ -9,7 +9,6 @@ import { HomePage } from "./pages/home/HomePage";
 import { AdminPage } from "./pages/admin/AdminPage";
 import { LoginPage } from "./pages/auth/LoginPage";
 import { RegisterPage } from "./pages/auth/RegisterPage";
-import { VerifyEmailPage } from "./pages/auth/VerifyEmailPage";
 import { GroupsPage } from "./pages/groups/GroupsPage";
 import { GroupDetailsPage } from "./pages/groups/GroupDetailsPage";
 import { GroupSettingsPage } from "./pages/groups/GroupSettingsPage";
@@ -45,15 +44,6 @@ export default function App() {
               </PublicOnlyRoute>
             }
           />
-          <Route
-            path="/verify-email"
-            element={
-              <PublicOnlyRoute>
-                <VerifyEmailPage />
-              </PublicOnlyRoute>
-            }
-          />
-
           <Route
             element={
               <ProtectedRoute>
