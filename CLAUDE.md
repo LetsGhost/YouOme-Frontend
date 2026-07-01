@@ -23,13 +23,13 @@ Vite + React 19 + TypeScript SPA talking to the separate `backend/` Express API.
 
 `main.tsx` mounts `<App />` and imports the single global stylesheet `src/styles.css`. `App.tsx` nests: `ThemeProvider` (MUI theme, `src/config/theme.ts`) → `CssBaseline` → `AppProvider` (`src/app/AppStateContext.tsx`) → `BrowserRouter` → `Routes` (classic JSX route config, not the v7 data-router API).
 
-Routes: `/` → redirect to `/dashboard`; `PublicOnlyRoute`-wrapped `/login`, `/register`, `/verify-email`; a `ProtectedRoute`-wrapped layout route rendering `AppShell` with nested authenticated pages — `/dashboard`, `/groups`, `/groups/:id`, `/groups/:id/settings`, `/friends`, `/expenses`, `/settlements`, `/notifications`, `/settings`, `/admin`; catch-all `*` → `/dashboard`.
+Routes: `/` → redirect to `/dashboard`; `PublicOnlyRoute`-wrapped `/login`, `/register`; a `ProtectedRoute`-wrapped layout route rendering `AppShell` with nested authenticated pages — `/dashboard`, `/groups`, `/groups/:id`, `/groups/:id/settings`, `/friends`, `/expenses`, `/settlements`, `/notifications`, `/settings`, `/admin`; catch-all `*` → `/dashboard`.
 
 **`/admin` has no role/admin check** — `ProtectedRoute` only requires a logged-in `currentUser` (real or dev-bypass), same as every other authenticated page. Don't assume there's an authorization boundary there beyond "is logged in."
 
 ### App state (`src/app/AppStateContext.tsx`) — the one thing to understand before changing behavior
 
-`AppProvider`/`useAppState()` is the single source of truth for: `apiBaseUrl`/`backendUrl`, `health`, `session`, `currentUser`, `groups`, a single global `notice` (toast-like `{tone, message}`), `isBootstrapping`, and `admin` (Redis-backed routes/jobs/state bundle). Actions (`login`, `register`, `verifyEmail`, `refreshSession`, `logout`, `deleteCurrentUser`, `reloadGroups`, `reloadAdminState`, etc.) are `useCallback`-wrapped calls into `shared/api/backend.ts` that synchronously replace local state — there's no caching/dedup/invalidation layer; "reload*" just refetches and overwrites.
+`AppProvider`/`useAppState()` is the single source of truth for: `apiBaseUrl`/`backendUrl`, `health`, `session`, `currentUser`, `groups`, a single global `notice` (toast-like `{tone, message}`), `isBootstrapping`, and `admin` (Redis-backed routes/jobs/state bundle). Actions (`login`, `register`, `refreshSession`, `logout`, `deleteCurrentUser`, `reloadGroups`, `reloadAdminState`, etc.) are `useCallback`-wrapped calls into `shared/api/backend.ts` that synchronously replace local state — there's no caching/dedup/invalidation layer; "reload*" just refetches and overwrites.
 
 Bootstrap-on-mount sequence: `GET /health` → `bootstrapCurrentUser()` (if a stored session exists, `GET /api/auth/me` with its bearer token to restore the session; if not, it **still calls `GET /api/auth/me` with no Authorization header**, relying on the backend's dev auth bypass — so in a dev-bypassed backend, the app always ends up "logged in" even with no real session) → `reloadGroups()`. Any failure surfaces a warning `notice` but never blocks the app.
 
