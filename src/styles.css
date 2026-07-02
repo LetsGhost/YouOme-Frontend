@@ -1,5 +1,3 @@
-@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap");
-
 * {
   margin: 0;
   padding: 0;
@@ -31,6 +29,7 @@ html {
 body {
   margin: 0;
   min-height: 100vh;
+  min-height: 100dvh;
   color: var(--ink);
   background: inherit;
 }
@@ -61,16 +60,6 @@ textarea:focus {
   outline: none;
   border-color: rgba(44, 107, 237, 0.44);
   box-shadow: 0 0 0 4px rgba(44, 107, 237, 0.12);
-}
-
-.app-shell {
-  position: relative;
-  display: grid;
-  grid-template-columns: 300px minmax(0, 1fr);
-  gap: 20px;
-  min-height: 100vh;
-  padding: 20px;
-  overflow: hidden;
 }
 
 .backdrop {
@@ -294,6 +283,7 @@ textarea:focus {
 
 .auth-screen {
   min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
   place-items: center;
   padding: 20px;
@@ -759,7 +749,6 @@ textarea:focus {
 }
 
 @media (max-width: 1120px) {
-  .app-shell,
   .dashboard-grid,
   .admin-layout,
   .module-layout,
@@ -775,10 +764,6 @@ textarea:focus {
 }
 
 @media (max-width: 720px) {
-  .app-shell {
-    padding: 14px;
-  }
-
   .topbar,
   .info-row,
   .table-row,
@@ -806,14 +791,9 @@ textarea:focus {
   }
 }
 
-/* DEBUG: temporary visual check to confirm styles are loaded in the browser */
-/* Remove this block after verifying */
-body.debug-css-check {
-  background: #e6fffa !important;
-}
-
 .shell-root {
   min-height: 100vh;
+  min-height: 100dvh;
   background:
     radial-gradient(circle at 10% -12%, rgba(255, 189, 89, 0.18), transparent 26%),
     radial-gradient(circle at 105% 18%, rgba(255, 80, 96, 0.12), transparent 28%),
@@ -913,7 +893,7 @@ body.debug-css-check {
   }
 
   .ig-nav-item {
-    width: 2.76rem;
-    height: 2.76rem;
+    width: 3rem;
+    height: 3rem;
   }
 }

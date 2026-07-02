@@ -8,7 +8,7 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
   const location = useLocation();
 
   if (isBootstrapping) {
-    return <div className="auth-screen"><div className="auth-card panel">Session wird geladen...</div></div>;
+    return <div className="auth-screen"><div className="auth-card panel">Loading session...</div></div>;
   }
 
   if (!currentUser) {
@@ -23,7 +23,7 @@ export function AdminRoute({ children }: { children: ReactNode }) {
   const location = useLocation();
 
   if (isBootstrapping) {
-    return <div className="auth-screen"><div className="auth-card panel">Session wird geladen...</div></div>;
+    return <div className="auth-screen"><div className="auth-card panel">Loading session...</div></div>;
   }
 
   if (!currentUser) {
@@ -41,7 +41,7 @@ export function PublicOnlyRoute({ children }: { children: ReactNode }) {
   const { currentUser, isBootstrapping } = useAppState();
 
   if (isBootstrapping) {
-    return <div className="auth-screen"><div className="auth-card panel">Session wird geladen...</div></div>;
+    return <div className="auth-screen"><div className="auth-card panel">Loading session...</div></div>;
   }
 
   if (currentUser) {

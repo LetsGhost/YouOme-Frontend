@@ -17,9 +17,15 @@ export function formatTimestamp(value: string) {
   });
 }
 
+const moneyFormatter = new Intl.NumberFormat("de-DE", {
+  style: "currency",
+  currency: "EUR",
+  maximumFractionDigits: 2,
+});
+
 export function formatMoney(value: number | string | null | undefined) {
   if (value === null || value === undefined || value === "") {
-    return "€ 0.00";
+    return moneyFormatter.format(0);
   }
 
   const parsed = typeof value === "number" ? value : Number(String(value).replace(/[^0-9.-]/g, ""));
@@ -28,11 +34,7 @@ export function formatMoney(value: number | string | null | undefined) {
     return String(value);
   }
 
-  return new Intl.NumberFormat("de-DE", {
-    style: "currency",
-    currency: "EUR",
-    maximumFractionDigits: 2,
-  }).format(parsed);
+  return moneyFormatter.format(parsed);
 }
 
 export function formatCount(value: number | string | null | undefined) {

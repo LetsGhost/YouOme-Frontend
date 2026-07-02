@@ -490,7 +490,7 @@ export function GroupDetailsPage() {
                 }}
               >
                 <Avatar sx={{ bgcolor: "#4f46e5", color: "white", fontWeight: "bold" }}>
-                  {member.avatar || member.name[0]}
+                  {member.avatar || member.name?.[0] || "?"}
                 </Avatar>
                 <Box sx={{ flex: 1 }}>
                   <Typography variant="body2" sx={{ fontWeight: "bold" }}>

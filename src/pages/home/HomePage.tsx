@@ -70,7 +70,7 @@ export function HomePage() {
     if (recentActivities.length === 0) {
       for (const group of groups.slice(0, 3)) {
         recentActivities.push({
-          user: group.name[0] || "G",
+          user: group.name?.[0] || "G",
           action: "group loaded from",
           group: group.name,
           time: group.updatedAt || group.createdAt || "Recently",
@@ -185,9 +185,9 @@ export function HomePage() {
                   },
                 }}
               >
-                
-                  {activity.user[0]}
-                  {activity.user[0]}
+                <Avatar sx={{ bgcolor: "#4f46e5", color: "white", fontWeight: "bold", flexShrink: 0 }}>
+                  {activity.user?.[0] || "?"}
+                </Avatar>
                 <Box sx={{ flex: 1 }}>
                   <Typography variant="body2">
                     <strong>{activity.user}</strong> {activity.action}{" "}

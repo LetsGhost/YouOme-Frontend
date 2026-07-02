@@ -1,3 +1,4 @@
+import { Suspense, lazy } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
@@ -5,19 +6,36 @@ import CssBaseline from "@mui/material/CssBaseline";
 import { theme } from "./config/theme";
 import { AppProvider } from "./app/AppStateContext";
 import { AppShell } from "./widgets/layout/AppShell";
-import { HomePage } from "./pages/home/HomePage";
-import { AdminPage } from "./pages/admin/AdminPage";
-import { LoginPage } from "./pages/auth/LoginPage";
-import { RegisterPage } from "./pages/auth/RegisterPage";
-import { GroupsPage } from "./pages/groups/GroupsPage";
-import { GroupDetailsPage } from "./pages/groups/GroupDetailsPage";
-import { GroupSettingsPage } from "./pages/groups/GroupSettingsPage";
-import { FriendsPage } from "./pages/friends/FriendsPage";
-import { ExpensesPage } from "./pages/expenses/ExpensesPage";
-import { SettlementsPage } from "./pages/settlements/SettlementsPage";
-import { NotificationsPage } from "./pages/notifications/NotificationsPage";
-import { SettingsPage } from "./pages/settings/SettingsPage";
 import { AdminRoute, ProtectedRoute, PublicOnlyRoute } from "./app/RouteGuards";
+
+const HomePage = lazy(() => import("./pages/home/HomePage").then((m) => ({ default: m.HomePage })));
+const AdminPage = lazy(() => import("./pages/admin/AdminPage").then((m) => ({ default: m.AdminPage })));
+const LoginPage = lazy(() => import("./pages/auth/LoginPage").then((m) => ({ default: m.LoginPage })));
+const RegisterPage = lazy(() => import("./pages/auth/RegisterPage").then((m) => ({ default: m.RegisterPage })));
+const GroupsPage = lazy(() => import("./pages/groups/GroupsPage").then((m) => ({ default: m.GroupsPage })));
+const GroupDetailsPage = lazy(() =>
+  import("./pages/groups/GroupDetailsPage").then((m) => ({ default: m.GroupDetailsPage }))
+);
+const GroupSettingsPage = lazy(() =>
+  import("./pages/groups/GroupSettingsPage").then((m) => ({ default: m.GroupSettingsPage }))
+);
+const FriendsPage = lazy(() => import("./pages/friends/FriendsPage").then((m) => ({ default: m.FriendsPage })));
+const ExpensesPage = lazy(() => import("./pages/expenses/ExpensesPage").then((m) => ({ default: m.ExpensesPage })));
+const SettlementsPage = lazy(() =>
+  import("./pages/settlements/SettlementsPage").then((m) => ({ default: m.SettlementsPage }))
+);
+const NotificationsPage = lazy(() =>
+  import("./pages/notifications/NotificationsPage").then((m) => ({ default: m.NotificationsPage }))
+);
+const SettingsPage = lazy(() => import("./pages/settings/SettingsPage").then((m) => ({ default: m.SettingsPage })));
+
+function RouteFallback() {
+  return (
+    <div className="auth-screen">
+      <div className="auth-card panel">Loading...</div>
+    </div>
+  );
+}
 
 export default function App() {
   return (
@@ -25,53 +43,55 @@ export default function App() {
       <CssBaseline />
       <AppProvider>
         <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Suspense fallback={<RouteFallback />}>
+            <Routes>
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-          <Route
-            path="/login"
-            element={
-              <PublicOnlyRoute>
-                <LoginPage />
-              </PublicOnlyRoute>
-            }
-          />
-          <Route
-            path="/register"
-            element={
-              <PublicOnlyRoute>
-                <RegisterPage />
-              </PublicOnlyRoute>
-            }
-          />
-          <Route
-            element={
-              <ProtectedRoute>
-                <AppShell />
-              </ProtectedRoute>
-            }
-          >
-            <Route path="/dashboard" element={<HomePage />} />
-            <Route path="/groups" element={<GroupsPage />} />
-            <Route path="/groups/:id" element={<GroupDetailsPage />} />
-            <Route path="/groups/:id/settings" element={<GroupSettingsPage />} />
-            <Route path="/friends" element={<FriendsPage />} />
-            <Route path="/expenses" element={<ExpensesPage />} />
-            <Route path="/settlements" element={<SettlementsPage />} />
-            <Route path="/notifications" element={<NotificationsPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route
-              path="/admin"
-              element={
-                <AdminRoute>
-                  <AdminPage />
-                </AdminRoute>
-              }
-            />
-          </Route>
+              <Route
+                path="/login"
+                element={
+                  <PublicOnlyRoute>
+                    <LoginPage />
+                  </PublicOnlyRoute>
+                }
+              />
+              <Route
+                path="/register"
+                element={
+                  <PublicOnlyRoute>
+                    <RegisterPage />
+                  </PublicOnlyRoute>
+                }
+              />
+              <Route
+                element={
+                  <ProtectedRoute>
+                    <AppShell />
+                  </ProtectedRoute>
+                }
+              >
+                <Route path="/dashboard" element={<HomePage />} />
+                <Route path="/groups" element={<GroupsPage />} />
+                <Route path="/groups/:id" element={<GroupDetailsPage />} />
+                <Route path="/groups/:id/settings" element={<GroupSettingsPage />} />
+                <Route path="/friends" element={<FriendsPage />} />
+                <Route path="/expenses" element={<ExpensesPage />} />
+                <Route path="/settlements" element={<SettlementsPage />} />
+                <Route path="/notifications" element={<NotificationsPage />} />
+                <Route path="/settings" element={<SettingsPage />} />
+                <Route
+                  path="/admin"
+                  element={
+                    <AdminRoute>
+                      <AdminPage />
+                    </AdminRoute>
+                  }
+                />
+              </Route>
 
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            </Routes>
+          </Suspense>
         </BrowserRouter>
       </AppProvider>
     </ThemeProvider>

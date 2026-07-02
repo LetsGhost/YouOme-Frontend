@@ -390,7 +390,7 @@ export function GroupSettingsPage() {
                     }}
                   >
                     <Avatar sx={{ width: 36, height: 36, bgcolor: "#e0e7ff", color: "#4f46e5", fontWeight: 700 }}>
-                      {member.avatar || member.name[0]}
+                      {member.avatar || member.name?.[0] || "?"}
                     </Avatar>
                     <Box sx={{ minWidth: 0, flex: 1 }}>
                       <Typography variant="body2" sx={{ fontWeight: 700 }} noWrap>

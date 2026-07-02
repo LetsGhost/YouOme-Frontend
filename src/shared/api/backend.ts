@@ -590,6 +590,8 @@ export async function confirmExpenseReceipt(backendUrl: string, expenseId: strin
   });
 }
 
+const DEFAULT_TIMEOUT_MS = 15000;
+
 export async function fetchJson<T>(url: string, options: ApiRequestOptions = {}): Promise<T> {
   const headers = new Headers(options.headers);
   headers.set("Accept", "application/json");
@@ -604,21 +606,44 @@ export async function fetchJson<T>(url: string, options: ApiRequestOptions = {})
     headers.set("X-Dev-User-Id", ensureDevUserId());
   }
 
-  const response = await fetch(url, {
-    ...options,
-    headers,
-    body: options.json === undefined ? options.body : JSON.stringify(options.json),
-  });
+  const timeoutController = new AbortController();
+  const timeoutId = setTimeout(() => timeoutController.abort(), DEFAULT_TIMEOUT_MS);
+  const callerSignal = options.signal;
 
-  const text = await response.text();
-  const payload = text ? safeParseJson<ApiError | T>(text) : null;
-
-  if (!response.ok) {
-    const apiError = payload as ApiError | null;
-    throw new Error(apiError?.message || `Request failed with status ${response.status}`);
+  if (callerSignal) {
+    if (callerSignal.aborted) {
+      timeoutController.abort();
+    } else {
+      callerSignal.addEventListener("abort", () => timeoutController.abort(), { once: true });
+    }
   }
 
-  return payload as T;
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers,
+      signal: timeoutController.signal,
+      body: options.json === undefined ? options.body : JSON.stringify(options.json),
+    });
+
+    const text = await response.text();
+    const payload = text ? safeParseJson<ApiError | T>(text) : null;
+
+    if (!response.ok) {
+      const apiError = payload as ApiError | null;
+      throw new Error(apiError?.message || `Request failed with status ${response.status}`);
+    }
+
+    return payload as T;
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError" && !callerSignal?.aborted) {
+      throw new Error("Request timed out. Check your connection and try again.");
+    }
+
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 function safeParseJson<T>(value: string): T | null {

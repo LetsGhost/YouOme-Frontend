@@ -157,7 +157,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
         setHealth(healthSnapshot);
         await bootstrapCurrentUser();
-        await reloadGroups();
       } catch {
         setNotice({ tone: "warning", message: "Backend unreachable or no active session found." });
       } finally {
@@ -168,7 +167,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     void bootstrap();
 
     return () => controller.abort();
-  }, [backendUrl, bootstrapCurrentUser, reloadGroups]);
+  }, [backendUrl, bootstrapCurrentUser]);
 
   useEffect(() => {
     void reloadGroups();
@@ -323,47 +322,55 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setNotice({ tone: "info", message: "Local session removed." });
   }, []);
 
-  const value: AppStateValue = {
-    apiBaseUrl,
-    backendUrl,
-    health,
-    session,
-    currentUser,
-    groups,
-    notice,
-    isBootstrapping,
-    admin,
-    setApiBaseUrl: (value) => setApiBaseUrlState(normalizeBaseUrl(value)),
-    setNotice,
-    login: async (input) => {
-      await login(input);
-    },
-    register: async (input) => {
-      return await register(input);
-    },
-    refreshSession: async () => {
-      await refreshSession();
-    },
-    logout: async () => {
-      await logout();
-    },
-    deleteCurrentUser: async () => {
-      await deleteCurrentUser();
-    },
-    probeDevSession: async (token?: string) => {
-      await probeDevSession(token);
-    },
-    reloadHealth: async () => {
-      await reloadHealth();
-    },
-    reloadGroups: async () => {
-      await reloadGroups();
-    },
-    reloadAdminState: async () => {
-      await reloadAdminState();
-    },
-    clearSession,
-  };
+  const setApiBaseUrl = useCallback((nextValue: string) => setApiBaseUrlState(normalizeBaseUrl(nextValue)), []);
+
+  const value = useMemo<AppStateValue>(
+    () => ({
+      apiBaseUrl,
+      backendUrl,
+      health,
+      session,
+      currentUser,
+      groups,
+      notice,
+      isBootstrapping,
+      admin,
+      setApiBaseUrl,
+      setNotice,
+      login,
+      register,
+      refreshSession,
+      logout,
+      deleteCurrentUser,
+      probeDevSession,
+      reloadHealth,
+      reloadGroups,
+      reloadAdminState,
+      clearSession,
+    }),
+    [
+      apiBaseUrl,
+      backendUrl,
+      health,
+      session,
+      currentUser,
+      groups,
+      notice,
+      isBootstrapping,
+      admin,
+      setApiBaseUrl,
+      login,
+      register,
+      refreshSession,
+      logout,
+      deleteCurrentUser,
+      probeDevSession,
+      reloadHealth,
+      reloadGroups,
+      reloadAdminState,
+      clearSession,
+    ]
+  );
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;
 }
