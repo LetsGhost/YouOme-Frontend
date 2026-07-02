@@ -6,6 +6,8 @@ import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import GroupsIcon from "@mui/icons-material/Groups";
 import SettingsIcon from "@mui/icons-material/Settings";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
+import DeleteIcon from "@mui/icons-material/Delete";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import {
   Box,
   Button,
@@ -15,6 +17,11 @@ import {
   Divider,
   Alert,
   Avatar,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   IconButton,
   InputAdornment,
   Skeleton,
@@ -27,6 +34,7 @@ import {
 import { useAppState } from "../../app/AppStateContext";
 import {
   createGroupInvite,
+  deleteGroup,
   getGroup,
   getGroupPolicy,
   listFriendSummaries,
@@ -47,7 +55,7 @@ function resolveFriendKey(friend: FriendSummary) {
 export function GroupSettingsPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const { backendUrl, currentUser, session, setNotice } = useAppState();
+  const { backendUrl, currentUser, session, setNotice, reloadGroups } = useAppState();
   const [group, setGroup] = useState<Group | null>(null);
   const [groupMembers, setGroupMembers] = useState<GroupMember[]>([]);
   const [friends, setFriends] = useState<FriendSummary[]>([]);
@@ -60,6 +68,9 @@ export function GroupSettingsPage() {
   const [isPolicyLoading, setIsPolicyLoading] = useState(false);
   const [isPolicySaving, setIsPolicySaving] = useState(false);
   const [policyError, setPolicyError] = useState<string | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) {
@@ -107,12 +118,13 @@ export function GroupSettingsPage() {
   const members = groupMembers.length > 0 ? groupMembers : group?.members ?? [];
   const memberIds = useMemo(() => new Set(members.map((member) => member.id)), [members]);
 
-  const isOwnerOrAdmin = useMemo(() => {
-    const membership = members.find(
-      (member) => member.id === currentUser?.id || member.email === currentUser?.email
-    );
-    return membership?.role === "owner" || membership?.role === "admin";
-  }, [members, currentUser?.id, currentUser?.email]);
+  const currentMembership = useMemo(
+    () => members.find((member) => member.id === currentUser?.id || member.email === currentUser?.email),
+    [members, currentUser?.id, currentUser?.email]
+  );
+
+  const isOwnerOrAdmin = currentMembership?.role === "owner" || currentMembership?.role === "admin";
+  const isOwner = currentMembership?.role === "owner";
 
   useEffect(() => {
     if (!id || !isOwnerOrAdmin || !session?.accessToken) {
@@ -225,6 +237,28 @@ export function GroupSettingsPage() {
       setErrorMessage(error instanceof Error ? error.message : "Failed to invite friend.");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleDeleteGroup = async () => {
+    if (!id || !session?.accessToken) {
+      setDeleteError("Sign in to delete this group.");
+      return;
+    }
+
+    setIsDeleting(true);
+    setDeleteError(null);
+
+    try {
+      await deleteGroup(backendUrl, id, session.accessToken);
+      setIsDeleteDialogOpen(false);
+      setNotice({ tone: "success", message: `${group?.name ?? "Group"} was deleted.` });
+      await reloadGroups();
+      navigate("/groups");
+    } catch (error) {
+      setDeleteError(error instanceof Error ? error.message : "Failed to delete group.");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -527,6 +561,74 @@ export function GroupSettingsPage() {
           </CardContent>
         </Card>
       )}
+
+      {isOwner && (
+        <Card sx={{ borderRadius: 3, border: "1px solid #fecaca" }}>
+          <CardContent sx={{ display: "grid", gap: 2 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <WarningAmberIcon sx={{ color: "#dc2626" }} />
+              <Box>
+                <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                  Danger zone
+                </Typography>
+                <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                  Deleting this group permanently removes it, its members, and its policy for everyone.
+                </Typography>
+              </Box>
+            </Box>
+
+            <Divider />
+
+            <Box>
+              <Button
+                variant="outlined"
+                color="error"
+                startIcon={<DeleteIcon />}
+                onClick={() => {
+                  setDeleteError(null);
+                  setIsDeleteDialogOpen(true);
+                }}
+                sx={{ textTransform: "none", fontWeight: 700 }}
+              >
+                Delete group
+              </Button>
+            </Box>
+          </CardContent>
+        </Card>
+      )}
+
+      <Dialog open={isDeleteDialogOpen} onClose={() => (isDeleting ? undefined : setIsDeleteDialogOpen(false))}>
+        <DialogTitle sx={{ fontWeight: 800 }}>Delete {group?.name ?? "this group"}?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            This action can't be undone. All members will lose access, and the group's data will be permanently
+            removed.
+          </DialogContentText>
+          {deleteError && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {deleteError}
+            </Alert>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button
+            onClick={() => setIsDeleteDialogOpen(false)}
+            disabled={isDeleting}
+            sx={{ textTransform: "none", fontWeight: 700 }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={() => void handleDeleteGroup()}
+            disabled={isDeleting}
+            sx={{ textTransform: "none", fontWeight: 700 }}
+          >
+            {isDeleting ? "Deleting..." : "Delete group"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

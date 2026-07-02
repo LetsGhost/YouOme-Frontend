@@ -7,13 +7,19 @@ import {
   Card,
   CardContent,
   Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Divider,
   Stack,
+  TextField,
   Typography,
   Skeleton,
 } from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
+import EditIcon from "@mui/icons-material/Edit";
 import PendingActionsIcon from "@mui/icons-material/PendingActions";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 
@@ -22,6 +28,7 @@ import {
   getGroupDebtBoard,
   rejectExpensePayment,
   submitExpensePayment,
+  updateExpense,
   type GroupDebtBoard,
   type GroupDebtExpense,
   type GroupDebtParticipant,
@@ -63,11 +70,21 @@ function hasReviewAction(expense: GroupDebtExpense, participant: GroupDebtPartic
   return Boolean(currentUserId && expense.createdByUserId === currentUserId && participant.status === "payment-submitted");
 }
 
+function canEditExpense(expense: GroupDebtExpense, currentUserId?: string) {
+  const isCreator = Boolean(currentUserId && expense.createdByUserId === currentUserId);
+  const hasSubmission = expense.participants.some((participant) => participant.status !== "pending");
+  return isCreator && !hasSubmission;
+}
+
 export function GroupDebtWidget({ backendUrl, groupId, currentUserId, accessToken }: GroupDebtWidgetProps) {
   const [board, setBoard] = useState<GroupDebtBoard | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [activeAction, setActiveAction] = useState<string | null>(null);
+  const [editingExpense, setEditingExpense] = useState<GroupDebtExpense | null>(null);
+  const [editForm, setEditForm] = useState({ title: "", totalAmount: "", note: "" });
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
 
   const loadBoard = useCallback(async () => {
     setIsLoading(true);
@@ -110,6 +127,57 @@ export function GroupDebtWidget({ backendUrl, groupId, currentUserId, accessToke
       setErrorMessage(error instanceof Error ? error.message : "Failed to update payment status.");
     } finally {
       setActiveAction(null);
+    }
+  };
+
+  const openEditDialog = (expense: GroupDebtExpense) => {
+    setEditError(null);
+    setEditForm({
+      title: expense.title,
+      totalAmount: String(expense.totalAmount),
+      note: expense.description || "",
+    });
+    setEditingExpense(expense);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingExpense) {
+      return;
+    }
+
+    const totalAmount = Number(editForm.totalAmount);
+
+    if (!editForm.title.trim()) {
+      setEditError("Title is required.");
+      return;
+    }
+
+    if (!Number.isFinite(totalAmount) || totalAmount <= 0) {
+      setEditError("Enter a valid amount.");
+      return;
+    }
+
+    setIsSavingEdit(true);
+    setEditError(null);
+
+    try {
+      await updateExpense(
+        backendUrl,
+        editingExpense.id,
+        {
+          title: editForm.title.trim(),
+          totalAmount,
+          note: editForm.note.trim() || undefined,
+        },
+        accessToken
+      );
+
+      setEditingExpense(null);
+      await loadBoard();
+    } catch (error) {
+      setEditError(error instanceof Error ? error.message : "Failed to update expense.");
+    } finally {
+      setIsSavingEdit(false);
     }
   };
 
@@ -215,6 +283,18 @@ export function GroupDebtWidget({ backendUrl, groupId, currentUserId, accessToke
                         {formatMoney(expense.totalAmount)}
                       </Typography>
                       <Chip label={expense.status} size="small" variant="outlined" sx={{ textTransform: "capitalize" }} />
+                      {canEditExpense(expense, currentUserId) && (
+                        <Box sx={{ mt: 0.75 }}>
+                          <Button
+                            size="small"
+                            startIcon={<EditIcon fontSize="small" />}
+                            onClick={() => openEditDialog(expense)}
+                            sx={{ textTransform: "none", fontWeight: 700 }}
+                          >
+                            Edit
+                          </Button>
+                        </Box>
+                      )}
                     </Box>
                   </Box>
 
@@ -344,6 +424,50 @@ export function GroupDebtWidget({ backendUrl, groupId, currentUserId, accessToke
           </Box>
         )}
       </CardContent>
+
+      <Dialog open={Boolean(editingExpense)} onClose={() => (isSavingEdit ? undefined : setEditingExpense(null))} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontWeight: 800 }}>Edit expense</DialogTitle>
+        <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
+          <TextField
+            label="Title"
+            value={editForm.title}
+            onChange={(event) => setEditForm((current) => ({ ...current, title: event.target.value }))}
+            required
+            fullWidth
+          />
+          <TextField
+            label="Amount"
+            type="number"
+            value={editForm.totalAmount}
+            onChange={(event) => setEditForm((current) => ({ ...current, totalAmount: event.target.value }))}
+            required
+            fullWidth
+            slotProps={{ htmlInput: { min: 0, step: "0.01" } }}
+          />
+          <TextField
+            label="Description"
+            value={editForm.note}
+            onChange={(event) => setEditForm((current) => ({ ...current, note: event.target.value }))}
+            fullWidth
+            multiline
+            rows={3}
+          />
+          {editError && <Alert severity="error">{editError}</Alert>}
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setEditingExpense(null)} disabled={isSavingEdit} sx={{ textTransform: "none", fontWeight: 700 }}>
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={() => void handleSaveEdit()}
+            disabled={isSavingEdit}
+            sx={{ textTransform: "none", fontWeight: 700 }}
+          >
+            {isSavingEdit ? "Saving..." : "Save changes"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Card>
   );
 }

@@ -498,6 +498,13 @@ export async function createGroup(backendUrl: string, input: CreateGroupInput, t
   });
 }
 
+export async function deleteGroup(backendUrl: string, groupId: string, token?: string) {
+  return fetchJson<{ message: string }>(`${backendUrl}/api/groups/${groupId}`, {
+    method: "DELETE",
+    token,
+  });
+}
+
 export async function createGroupInvite(backendUrl: string, input: CreateGroupInviteInput, token?: string) {
   return fetchJson<GroupInvite>(`${backendUrl}/api/group-invites`, {
     method: "POST",
@@ -581,6 +588,25 @@ export async function confirmExpensePayment(
       token,
     }
   );
+}
+
+export type UpdateExpenseInput = {
+  title?: string;
+  totalAmount?: number;
+  note?: string;
+};
+
+export async function updateExpense(
+  backendUrl: string,
+  expenseId: string,
+  input: UpdateExpenseInput,
+  token?: string
+) {
+  return fetchJson<GroupExpense>(`${backendUrl}/api/expenses/${expenseId}`, {
+    method: "PATCH",
+    json: input,
+    token,
+  });
 }
 
 export async function confirmExpenseReceipt(backendUrl: string, expenseId: string, token?: string) {
