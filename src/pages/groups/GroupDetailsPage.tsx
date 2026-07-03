@@ -18,7 +18,6 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  Divider,
   Chip,
   Alert,
   Skeleton,
@@ -26,7 +25,7 @@ import {
 } from "@mui/material";
 
 import { useAppState } from "../../app/AppStateContext";
-import { createExpense, getGroup, listGroupMembers, type Group, type GroupMember } from "../../shared/api/backend";
+import { createExpense, getGroup, listGroupMembers, type Group, type GroupDebtBoard, type GroupMember } from "../../shared/api/backend";
 import { formatMoney } from "../../shared/lib/format";
 import { GroupDebtWidget } from "../../widgets/module/group/GroupDebtWidget";
 
@@ -178,6 +177,7 @@ export function GroupDetailsPage() {
   const { backendUrl, currentUser, session } = useAppState();
   const [group, setGroup] = useState<Group | null>(null);
   const [groupMembers, setGroupMembers] = useState<GroupMember[]>([]);
+  const [debtBoard, setDebtBoard] = useState<GroupDebtBoard | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showExpenseDialog, setShowExpenseDialog] = useState(false);
@@ -244,15 +244,30 @@ export function GroupDetailsPage() {
 
   const members = groupMembers.length > 0 ? groupMembers : group?.members ?? [];
   const expenses = group?.expenses ?? [];
-  const debtHistory = group?.debtHistory ?? [];
 
-  const balanceValue = useMemo(() => {
-    const parsed = typeof group?.balance === "number" ? group.balance : Number(String(group?.balance ?? 0).replace(/[^0-9.-]/g, ""));
-    return Number.isNaN(parsed) ? 0 : parsed;
-  }, [group?.balance]);
+  const { youOwe, owedToYou } = useMemo(() => {
+    const currentUserId = currentUser?.id;
+    let owe = 0;
+    let owed = 0;
 
-  const youOwe = Math.max(balanceValue, 0);
-  const owedToYou = Math.max(-balanceValue, 0);
+    for (const expense of debtBoard?.expenses ?? []) {
+      for (const participant of expense.participants) {
+        if (participant.status === "payment-confirmed") {
+          continue;
+        }
+
+        if (participant.userId === currentUserId) {
+          owe += participant.shareAmount;
+        }
+
+        if (expense.paidByUserId === currentUserId && participant.userId !== currentUserId) {
+          owed += participant.shareAmount;
+        }
+      }
+    }
+
+    return { youOwe: owe, owedToYou: owed };
+  }, [debtBoard, currentUser?.id]);
 
   const participantMembers = members.filter((member) => expenseData.participantIds.includes(member.id) && member.id !== expenseData.paidBy);
   const payerMember = members.find((member) => member.id === expenseData.paidBy) ?? null;
@@ -519,6 +534,7 @@ export function GroupDetailsPage() {
         groupId={id || ""}
         currentUserId={currentUser?.id}
         accessToken={session?.accessToken}
+        onBoardChange={setDebtBoard}
       />
 
       {/* Recent Expenses */}
@@ -569,73 +585,6 @@ export function GroupDetailsPage() {
           ) : (
             <Typography variant="body2" sx={{ color: "text.secondary", textAlign: "center", py: 2 }}>
               No expenses found for this group.
-            </Typography>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Debt History */}
-      <Card sx={{ borderRadius: 3 }}>
-        <CardContent sx={{ p: 3 }}>
-          <Typography variant="h6" sx={{ fontWeight: "bold", mb: 2 }}>
-            Debt History
-          </Typography>
-
-          {debtHistory.length > 0 ? (
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              {debtHistory.map((entry, idx) => (
-                <Box key={entry.id}>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "flex-start",
-                      p: 1.5,
-                      borderRadius: 1,
-                      bgcolor: entry.type === "settlement" ? "#f0fdf4" : "#eff6ff",
-                      border: entry.type === "settlement" ? "1px solid #dcfce7" : "1px solid #e0e7ff",
-                    }}
-                  >
-                    <Box sx={{ flex: 1 }}>
-                      <Typography variant="body2" sx={{ fontWeight: "bold", mb: 0.5 }}>
-                        {entry.description}
-                      </Typography>
-                      <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 0.5 }}>
-                        {new Date(entry.date).toLocaleDateString()}
-                      </Typography>
-                      <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
-                        {entry.participants.map((participant) => (
-                          <Chip
-                            key={participant}
-                            label={participant}
-                            size="small"
-                            sx={{
-                              bgcolor: "transparent",
-                              border: "1px solid #cbd5e1",
-                              fontSize: "0.75rem",
-                            }}
-                          />
-                        ))}
-                      </Box>
-                    </Box>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        fontWeight: "bold",
-                        color: entry.type === "settlement" ? "#16a34a" : "#4f46e5",
-                        ml: 2,
-                      }}
-                    >
-                      {entry.amount}
-                    </Typography>
-                  </Box>
-                  {idx < debtHistory.length - 1 && <Divider sx={{ my: 0 }} />}
-                </Box>
-              ))}
-            </Box>
-          ) : (
-            <Typography variant="body2" sx={{ color: "text.secondary", textAlign: "center", py: 2 }}>
-              No debt history available for this group.
             </Typography>
           )}
         </CardContent>

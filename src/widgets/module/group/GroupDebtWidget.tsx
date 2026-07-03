@@ -43,6 +43,7 @@ type GroupDebtWidgetProps = {
   groupId: string;
   currentUserId?: string;
   accessToken?: string;
+  onBoardChange?: (board: GroupDebtBoard | null) => void;
 };
 
 function getStatusLabel(status: GroupDebtParticipant["status"]) {
@@ -79,7 +80,7 @@ function canModifyExpense(expense: GroupDebtExpense, currentUserId?: string) {
   return isCreator && !hasSubmission;
 }
 
-export function GroupDebtWidget({ backendUrl, groupId, currentUserId, accessToken }: GroupDebtWidgetProps) {
+export function GroupDebtWidget({ backendUrl, groupId, currentUserId, accessToken, onBoardChange }: GroupDebtWidgetProps) {
   const [board, setBoard] = useState<GroupDebtBoard | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -99,13 +100,15 @@ export function GroupDebtWidget({ backendUrl, groupId, currentUserId, accessToke
     try {
       const snapshot = await getGroupDebtBoard(backendUrl, groupId, accessToken);
       setBoard(snapshot);
+      onBoardChange?.(snapshot);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Failed to load current debts.");
       setBoard(null);
+      onBoardChange?.(null);
     } finally {
       setIsLoading(false);
     }
-  }, [accessToken, backendUrl, groupId]);
+  }, [accessToken, backendUrl, groupId, onBoardChange]);
 
   useEffect(() => {
     void loadBoard();
