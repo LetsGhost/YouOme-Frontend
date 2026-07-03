@@ -408,20 +408,6 @@ export function FriendsPage() {
                               {friend.blocked ? "Blocked" : "Active"}
                             </Typography>
                           </Box>
-
-                          <IconButton
-                            size="small"
-                            sx={{
-                              width: 34,
-                              height: 34,
-                              borderRadius: "var(--radius-sm)",
-                              bgcolor: "var(--color-accent-soft-bg)",
-                              color: "var(--color-accent-soft-ink)",
-                              "&:hover": { bgcolor: "var(--color-accent-soft-bg)", opacity: 0.85 },
-                            }}
-                          >
-                            <MessageCircle size={16} strokeWidth={2} />
-                          </IconButton>
                         </Box>
                       </Box>
                     </CardContent>
