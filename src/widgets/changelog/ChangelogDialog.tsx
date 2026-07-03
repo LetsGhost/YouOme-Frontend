@@ -67,12 +67,32 @@ export function ChangelogDialog() {
               {entry.date}
             </Typography>
             <Box component="ul" sx={{ m: 0, pl: 2.5 }}>
-              {entry.changes.map((change, idx) => (
+              {entry.highlights.map((change, idx) => (
                 <Typography key={idx} component="li" variant="body2" sx={{ mb: 0.5 }}>
                   {change}
                 </Typography>
               ))}
             </Box>
+
+            {entry.minor.length > 0 && (
+              <Box sx={{ mt: 1.5 }}>
+                <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700 }}>
+                  Also included
+                </Typography>
+                <Box component="ul" sx={{ m: 0, mt: 0.5, pl: 2.5 }}>
+                  {entry.minor.map((change, idx) => (
+                    <Typography
+                      key={idx}
+                      component="li"
+                      variant="caption"
+                      sx={{ display: "list-item", color: "text.secondary", mb: 0.25 }}
+                    >
+                      {change}
+                    </Typography>
+                  ))}
+                </Box>
+              </Box>
+            )}
           </Box>
         ))}
       </DialogContent>
