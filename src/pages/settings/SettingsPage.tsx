@@ -19,11 +19,31 @@ import {
 import { useNavigate } from "react-router-dom";
 
 import { useAppState } from "../../app/AppStateContext";
+import { deleteUserAvatar, resolveAvatarUrl, uploadUserAvatar } from "../../shared/api/backend";
+import { AvatarUploader } from "../../widgets/avatar/AvatarUploader";
 
 export function SettingsPage() {
   const navigate = useNavigate();
-  const { currentUser, logout, deleteCurrentUser } = useAppState();
+  const { currentUser, backendUrl, session, logout, deleteCurrentUser, updateCurrentUser, setNotice } = useAppState();
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleUploadAvatar = async (file: File) => {
+    try {
+      const updated = await uploadUserAvatar(backendUrl, file, session?.accessToken);
+      updateCurrentUser(updated);
+    } catch (error) {
+      setNotice({ tone: "error", message: error instanceof Error ? error.message : "Failed to upload avatar." });
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    try {
+      const updated = await deleteUserAvatar(backendUrl, session?.accessToken);
+      updateCurrentUser(updated);
+    } catch (error) {
+      setNotice({ tone: "error", message: error instanceof Error ? error.message : "Failed to remove avatar." });
+    }
+  };
 
   const handleClearSession = async () => {
     if (confirm("Are you sure you want to clear your session? You will be logged out.")) {
@@ -81,6 +101,22 @@ export function SettingsPage() {
             <Typography variant="h6" sx={{ fontWeight: "bold", mb: 2, color: "var(--color-ink)" }}>
               Account Information
             </Typography>
+
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
+              <AvatarUploader
+                src={resolveAvatarUrl(backendUrl, currentUser?.avatarUrl)}
+                token={session?.accessToken}
+                fallback={currentUser?.name?.[0] || currentUser?.email?.[0] || "?"}
+                size={72}
+                editable
+                onUpload={handleUploadAvatar}
+                onRemove={handleRemoveAvatar}
+              />
+              <Typography variant="body2" sx={{ color: "var(--color-muted)" }}>
+                Upload a photo to personalize your profile. Recommended: a square image, at least
+                256x256.
+              </Typography>
+            </Box>
 
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
               <Box>

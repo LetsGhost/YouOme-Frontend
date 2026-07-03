@@ -8,7 +8,6 @@ import {
   CardContent,
   Typography,
   IconButton,
-  Avatar,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -32,6 +31,7 @@ import {
   getGroup,
   listGroupExpenses,
   listGroupMembers,
+  resolveAvatarUrl,
   type Group,
   type GroupDebtBoard,
   type GroupMember,
@@ -39,6 +39,11 @@ import {
 } from "../../shared/api/backend";
 import { formatMoney, formatTimestamp } from "../../shared/lib/format";
 import { GroupDebtWidget } from "../../widgets/module/group/GroupDebtWidget";
+import { AvatarUploader } from "../../widgets/avatar/AvatarUploader";
+
+const noop = async () => {
+  void 0;
+};
 
 const EXPENSES_PAGE_SIZE = 10;
 
@@ -490,6 +495,17 @@ export function GroupDetailsPage() {
           <IconButton onClick={() => navigate("/groups")} sx={{ color: "var(--color-muted)", "&:hover": { color: "var(--color-ink)" } }}>
             <ChevronLeft size={22} strokeWidth={2} />
           </IconButton>
+          {!isLoading && (
+            <AvatarUploader
+              src={resolveAvatarUrl(backendUrl, group?.avatarUrl)}
+              token={session?.accessToken}
+              fallback={<Users size={24} strokeWidth={2} />}
+              size={56}
+              shape="rounded"
+              onUpload={noop}
+              onRemove={noop}
+            />
+          )}
           <Box sx={{ minWidth: 0 }}>
             {isLoading ? (
               <Skeleton variant="text" width={260} height={42} />
@@ -741,9 +757,14 @@ export function GroupDetailsPage() {
                     border: "1px solid var(--color-border)",
                   }}
                 >
-                  <Avatar sx={{ bgcolor: "var(--color-accent-soft-bg)", color: "var(--color-accent-soft-ink)", fontWeight: 700 }}>
-                    {member.avatar || member.name?.[0] || "?"}
-                  </Avatar>
+                  <AvatarUploader
+                    src={resolveAvatarUrl(backendUrl, member.avatarUrl)}
+                    token={session?.accessToken}
+                    fallback={member.avatar || member.name?.[0] || "?"}
+                    size={40}
+                    onUpload={noop}
+                    onRemove={noop}
+                  />
                   <Box sx={{ flex: 1 }}>
                     <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--color-ink)" }}>
                       {member.name}

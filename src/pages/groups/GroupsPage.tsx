@@ -20,8 +20,13 @@ import {
 } from "@mui/material";
 
 import { useAppState } from "../../app/AppStateContext";
-import { createGroup } from "../../shared/api/backend";
+import { createGroup, resolveAvatarUrl } from "../../shared/api/backend";
 import { formatCount, formatMoney } from "../../shared/lib/format";
+import { AvatarUploader } from "../../widgets/avatar/AvatarUploader";
+
+const noop = async () => {
+  void 0;
+};
 
 const microLabelSx = {
   fontFamily: "var(--font-mono)",
@@ -204,20 +209,15 @@ export function GroupsPage() {
                     }}
                   >
                     <Box sx={{ display: "flex", gap: 1.5, alignItems: "flex-start", flex: 1, minWidth: 0 }}>
-                      <Box
-                        sx={{
-                          width: 44,
-                          height: 44,
-                          borderRadius: "var(--radius-sm)",
-                          bgcolor: "var(--color-accent-soft-bg)",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          flexShrink: 0,
-                        }}
-                      >
-                        <Users size={20} strokeWidth={2} color="var(--color-accent-soft-ink)" />
-                      </Box>
+                      <AvatarUploader
+                        src={resolveAvatarUrl(backendUrl, group.avatarUrl)}
+                        token={session?.accessToken}
+                        fallback={<Users size={20} strokeWidth={2} />}
+                        size={44}
+                        shape="rounded"
+                        onUpload={noop}
+                        onRemove={noop}
+                      />
                       <Box sx={{ flex: 1, minWidth: 0 }}>
                         <Typography
                           variant="subtitle1"

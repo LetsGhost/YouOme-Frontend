@@ -13,6 +13,7 @@ export type CurrentUser = {
   email: string;
   name: string;
   role: string;
+  avatarUrl?: string | null;
 };
 
 export type GroupMember = {
@@ -20,6 +21,7 @@ export type GroupMember = {
   name: string;
   email?: string;
   avatar?: string;
+  avatarUrl?: string | null;
   role?: string;
 };
 
@@ -56,6 +58,7 @@ export type GroupDebtParticipant = {
   userId: string;
   name: string;
   email?: string;
+  avatarUrl?: string | null;
   shareAmount: number;
   status: "pending" | "payment-submitted" | "payment-confirmed" | string;
   submissionCount: number;
@@ -110,6 +113,7 @@ export type Group = {
   balance?: number | string;
   expenses?: GroupExpense[];
   debtHistory?: DebtHistoryEntry[];
+  avatarUrl?: string | null;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -157,6 +161,7 @@ export type FriendSummary = {
   name: string;
   email: string;
   blocked: boolean;
+  avatarUrl?: string | null;
 };
 
 export type FriendInvite = {
@@ -548,6 +553,52 @@ export async function deleteGroup(backendUrl: string, groupId: string, token?: s
   });
 }
 
+export async function uploadUserAvatar(backendUrl: string, file: File, token?: string) {
+  const formData = new FormData();
+  formData.append("avatar", file);
+
+  return fetchJson<CurrentUser>(`${backendUrl}/api/users/me/avatar`, {
+    method: "POST",
+    body: formData,
+    token,
+  });
+}
+
+export async function deleteUserAvatar(backendUrl: string, token?: string) {
+  return fetchJson<CurrentUser>(`${backendUrl}/api/users/me/avatar`, {
+    method: "DELETE",
+    token,
+  });
+}
+
+export async function uploadGroupAvatar(backendUrl: string, groupId: string, file: File, token?: string) {
+  const formData = new FormData();
+  formData.append("avatar", file);
+
+  return fetchJson<Group>(`${backendUrl}/api/groups/${groupId}/avatar`, {
+    method: "POST",
+    body: formData,
+    token,
+  });
+}
+
+export async function deleteGroupAvatar(backendUrl: string, groupId: string, token?: string) {
+  return fetchJson<Group>(`${backendUrl}/api/groups/${groupId}/avatar`, {
+    method: "DELETE",
+    token,
+  });
+}
+
+// Avatar routes return a relative path (e.g. "/api/users/<id>/avatar") since
+// the backend doesn't know its own public origin. The frontend and backend
+// run on different origins (Vite dev server vs. the API), so that path has
+// to be resolved against backendUrl before it's usable - passing it through
+// as-is silently fetches the frontend's own dev server instead (you'd get
+// index.html back instead of image bytes).
+export function resolveAvatarUrl(backendUrl: string, avatarUrl?: string | null) {
+  return avatarUrl ? `${backendUrl}${avatarUrl}` : null;
+}
+
 export async function createGroupInvite(backendUrl: string, input: CreateGroupInviteInput, token?: string) {
   return fetchJson<GroupInvite>(`${backendUrl}/api/group-invites`, {
     method: "POST",
@@ -725,6 +776,31 @@ export async function fetchJson<T>(url: string, options: ApiRequestOptions = {})
   } finally {
     clearTimeout(timeoutId);
   }
+}
+
+// Avatar routes are authenticated like every other endpoint (Bearer token or
+// the dev X-Dev-User-Id header) - a plain <img src> can't send those headers,
+// so callers fetch the bytes as a Blob and turn them into an object URL
+// (see shared/lib/useAuthenticatedImage.ts).
+export async function fetchImageBlob(url: string, token?: string, signal?: AbortSignal): Promise<Blob> {
+  const headers = new Headers();
+
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  } else {
+    headers.set("X-Dev-User-Id", ensureDevUserId());
+  }
+
+  const response = await fetch(url, { headers, signal });
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      emitSessionExpired();
+    }
+    throw new Error(`Request failed with status ${response.status}`);
+  }
+
+  return response.blob();
 }
 
 function safeParseJson<T>(value: string): T | null {

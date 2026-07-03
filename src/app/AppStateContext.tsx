@@ -70,6 +70,7 @@ type AppStateValue = {
   refreshSession: () => Promise<void>;
   logout: () => Promise<void>;
   deleteCurrentUser: () => Promise<void>;
+  updateCurrentUser: (patch: Partial<CurrentUser>) => void;
   probeDevSession: (token?: string) => Promise<void>;
   reloadHealth: () => Promise<void>;
   reloadGroups: () => Promise<void>;
@@ -324,6 +325,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
   }, [backendUrl, session?.accessToken]);
 
+  const updateCurrentUser = useCallback((patch: Partial<CurrentUser>) => {
+    setCurrentUser((current) => (current ? { ...current, ...patch } : current));
+    setSession((current) => (current ? { ...current, user: { ...current.user, ...patch } } : current));
+  }, []);
+
   const clearSession = useCallback(() => {
     setCurrentUser(null);
     setSession(null);
@@ -351,6 +357,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       refreshSession,
       logout,
       deleteCurrentUser,
+      updateCurrentUser,
       probeDevSession,
       reloadHealth,
       reloadGroups,
@@ -373,6 +380,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       refreshSession,
       logout,
       deleteCurrentUser,
+      updateCurrentUser,
       probeDevSession,
       reloadHealth,
       reloadGroups,

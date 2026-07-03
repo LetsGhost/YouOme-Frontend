@@ -9,7 +9,6 @@ import {
   Chip,
   Divider,
   Alert,
-  Avatar,
   Dialog,
   DialogActions,
   DialogContent,
@@ -28,11 +27,14 @@ import { useAppState } from "../../app/AppStateContext";
 import {
   createGroupInvite,
   deleteGroup,
+  deleteGroupAvatar,
   getGroup,
   getGroupPolicy,
   listFriendSummaries,
   listGroupMembers,
+  resolveAvatarUrl,
   updateGroupPolicy,
+  uploadGroupAvatar,
   type FriendSummary,
   type Group,
   type GroupMember,
@@ -40,6 +42,11 @@ import {
   type GroupPolicyFields,
 } from "../../shared/api/backend";
 import { formatCount } from "../../shared/lib/format";
+import { AvatarUploader } from "../../widgets/avatar/AvatarUploader";
+
+const noop = async () => {
+  void 0;
+};
 
 function resolveFriendKey(friend: FriendSummary) {
   return friend.id || friend.email;
@@ -255,6 +262,30 @@ export function GroupSettingsPage() {
     }
   };
 
+  const handleUploadAvatar = async (file: File) => {
+    if (!id) return;
+
+    try {
+      const updated = await uploadGroupAvatar(backendUrl, id, file, session?.accessToken);
+      setGroup(updated);
+      await reloadGroups();
+    } catch (error) {
+      setNotice({ tone: "error", message: error instanceof Error ? error.message : "Failed to upload group avatar." });
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    if (!id) return;
+
+    try {
+      const updated = await deleteGroupAvatar(backendUrl, id, session?.accessToken);
+      setGroup(updated);
+      await reloadGroups();
+    } catch (error) {
+      setNotice({ tone: "error", message: error instanceof Error ? error.message : "Failed to remove group avatar." });
+    }
+  };
+
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 2, pb: 2, borderBottom: "1px solid var(--color-border)" }}>
@@ -262,6 +293,16 @@ export function GroupSettingsPage() {
           <IconButton onClick={() => navigate(`/groups/${id}`)} sx={{ color: "var(--color-muted)", "&:hover": { color: "var(--color-ink)" } }}>
             <ChevronLeft size={22} strokeWidth={2} />
           </IconButton>
+          <AvatarUploader
+            src={resolveAvatarUrl(backendUrl, group?.avatarUrl)}
+            token={session?.accessToken}
+            fallback={<Users size={24} strokeWidth={2} />}
+            size={56}
+            shape="rounded"
+            editable={isOwnerOrAdmin}
+            onUpload={handleUploadAvatar}
+            onRemove={handleRemoveAvatar}
+          />
           <Box sx={{ minWidth: 0 }}>
             <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: -0.4, color: "var(--color-ink)" }}>
               Group settings
@@ -343,9 +384,14 @@ export function GroupSettingsPage() {
                         border: "1px solid var(--color-border)",
                       }}
                     >
-                      <Avatar sx={{ bgcolor: "var(--color-accent-soft-bg)", color: "var(--color-accent-soft-ink)", fontWeight: 700 }}>
-                        {friend.name?.[0] || friend.email?.[0] || "?"}
-                      </Avatar>
+                      <AvatarUploader
+                        src={resolveAvatarUrl(backendUrl, friend.avatarUrl)}
+                        token={session?.accessToken}
+                        fallback={friend.name?.[0] || friend.email?.[0] || "?"}
+                        size={40}
+                        onUpload={noop}
+                        onRemove={noop}
+                      />
 
                       <Box sx={{ minWidth: 0, flex: 1 }}>
                         <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "var(--color-ink)" }} noWrap>
@@ -430,9 +476,14 @@ export function GroupSettingsPage() {
                       border: "1px solid var(--color-border)",
                     }}
                   >
-                    <Avatar sx={{ width: 36, height: 36, bgcolor: "var(--color-accent-soft-bg)", color: "var(--color-accent-soft-ink)", fontWeight: 700 }}>
-                      {member.avatar || member.name?.[0] || "?"}
-                    </Avatar>
+                    <AvatarUploader
+                      src={resolveAvatarUrl(backendUrl, member.avatarUrl)}
+                      token={session?.accessToken}
+                      fallback={member.avatar || member.name?.[0] || "?"}
+                      size={36}
+                      onUpload={noop}
+                      onRemove={noop}
+                    />
                     <Box sx={{ minWidth: 0, flex: 1 }}>
                       <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--color-ink)" }} noWrap>
                         {member.name}

@@ -6,7 +6,6 @@ import {
   CardContent,
   TextField,
   Typography,
-  Avatar,
   IconButton,
   InputAdornment,
   Button,
@@ -20,12 +19,18 @@ import {
   listFriendSummaries,
   listNotifications,
   markNotificationRead,
+  resolveAvatarUrl,
   respondToFriendInvite,
   sendFriendInvite,
   type FriendSummary,
   type NotificationRecord,
 } from "../../shared/api/backend";
 import { formatTimestamp } from "../../shared/lib/format";
+import { AvatarUploader } from "../../widgets/avatar/AvatarUploader";
+
+const noop = async () => {
+  void 0;
+};
 
 function readString(value: unknown) {
   return typeof value === "string" ? value : "";
@@ -103,6 +108,7 @@ export function FriendsPage() {
           inviteId: readString(payload.inviteId),
           fromUserName: readString(payload.fromUserName) || readString(payload.fromUserEmail) || "Someone",
           fromUserEmail: readString(payload.fromUserEmail),
+          fromUserAvatarUrl: readString(payload.fromUserAvatarUrl),
           createdAt: notification.createdAt || notification.updatedAt || "",
           readAt: notification.readAt,
         };
@@ -349,17 +355,14 @@ export function FriendsPage() {
                     <CardContent sx={{ p: 2 }}>
                       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2 }}>
                         <Box sx={{ display: "flex", gap: 2, alignItems: "center", flex: 1, minWidth: 0 }}>
-                          <Avatar
-                            sx={{
-                              width: 48,
-                              height: 48,
-                              bgcolor: "var(--color-accent)",
-                              color: "var(--color-accent-contrast)",
-                              fontWeight: 800,
-                            }}
-                          >
-                            {friend.name?.[0] || friend.email?.[0] || "?"}
-                          </Avatar>
+                          <AvatarUploader
+                            src={resolveAvatarUrl(backendUrl, friend.avatarUrl)}
+                            token={session?.accessToken}
+                            fallback={friend.name?.[0] || friend.email?.[0] || "?"}
+                            size={48}
+                            onUpload={noop}
+                            onRemove={noop}
+                          />
 
                           <Box sx={{ minWidth: 0 }}>
                             <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "var(--color-ink)" }} noWrap>
@@ -455,17 +458,14 @@ export function FriendsPage() {
                     <CardContent sx={{ p: 2, display: "grid", gap: 1.5 }}>
                       <Box sx={{ display: "flex", justifyContent: "space-between", gap: 2, alignItems: "flex-start" }}>
                         <Box sx={{ display: "flex", gap: 1.5, alignItems: "center", minWidth: 0 }}>
-                          <Avatar
-                            sx={{
-                              width: 40,
-                              height: 40,
-                              bgcolor: "var(--color-accent)",
-                              color: "var(--color-accent-contrast)",
-                              fontWeight: 800,
-                            }}
-                          >
-                            {invite.fromUserName?.[0] || "?"}
-                          </Avatar>
+                          <AvatarUploader
+                            src={resolveAvatarUrl(backendUrl, invite.fromUserAvatarUrl)}
+                            token={session?.accessToken}
+                            fallback={invite.fromUserName?.[0] || "?"}
+                            size={40}
+                            onUpload={noop}
+                            onRemove={noop}
+                          />
                           <Box sx={{ minWidth: 0 }}>
                             <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "var(--color-ink)" }} noWrap>
                               {invite.fromUserName}
