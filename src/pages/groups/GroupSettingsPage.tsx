@@ -1,13 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import SearchIcon from "@mui/icons-material/Search";
-import PersonAddIcon from "@mui/icons-material/PersonAdd";
-import GroupsIcon from "@mui/icons-material/Groups";
-import SettingsIcon from "@mui/icons-material/Settings";
-import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
-import DeleteIcon from "@mui/icons-material/Delete";
-import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import { ChevronLeft, Search, UserPlus, Users, Settings, ShieldCheck, Trash2, TriangleAlert } from "lucide-react";
 import {
   Box,
   Button,
@@ -264,16 +257,16 @@ export function GroupSettingsPage() {
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 2 }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <IconButton onClick={() => navigate(`/groups/${id}`)} sx={{ color: "text.secondary" }}>
-            <ArrowBackIcon />
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 2, pb: 2, borderBottom: "1px solid var(--color-border)" }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          <IconButton onClick={() => navigate(`/groups/${id}`)} sx={{ color: "var(--color-muted)", "&:hover": { color: "var(--color-ink)" } }}>
+            <ChevronLeft size={22} strokeWidth={2} />
           </IconButton>
           <Box>
-            <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: -0.4 }}>
+            <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: -0.4, color: "var(--color-ink)" }}>
               Group settings
             </Typography>
-            <Typography variant="body2" sx={{ color: "text.secondary" }}>
+            <Typography variant="body2" sx={{ color: "var(--color-muted)" }}>
               Invite friends, review the member list, and manage access for this group.
             </Typography>
           </Box>
@@ -281,9 +274,15 @@ export function GroupSettingsPage() {
 
         <Button
           variant="outlined"
-          startIcon={<SettingsIcon />}
+          startIcon={<Settings size={16} strokeWidth={2} />}
           onClick={() => navigate(`/groups/${id}`)}
-          sx={{ textTransform: "none", fontWeight: 700, whiteSpace: "nowrap" }}
+          sx={{
+            textTransform: "none",
+            fontWeight: 700,
+            whiteSpace: "nowrap",
+            borderColor: "var(--color-border)",
+            color: "var(--color-ink)",
+          }}
         >
           Back to group
         </Button>
@@ -292,13 +291,13 @@ export function GroupSettingsPage() {
       {errorMessage && <Alert severity="warning">{errorMessage}</Alert>}
 
       <Box sx={{ display: "grid", gap: 2, gridTemplateColumns: { xs: "1fr", md: "1.2fr 0.8fr" } }}>
-        <Card sx={{ borderRadius: 3 }}>
+        <Card sx={{ borderRadius: "var(--radius-md)" }}>
           <CardContent sx={{ display: "grid", gap: 2 }}>
             <Box sx={{ display: "grid", gap: 0.5 }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "var(--color-ink)" }}>
                 Invite friends
               </Typography>
-              <Typography variant="body2" sx={{ color: "text.secondary" }}>
+              <Typography variant="body2" sx={{ color: "var(--color-muted)" }}>
                 Pick a friend from your list and send them a group invite.
               </Typography>
             </Box>
@@ -313,14 +312,14 @@ export function GroupSettingsPage() {
                 input: {
                   startAdornment: (
                     <InputAdornment position="start">
-                      <SearchIcon fontSize="small" />
+                      <Search size={16} strokeWidth={2} color="var(--color-muted)" />
                     </InputAdornment>
                   ),
                 },
               }}
             />
 
-            <Divider />
+            <Divider sx={{ borderColor: "var(--color-border)" }} />
 
             {isLoading ? (
               <Box sx={{ display: "grid", gap: 1.5 }}>
@@ -341,30 +340,40 @@ export function GroupSettingsPage() {
                         alignItems: "center",
                         gap: 2,
                         p: 1.5,
-                        borderRadius: 2,
-                        bgcolor: "#f8fafc",
-                        border: "1px solid #e2e8f0",
+                        borderRadius: "var(--radius-md)",
+                        bgcolor: "var(--color-surface-2)",
+                        border: "1px solid var(--color-border)",
                       }}
                     >
-                      <Avatar sx={{ bgcolor: "#4f46e5", color: "white", fontWeight: 700 }}>
+                      <Avatar sx={{ bgcolor: "var(--color-accent-soft-bg)", color: "var(--color-accent-soft-ink)", fontWeight: 700 }}>
                         {friend.name?.[0] || friend.email?.[0] || "?"}
                       </Avatar>
 
                       <Box sx={{ minWidth: 0, flex: 1 }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 700 }} noWrap>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "var(--color-ink)" }} noWrap>
                           {friend.name}
                         </Typography>
-                        <Typography variant="body2" sx={{ color: "text.secondary" }} noWrap>
+                        <Typography variant="body2" sx={{ color: "var(--color-muted)" }} noWrap>
                           {friend.email}
                         </Typography>
                       </Box>
 
                       <Button
-                        variant="contained"
-                        startIcon={<PersonAddIcon />}
+                        startIcon={<UserPlus size={16} strokeWidth={2} />}
                         onClick={() => void handleInviteFriend(friend)}
                         disabled={isSaving || isSent || friend.blocked}
-                        sx={{ textTransform: "none", fontWeight: 700, whiteSpace: "nowrap" }}
+                        sx={{
+                          textTransform: "none",
+                          fontWeight: 700,
+                          whiteSpace: "nowrap",
+                          bgcolor: "var(--color-accent)",
+                          color: "var(--color-accent-contrast)",
+                          "&:hover": { bgcolor: "var(--color-accent)", filter: "brightness(0.92)" },
+                          "&.Mui-disabled": {
+                            bgcolor: "var(--color-surface-3)",
+                            color: "var(--color-muted)",
+                          },
+                        }}
                       >
                         {isSent ? "Invited" : friend.blocked ? "Blocked" : "Invite"}
                       </Button>
@@ -374,11 +383,11 @@ export function GroupSettingsPage() {
               </Box>
             ) : (
               <Box sx={{ textAlign: "center", py: 4 }}>
-                <PersonAddIcon sx={{ fontSize: 56, color: "text.disabled", mb: 1 }} />
-                <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 0.5 }}>
+                <UserPlus size={48} strokeWidth={1.8} color="var(--color-muted-3)" style={{ marginBottom: 8 }} />
+                <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 0.5, color: "var(--color-ink)" }}>
                   No friends available
                 </Typography>
-                <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                <Typography variant="body2" sx={{ color: "var(--color-muted)" }}>
                   Add friends first, then invite them into the group from here.
                 </Typography>
               </Box>
@@ -386,21 +395,21 @@ export function GroupSettingsPage() {
           </CardContent>
         </Card>
 
-        <Card sx={{ borderRadius: 3 }}>
+        <Card sx={{ borderRadius: "var(--radius-md)" }}>
           <CardContent sx={{ display: "grid", gap: 2 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <GroupsIcon sx={{ color: "#4f46e5" }} />
+              <Users size={18} strokeWidth={2} color="var(--color-accent)" />
               <Box>
-                <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "var(--color-ink)" }}>
                   Current members
                 </Typography>
-                <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                <Typography variant="body2" sx={{ color: "var(--color-muted)" }}>
                   {formatCount(members.length)} member{members.length === 1 ? "" : "s"}
                 </Typography>
               </Box>
             </Box>
 
-            <Divider />
+            <Divider sx={{ borderColor: "var(--color-border)" }} />
 
             {isLoading ? (
               <Box sx={{ display: "grid", gap: 1.5 }}>
@@ -418,30 +427,34 @@ export function GroupSettingsPage() {
                       alignItems: "center",
                       gap: 1.5,
                       p: 1.25,
-                      borderRadius: 2,
-                      bgcolor: "#f8fafc",
-                      border: "1px solid #e2e8f0",
+                      borderRadius: "var(--radius-md)",
+                      bgcolor: "var(--color-surface-2)",
+                      border: "1px solid var(--color-border)",
                     }}
                   >
-                    <Avatar sx={{ width: 36, height: 36, bgcolor: "#e0e7ff", color: "#4f46e5", fontWeight: 700 }}>
+                    <Avatar sx={{ width: 36, height: 36, bgcolor: "var(--color-accent-soft-bg)", color: "var(--color-accent-soft-ink)", fontWeight: 700 }}>
                       {member.avatar || member.name?.[0] || "?"}
                     </Avatar>
                     <Box sx={{ minWidth: 0, flex: 1 }}>
-                      <Typography variant="body2" sx={{ fontWeight: 700 }} noWrap>
+                      <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--color-ink)" }} noWrap>
                         {member.name}
                       </Typography>
-                      <Typography variant="caption" sx={{ color: "text.secondary" }} noWrap>
+                      <Typography variant="caption" sx={{ color: "var(--color-muted)" }} noWrap>
                         {member.email || "No email available"}
                       </Typography>
                     </Box>
                     {(member.id === currentUser?.id || member.email === currentUser?.email) && (
-                      <Chip label="You" size="small" sx={{ bgcolor: "#e0e7ff", color: "#4f46e5" }} />
+                      <Chip
+                        label="You"
+                        size="small"
+                        sx={{ bgcolor: "var(--color-accent-soft-bg)", color: "var(--color-accent-soft-ink)" }}
+                      />
                     )}
                   </Box>
                 ))}
               </Box>
             ) : (
-              <Typography variant="body2" sx={{ color: "text.secondary", textAlign: "center", py: 2 }}>
+              <Typography variant="body2" sx={{ color: "var(--color-muted)", textAlign: "center", py: 2 }}>
                 No members found in this group.
               </Typography>
             )}
@@ -450,21 +463,21 @@ export function GroupSettingsPage() {
       </Box>
 
       {isOwnerOrAdmin && (
-        <Card sx={{ borderRadius: 3 }}>
+        <Card sx={{ borderRadius: "var(--radius-md)" }}>
           <CardContent sx={{ display: "grid", gap: 2 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <AdminPanelSettingsIcon sx={{ color: "#4f46e5" }} />
+              <ShieldCheck size={18} strokeWidth={2} color="var(--color-accent)" />
               <Box>
-                <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "var(--color-ink)" }}>
                   Group policy
                 </Typography>
-                <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                <Typography variant="body2" sx={{ color: "var(--color-muted)" }}>
                   Owner/admin-only rules that govern how this group behaves.
                 </Typography>
               </Box>
             </Box>
 
-            <Divider />
+            <Divider sx={{ borderColor: "var(--color-border)" }} />
 
             {policyError && <Alert severity="warning">{policyError}</Alert>}
 
@@ -548,10 +561,15 @@ export function GroupSettingsPage() {
 
                 <Box>
                   <Button
-                    variant="contained"
                     onClick={() => void handleSavePolicy()}
                     disabled={isPolicySaving}
-                    sx={{ textTransform: "none", fontWeight: 700 }}
+                    sx={{
+                      textTransform: "none",
+                      fontWeight: 700,
+                      bgcolor: "var(--color-accent)",
+                      color: "var(--color-accent-contrast)",
+                      "&:hover": { bgcolor: "var(--color-accent)", filter: "brightness(0.92)" },
+                    }}
                   >
                     {isPolicySaving ? "Saving..." : "Save policy"}
                   </Button>
@@ -563,32 +581,37 @@ export function GroupSettingsPage() {
       )}
 
       {isOwner && (
-        <Card sx={{ borderRadius: 3, border: "1px solid #fecaca" }}>
+        <Card sx={{ borderRadius: "var(--radius-md)", border: "1px solid var(--color-danger-border)", bgcolor: "var(--color-danger-soft-bg)" }}>
           <CardContent sx={{ display: "grid", gap: 2 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <WarningAmberIcon sx={{ color: "#dc2626" }} />
+              <TriangleAlert size={18} strokeWidth={2} color="var(--color-danger)" />
               <Box>
-                <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "var(--color-danger)" }}>
                   Danger zone
                 </Typography>
-                <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                <Typography variant="body2" sx={{ color: "var(--color-muted)" }}>
                   Deleting this group permanently removes it, its members, and its policy for everyone.
                 </Typography>
               </Box>
             </Box>
 
-            <Divider />
+            <Divider sx={{ borderColor: "var(--color-danger-border)" }} />
 
             <Box>
               <Button
                 variant="outlined"
-                color="error"
-                startIcon={<DeleteIcon />}
+                startIcon={<Trash2 size={16} strokeWidth={2} />}
                 onClick={() => {
                   setDeleteError(null);
                   setIsDeleteDialogOpen(true);
                 }}
-                sx={{ textTransform: "none", fontWeight: 700 }}
+                sx={{
+                  textTransform: "none",
+                  fontWeight: 700,
+                  color: "var(--color-danger)",
+                  borderColor: "var(--color-danger-border)",
+                  "&:hover": { borderColor: "var(--color-danger)", bgcolor: "var(--color-danger-soft-bg)" },
+                }}
               >
                 Delete group
               </Button>
@@ -597,10 +620,14 @@ export function GroupSettingsPage() {
         </Card>
       )}
 
-      <Dialog open={isDeleteDialogOpen} onClose={() => (isDeleting ? undefined : setIsDeleteDialogOpen(false))}>
-        <DialogTitle sx={{ fontWeight: 800 }}>Delete {group?.name ?? "this group"}?</DialogTitle>
+      <Dialog
+        open={isDeleteDialogOpen}
+        onClose={() => (isDeleting ? undefined : setIsDeleteDialogOpen(false))}
+        slotProps={{ paper: { sx: { borderRadius: "var(--radius-lg)", border: "1px solid var(--color-border)" } } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, color: "var(--color-ink)" }}>Delete {group?.name ?? "this group"}?</DialogTitle>
         <DialogContent>
-          <DialogContentText>
+          <DialogContentText sx={{ color: "var(--color-muted)" }}>
             This action can't be undone. All members will lose access, and the group's data will be permanently
             removed.
           </DialogContentText>
@@ -614,16 +641,20 @@ export function GroupSettingsPage() {
           <Button
             onClick={() => setIsDeleteDialogOpen(false)}
             disabled={isDeleting}
-            sx={{ textTransform: "none", fontWeight: 700 }}
+            sx={{ textTransform: "none", fontWeight: 700, color: "var(--color-ink)" }}
           >
             Cancel
           </Button>
           <Button
-            variant="contained"
-            color="error"
             onClick={() => void handleDeleteGroup()}
             disabled={isDeleting}
-            sx={{ textTransform: "none", fontWeight: 700 }}
+            sx={{
+              textTransform: "none",
+              fontWeight: 700,
+              bgcolor: "var(--color-danger)",
+              color: "var(--color-accent-contrast)",
+              "&:hover": { bgcolor: "var(--color-danger)", filter: "brightness(0.92)" },
+            }}
           >
             {isDeleting ? "Deleting..." : "Delete group"}
           </Button>

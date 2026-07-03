@@ -1,24 +1,13 @@
-import NotificationsIcon from "@mui/icons-material/Notifications";
-import DeleteIcon from "@mui/icons-material/Delete";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import WarningIcon from "@mui/icons-material/Warning";
-import PeopleIcon from "@mui/icons-material/People";
-import PersonAddIcon from "@mui/icons-material/PersonAdd";
+import { Bell, Trash2, CheckCircle2, AlertTriangle, Users, UserPlus, Archive } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
-  Card,
-  CardContent,
-  Chip,
   Typography,
   IconButton,
-  Avatar,
   Button,
   Alert,
-  Divider,
   Skeleton,
-  Paper,
   Tooltip,
   CircularProgress,
 } from "@mui/material";
@@ -32,7 +21,6 @@ import {
   markNotificationRead,
   respondToGroupInvite,
   respondToFriendInvite,
-  type NotificationRecord,
 } from "../../shared/api/backend";
 import { formatTimestamp } from "../../shared/lib/format";
 
@@ -42,7 +30,7 @@ type NotificationItem = {
   message: string;
   time: string;
   read: boolean;
-  icon: typeof PeopleIcon;
+  icon: typeof Users;
   actionType?: "friend-request" | "group-invite";
   inviteId?: string;
   fromUserName?: string;
@@ -65,6 +53,14 @@ function formatNotificationTime(value: string) {
 
   return formatTimestamp(value);
 }
+
+const microLabelSx = {
+  fontFamily: "var(--font-mono)",
+  textTransform: "uppercase",
+  letterSpacing: "0.06em",
+  fontSize: "10.5px",
+  color: "var(--color-muted)",
+} as const;
 
 export function NotificationsPage() {
   const navigate = useNavigate();
@@ -130,7 +126,7 @@ export function NotificationsPage() {
                             : `Notification type: ${notification.type}`,
             time: notification.createdAt || notification.updatedAt || "Recently",
             read: Boolean(notification.readAt),
-            icon: isFriendRequest || isGroupInvite || notification.type === "group.created" ? PeopleIcon : isPaymentEvent ? CheckCircleIcon : WarningIcon,
+            icon: isFriendRequest || isGroupInvite || notification.type === "group.created" ? Users : isPaymentEvent ? CheckCircle2 : AlertTriangle,
             actionType: isFriendRequest ? "friend-request" : isGroupInvite ? "group-invite" : undefined,
             inviteId: isFriendRequest || isGroupInvite ? inviteId : undefined,
             groupId: isGroupInvite || isPaymentEvent ? readString(payload.groupId) : undefined,
@@ -275,258 +271,254 @@ export function NotificationsPage() {
 
   const sectionSummary = useMemo(
     () => [
-      { label: "Total", value: totalCount, tone: "#1d4ed8" },
-      { label: "Unread", value: unreadCount, tone: "#7c3aed" },
-      { label: "Seen", value: readCount, tone: "#0f766e" },
+      { label: "Total", value: totalCount, tone: "neutral" as const },
+      { label: "Unread", value: unreadCount, tone: "warning" as const },
+      { label: "Seen", value: readCount, tone: "neutral" as const },
     ],
     [readCount, totalCount, unreadCount]
   );
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 3, position: "relative" }}>
-      {errorMessage && <Alert severity="warning">{errorMessage}</Alert>}
-
-      <Paper
-        elevation={0}
+    <Box
+      sx={{
+        width: "100%",
+        maxWidth: "1080px",
+        mx: "auto",
+        borderRadius: "var(--radius-lg)",
+        border: "1px solid var(--color-border)",
+        bgcolor: "var(--color-surface)",
+        boxShadow: "var(--shadow-md)",
+        overflow: "hidden",
+      }}
+    >
+      {/* Header */}
+      <Box
         sx={{
-          position: "relative",
-          overflow: "hidden",
-          borderRadius: 4,
-          px: { xs: 2.5, md: 3.5 },
-          py: { xs: 2.5, md: 3.5 },
-          color: "#f8fafc",
-          background: "linear-gradient(135deg, #0f172a 0%, #1d4ed8 55%, #7c3aed 100%)",
-          border: "1px solid rgba(255,255,255,0.08)",
+          p: { xs: 2.5, md: 3.5 },
+          borderBottom: "1px solid var(--color-border)",
         }}
       >
-        <Box
-          sx={{
-            position: "absolute",
-            inset: 0,
-            background:
-              "radial-gradient(circle at top right, rgba(255,255,255,0.22), transparent 34%), radial-gradient(circle at bottom left, rgba(255,255,255,0.12), transparent 28%)",
-            pointerEvents: "none",
-          }}
-        />
+        {errorMessage && (
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            {errorMessage}
+          </Alert>
+        )}
 
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2.5 }}>
+          <Box
+            sx={{
+              width: 44,
+              height: 44,
+              flexShrink: 0,
+              borderRadius: "var(--radius-sm)",
+              display: "grid",
+              placeItems: "center",
+              bgcolor: "var(--color-accent-soft-bg)",
+              color: "var(--color-accent-soft-ink)",
+            }}
+          >
+            <Bell size={22} strokeWidth={2} />
+          </Box>
+          <Box>
+            <Typography sx={{ ...microLabelSx, mb: 0.25 }}>Activity stream</Typography>
+            <Typography sx={{ fontWeight: 700, fontSize: { xs: "1.3rem", md: "1.5rem" }, color: "var(--color-ink)" }}>
+              Notifications
+            </Typography>
+          </Box>
+        </Box>
+
+        {/* Stat row */}
         <Box
           sx={{
-            position: "relative",
-            zIndex: 1,
-            display: "flex",
-            flexDirection: { xs: "column", md: "row" },
-            gap: 3,
-            alignItems: { xs: "flex-start", md: "center" },
-            justifyContent: "space-between",
+            display: "grid",
+            gap: 1.5,
+            gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+            mb: 2.5,
           }}
         >
-          <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-            <Box
-              sx={{
-                width: 56,
-                height: 56,
-                borderRadius: 3,
-                display: "grid",
-                placeItems: "center",
-                background: "rgba(255,255,255,0.16)",
-                border: "1px solid rgba(255,255,255,0.18)",
-                backdropFilter: "blur(10px)",
-              }}
-            >
-              <NotificationsIcon sx={{ fontSize: 30, color: "#fff" }} />
-            </Box>
-            <Box>
-              <Typography variant="overline" sx={{ letterSpacing: 1.6, opacity: 0.75 }}>
-                Activity stream
-              </Typography>
-              <Typography variant="h4" sx={{ fontWeight: 800, lineHeight: 1.1 }}>
-                Notifications
-              </Typography>
-              <Typography variant="body2" sx={{ mt: 0.75, maxWidth: 560, color: "rgba(255,255,255,0.82)" }}>
-                Keep tabs on invites, expenses, and updates. Mark items as seen, open actions, or clear the feed when you are done.
-              </Typography>
-            </Box>
-          </Box>
-
-          <Box sx={{ position: "relative", zIndex: 1, display: "flex", gap: 1.5, flexDirection: { xs: "column", sm: "row" } }}>
-            <Button
-              variant="contained"
-              onClick={() => void handleMarkAllAsRead()}
-              disabled={!session?.accessToken || unreadCount === 0 || isBulkActionPending}
-              sx={{
-                bgcolor: "rgba(255,255,255,0.96)",
-                color: "#1d4ed8",
-                textTransform: "none",
-                fontWeight: 700,
-                px: 2,
-                minWidth: 150,
-                "&:hover": { bgcolor: "#fff" },
-              }}
-            >
-              {isBulkActionPending && unreadCount > 0 ? "Marking..." : "Mark all as seen"}
-            </Button>
-            <Button
-              variant="outlined"
-              onClick={() => void handleClearAll()}
-              disabled={!session?.accessToken || totalCount === 0 || isBulkActionPending}
-              sx={{
-                borderColor: "rgba(255,255,255,0.3)",
-                color: "#fff",
-                textTransform: "none",
-                fontWeight: 700,
-                px: 2,
-                minWidth: 126,
-                "&:hover": {
-                  borderColor: "rgba(255,255,255,0.55)",
-                  backgroundColor: "rgba(255,255,255,0.08)",
-                },
-              }}
-            >
-              Clear all
-            </Button>
-          </Box>
+          {sectionSummary.map((item) => {
+            const isWarning = item.tone === "warning";
+            return (
+              <Box
+                key={item.label}
+                sx={{
+                  borderRadius: "var(--radius-sm)",
+                  border: `1px solid ${isWarning ? "var(--color-warning-border)" : "var(--color-border)"}`,
+                  bgcolor: isWarning ? "var(--color-warning-soft-bg)" : "transparent",
+                  p: { xs: 1.5, md: 2 },
+                }}
+              >
+                <Typography sx={{ ...microLabelSx, color: isWarning ? "var(--color-warning)" : "var(--color-muted)", mb: 0.5 }}>
+                  {item.label}
+                </Typography>
+                <Typography
+                  sx={{
+                    fontFamily: "var(--font-mono)",
+                    fontWeight: 700,
+                    fontSize: { xs: "1.1rem", md: "1.3rem" },
+                    color: isWarning ? "var(--color-warning)" : "var(--color-ink)",
+                  }}
+                >
+                  {item.value}
+                </Typography>
+              </Box>
+            );
+          })}
         </Box>
 
-        <Box sx={{ position: "relative", zIndex: 1, mt: 3, display: "flex", gap: 1.5, flexDirection: { xs: "column", sm: "row" } }}>
-          {sectionSummary.map((item) => (
-            <Box
-              key={item.label}
-              sx={{
-                flex: 1,
-                p: 2,
-                borderRadius: 3,
-                background: "rgba(255,255,255,0.12)",
-                border: "1px solid rgba(255,255,255,0.14)",
-                backdropFilter: "blur(10px)",
-              }}
-            >
-              <Typography variant="caption" sx={{ display: "block", color: "rgba(255,255,255,0.72)" }}>
-                {item.label}
-              </Typography>
-              <Typography variant="h5" sx={{ fontWeight: 800, color: item.tone }}>
-                {item.value}
-              </Typography>
-            </Box>
-          ))}
+        {/* Actions */}
+        <Box sx={{ display: "flex", gap: 1.5, flexDirection: { xs: "column", sm: "row" } }}>
+          <Button
+            variant="contained"
+            onClick={() => void handleMarkAllAsRead()}
+            disabled={!session?.accessToken || unreadCount === 0 || isBulkActionPending}
+            startIcon={isBulkActionPending && unreadCount > 0 ? undefined : <CheckCircle2 size={16} strokeWidth={2.2} />}
+            sx={{
+              bgcolor: "var(--color-accent)",
+              color: "var(--color-accent-contrast)",
+              textTransform: "none",
+              fontWeight: 700,
+              borderRadius: "var(--radius-sm)",
+              px: 2,
+              boxShadow: "none",
+              "&:hover": { bgcolor: "var(--color-accent)", boxShadow: "none", opacity: 0.9 },
+              "&.Mui-disabled": { opacity: 0.5, color: "var(--color-accent-contrast)" },
+            }}
+          >
+            {isBulkActionPending && unreadCount > 0 ? "Marking..." : "Mark all seen"}
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={() => void handleClearAll()}
+            disabled={!session?.accessToken || totalCount === 0 || isBulkActionPending}
+            startIcon={<Trash2 size={16} strokeWidth={2.2} />}
+            sx={{
+              borderColor: "var(--color-danger-border)",
+              color: "var(--color-danger)",
+              textTransform: "none",
+              fontWeight: 700,
+              borderRadius: "var(--radius-sm)",
+              px: 2,
+              "&:hover": {
+                borderColor: "var(--color-danger)",
+                backgroundColor: "var(--color-danger-soft-bg)",
+              },
+              "&.Mui-disabled": { opacity: 0.5 },
+            }}
+          >
+            Clear all
+          </Button>
         </Box>
-      </Paper>
-
-      <Divider sx={{ opacity: 0.45 }} />
+      </Box>
 
       {/* Notifications List */}
-      {isLoading ? (
-        <Box sx={{ display: "grid", gap: 1.5 }}>
-          {Array.from({ length: 3 }).map((_, index) => (
-            <Card key={index} sx={{ borderRadius: 3, border: "1px solid", borderColor: "divider" }}>
-              <CardContent sx={{ p: 2.25 }}>
+      <Box sx={{ p: { xs: 1.5, md: 2 } }}>
+        {isLoading ? (
+          <Box sx={{ display: "grid", gap: 1 }}>
+            {Array.from({ length: 3 }).map((_, index) => (
+              <Box
+                key={index}
+                sx={{ borderRadius: "var(--radius-md)", border: "1px solid var(--color-border)", p: 2 }}
+              >
                 <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-                  <Skeleton variant="circular" width={40} height={40} />
+                  <Skeleton variant="circular" width={36} height={36} />
                   <Box sx={{ flex: 1 }}>
                     <Skeleton width="58%" />
                     <Skeleton width="34%" />
                   </Box>
                 </Box>
-              </CardContent>
-            </Card>
-          ))}
-        </Box>
-      ) : notifications.length > 0 ? (
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-          {notifications.map((notification) => {
-            const Icon = notification.icon;
-            return (
-              <Card
-                key={notification.id}
-                sx={{
-                    borderRadius: 3,
-                    position: "relative",
-                    overflow: "hidden",
-                    bgcolor: notification.read ? "#ffffff" : "#f8fbff",
-                    border: "1px solid",
-                    borderColor: notification.read ? "#e5e7eb" : "#c7d2fe",
-                    boxShadow: notification.read ? "0 8px 24px rgba(15, 23, 42, 0.04)" : "0 16px 34px rgba(79, 70, 229, 0.12)",
-                    transition: "transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease",
-                    "&:hover": {
-                      transform: "translateY(-1px)",
-                      boxShadow: notification.read ? "0 10px 28px rgba(15, 23, 42, 0.06)" : "0 18px 38px rgba(79, 70, 229, 0.16)",
-                    },
-                }}
-              >
-                  <Box
-                    sx={{
-                      position: "absolute",
-                      left: 0,
-                      top: 0,
-                      bottom: 0,
-                      width: 4,
-                      background: notification.read ? "#cbd5e1" : "linear-gradient(180deg, #6366f1 0%, #22c55e 100%)",
-                    }}
-                  />
-                <CardContent sx={{ p: 2 }}>
+              </Box>
+            ))}
+          </Box>
+        ) : notifications.length > 0 ? (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+            {notifications.map((notification) => {
+              const Icon = notification.icon;
+              const isUnread = !notification.read;
+              const chipColor = isUnread
+                ? "var(--color-warning)"
+                : notification.type === "payment"
+                  ? "var(--color-success)"
+                  : "var(--color-accent-soft-ink)";
+              const chipBg = isUnread
+                ? "var(--color-warning-soft-bg)"
+                : notification.type === "payment"
+                  ? "var(--color-success-soft-bg)"
+                  : "var(--color-accent-soft-bg)";
+
+              return (
+                <Box
+                  key={notification.id}
+                  sx={{
+                    borderRadius: "var(--radius-md)",
+                    border: `1px solid ${isUnread ? "var(--color-warning-border)" : "var(--color-border)"}`,
+                    bgcolor: isUnread ? "var(--color-warning-soft-bg)" : "var(--color-surface-2)",
+                    p: { xs: 1.5, md: 2 },
+                  }}
+                >
                   <Box sx={{ display: "flex", justifyContent: "space-between", gap: 2, alignItems: "flex-start" }}>
-                      <Box sx={{ display: "flex", gap: 2, alignItems: "flex-start", flex: 1, minWidth: 0 }}>
-                      <Avatar
+                    <Box sx={{ display: "flex", gap: 1.5, alignItems: "flex-start", flex: 1, minWidth: 0 }}>
+                      <Box
                         sx={{
-                            width: 44,
-                            height: 44,
-                          bgcolor: notification.read ? "#e5e7eb" : "#e0e7ff",
-                            color: notification.read ? "#475569" : "#4338ca",
+                          width: 38,
+                          height: 38,
                           flexShrink: 0,
+                          borderRadius: "var(--radius-sm)",
+                          display: "grid",
+                          placeItems: "center",
+                          bgcolor: chipBg,
+                          color: chipColor,
                         }}
                       >
-                        <Icon />
-                      </Avatar>
+                        <Icon size={18} strokeWidth={2} />
+                      </Box>
 
                       <Box sx={{ flex: 1, minWidth: 0, pt: 0.25 }}>
-                        <Box sx={{ display: "flex", gap: 1, alignItems: "center", mb: 0.75, flexWrap: "wrap" }}>
-                            <Typography
-                              variant="body2"
-                              sx={{
-                                fontWeight: notification.read ? 500 : 700,
-                                color: notification.read ? "text.secondary" : "text.primary",
-                                lineHeight: 1.45,
-                              }}
-                            >
-                              {notification.message}
-                            </Typography>
-                            <Chip
-                              size="small"
-                              label={notification.read ? "Seen" : "New"}
-                              sx={{
-                                height: 22,
-                                fontSize: "0.7rem",
-                                fontWeight: 700,
-                                bgcolor: notification.read ? "#e2e8f0" : "#e0e7ff",
-                                color: notification.read ? "#475569" : "#4338ca",
-                              }}
-                            />
-                          </Box>
-                        <Typography variant="caption" sx={{ color: "text.disabled", display: "block", mt: 0.5 }}>
-                            {formatNotificationTime(notification.time)}
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontWeight: isUnread ? 700 : 500,
+                            color: "var(--color-ink)",
+                            lineHeight: 1.45,
+                          }}
+                        >
+                          {notification.message}
+                        </Typography>
+                        <Typography sx={{ ...microLabelSx, mt: 0.5 }}>
+                          {formatNotificationTime(notification.time)}
                         </Typography>
                       </Box>
                     </Box>
 
-                      <Box sx={{ display: "flex", gap: 0.5, alignItems: "center", flexShrink: 0 }}>
+                    <Box sx={{ display: "flex", gap: 0.5, alignItems: "center", flexShrink: 0 }}>
                       {notification.actionType === "friend-request" && notification.inviteId && (
                         <>
                           <Button
                             size="small"
                             variant="outlined"
-                            startIcon={<PersonAddIcon />}
+                            startIcon={<UserPlus size={14} strokeWidth={2.2} />}
                             onClick={() => void handleFriendAction(notification, true)}
-                              disabled={pendingNotificationId === notification.id}
-                            sx={{ textTransform: "none" }}
+                            disabled={pendingNotificationId === notification.id}
+                            sx={{
+                              textTransform: "none",
+                              borderRadius: "var(--radius-sm)",
+                              borderColor: "var(--color-border-strong)",
+                              color: "var(--color-ink)",
+                            }}
                           >
                             Accept
                           </Button>
                           <Button
                             size="small"
                             variant="outlined"
-                            color="error"
                             onClick={() => void handleFriendAction(notification, false)}
-                              disabled={pendingNotificationId === notification.id}
-                            sx={{ textTransform: "none" }}
+                            disabled={pendingNotificationId === notification.id}
+                            sx={{
+                              textTransform: "none",
+                              borderRadius: "var(--radius-sm)",
+                              borderColor: "var(--color-danger-border)",
+                              color: "var(--color-danger)",
+                            }}
                           >
                             Reject
                           </Button>
@@ -537,26 +529,35 @@ export function NotificationsPage() {
                           <Button
                             size="small"
                             variant="outlined"
-                            startIcon={<PersonAddIcon />}
+                            startIcon={<UserPlus size={14} strokeWidth={2.2} />}
                             onClick={() => void handleGroupInviteAction(notification, true)}
                             disabled={pendingNotificationId === notification.id}
-                            sx={{ textTransform: "none" }}
+                            sx={{
+                              textTransform: "none",
+                              borderRadius: "var(--radius-sm)",
+                              borderColor: "var(--color-border-strong)",
+                              color: "var(--color-ink)",
+                            }}
                           >
                             Accept
                           </Button>
                           <Button
                             size="small"
                             variant="outlined"
-                            color="error"
                             onClick={() => void handleGroupInviteAction(notification, false)}
                             disabled={pendingNotificationId === notification.id}
-                            sx={{ textTransform: "none" }}
+                            sx={{
+                              textTransform: "none",
+                              borderRadius: "var(--radius-sm)",
+                              borderColor: "var(--color-danger-border)",
+                              color: "var(--color-danger)",
+                            }}
                           >
                             Reject
                           </Button>
                         </>
                       )}
-                      {!notification.read && (
+                      {isUnread && (
                         <Tooltip title="Mark as seen">
                           <span>
                             <IconButton
@@ -564,14 +565,14 @@ export function NotificationsPage() {
                               onClick={() => void handleMarkAsRead(notification)}
                               disabled={pendingNotificationId === notification.id}
                               sx={{
-                                color: "#4f46e5",
-                                "&:hover": { bgcolor: "#eef2ff" },
+                                color: "var(--color-accent)",
+                                "&:hover": { bgcolor: "var(--color-accent-soft-bg)" },
                               }}
                             >
                               {pendingNotificationId === notification.id ? (
-                                <CircularProgress size={18} thickness={6} color="inherit" />
+                                <CircularProgress size={16} thickness={6} color="inherit" />
                               ) : (
-                                <CheckCircleIcon sx={{ fontSize: 20 }} />
+                                <CheckCircle2 size={18} strokeWidth={2} />
                               )}
                             </IconButton>
                           </span>
@@ -584,47 +585,44 @@ export function NotificationsPage() {
                             onClick={() => void handleDelete(notification)}
                             disabled={pendingNotificationId === notification.id}
                             sx={{
-                              color: "#ef4444",
-                              "&:hover": { bgcolor: "#fee2e2" },
+                              color: "var(--color-danger)",
+                              "&:hover": { bgcolor: "var(--color-danger-soft-bg)" },
                             }}
                           >
                             {pendingNotificationId === notification.id ? (
-                              <CircularProgress size={18} thickness={6} color="inherit" />
+                              <CircularProgress size={16} thickness={6} color="inherit" />
                             ) : (
-                              <DeleteIcon sx={{ fontSize: 20 }} />
+                              <Archive size={18} strokeWidth={2} />
                             )}
                           </IconButton>
                         </span>
                       </Tooltip>
                     </Box>
                   </Box>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </Box>
-      ) : (
-        <Paper
-          elevation={0}
-          sx={{
-            textAlign: "center",
-            py: { xs: 5, md: 7 },
-            px: 3,
-            borderRadius: 4,
-            border: "1px dashed",
-            borderColor: "divider",
-            background: "linear-gradient(180deg, rgba(248,250,252,0.9), rgba(255,255,255,0.96))",
-          }}
-        >
-          <NotificationsIcon sx={{ fontSize: 72, color: "text.disabled", mb: 2 }} />
-          <Typography variant="h6" sx={{ fontWeight: 800, mb: 1 }}>
-            No notifications right now
-          </Typography>
-          <Typography sx={{ color: "text.secondary", maxWidth: 520, mx: "auto" }}>
-            You are caught up. New invites, expense updates, and confirmations will show up here as they arrive.
-          </Typography>
-        </Paper>
-      )}
+                </Box>
+              );
+            })}
+          </Box>
+        ) : (
+          <Box
+            sx={{
+              textAlign: "center",
+              py: { xs: 5, md: 7 },
+              px: 3,
+              borderRadius: "var(--radius-md)",
+              border: "1px dashed var(--color-border)",
+            }}
+          >
+            <Bell size={56} strokeWidth={1.8} color="var(--color-muted-3)" style={{ marginBottom: 16 }} />
+            <Typography sx={{ fontWeight: 700, fontSize: "1.1rem", color: "var(--color-ink)", mb: 1 }}>
+              No notifications right now
+            </Typography>
+            <Typography sx={{ color: "var(--color-ink-soft)", maxWidth: 520, mx: "auto" }}>
+              You are caught up. New invites, expense updates, and confirmations will show up here as they arrive.
+            </Typography>
+          </Box>
+        )}
+      </Box>
     </Box>
   );
 }

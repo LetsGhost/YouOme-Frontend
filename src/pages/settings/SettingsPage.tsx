@@ -53,20 +53,32 @@ export function SettingsPage() {
     <Container maxWidth="sm" sx={{ py: 4 }}>
       <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 1 }}>
-          <SettingsIcon sx={{ fontSize: 40, color: "#4f46e5" }} />
+          <Box
+            sx={{
+              display: "grid",
+              placeItems: "center",
+              width: 56,
+              height: 56,
+              borderRadius: "var(--radius-md)",
+              bgcolor: "var(--color-accent-soft-bg)",
+              flexShrink: 0,
+            }}
+          >
+            <SettingsIcon sx={{ fontSize: 28, color: "var(--color-accent-soft-ink)" }} />
+          </Box>
           <Box>
-            <Typography variant="h4" sx={{ fontWeight: "bold" }}>
+            <Typography variant="h4" sx={{ fontWeight: "bold", color: "var(--color-ink)" }}>
               Settings
             </Typography>
-            <Typography variant="body2" sx={{ color: "text.secondary" }}>
+            <Typography variant="body2" sx={{ color: "var(--color-muted)" }}>
               Configure your account and application preferences
             </Typography>
           </Box>
         </Box>
 
-        <Card sx={{ borderRadius: 2 }}>
+        <Card sx={{ borderRadius: "var(--radius-md)" }}>
           <CardContent sx={{ p: 3 }}>
-            <Typography variant="h6" sx={{ fontWeight: "bold", mb: 2 }}>
+            <Typography variant="h6" sx={{ fontWeight: "bold", mb: 2, color: "var(--color-ink)" }}>
               Account Information
             </Typography>
 
@@ -74,56 +86,83 @@ export function SettingsPage() {
               <Box>
                 <Typography
                   variant="caption"
-                  sx={{ color: "text.secondary", fontWeight: "bold", display: "block", mb: 0.5 }}
+                  sx={{
+                    color: "var(--color-muted)",
+                    fontFamily: "var(--font-mono)",
+                    fontWeight: 600,
+                    letterSpacing: "0.05em",
+                    textTransform: "uppercase",
+                    display: "block",
+                    mb: 0.5,
+                  }}
                 >
                   Name
                 </Typography>
-                <Paper
-                  elevation={0}
+                <Box
                   sx={{
                     p: 1.5,
-                    bgcolor: "#f3f4f6",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: 1,
+                    bgcolor: "var(--color-surface-2)",
+                    border: "1px solid var(--color-border)",
+                    borderRadius: "var(--radius-sm)",
                   }}
                 >
-                  <Typography variant="body2">{currentUser?.name || "Not set"}</Typography>
-                </Paper>
+                  <Typography variant="body2" sx={{ color: "var(--color-ink-soft)" }}>
+                    {currentUser?.name || "Not set"}
+                  </Typography>
+                </Box>
               </Box>
 
               <Box>
                 <Typography
                   variant="caption"
-                  sx={{ color: "text.secondary", fontWeight: "bold", display: "block", mb: 0.5 }}
+                  sx={{
+                    color: "var(--color-muted)",
+                    fontFamily: "var(--font-mono)",
+                    fontWeight: 600,
+                    letterSpacing: "0.05em",
+                    textTransform: "uppercase",
+                    display: "block",
+                    mb: 0.5,
+                  }}
                 >
                   Email
                 </Typography>
-                <Paper
-                  elevation={0}
+                <Box
                   sx={{
                     p: 1.5,
-                    bgcolor: "#f3f4f6",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: 1,
+                    bgcolor: "var(--color-surface-2)",
+                    border: "1px solid var(--color-border)",
+                    borderRadius: "var(--radius-sm)",
                   }}
                 >
-                  <Typography variant="body2">{currentUser?.email || "Not set"}</Typography>
-                </Paper>
+                  <Typography variant="body2" sx={{ color: "var(--color-ink-soft)" }}>
+                    {currentUser?.email || "Not set"}
+                  </Typography>
+                </Box>
               </Box>
 
               <Box>
                 <Typography
                   variant="caption"
-                  sx={{ color: "text.secondary", fontWeight: "bold", display: "block", mb: 0.5 }}
+                  sx={{
+                    color: "var(--color-muted)",
+                    fontFamily: "var(--font-mono)",
+                    fontWeight: 600,
+                    letterSpacing: "0.05em",
+                    textTransform: "uppercase",
+                    display: "block",
+                    mb: 0.5,
+                  }}
                 >
                   Role
                 </Typography>
                 <Chip
                   label={currentUser?.role || "User"}
                   sx={{
-                    bgcolor: "#eef2ff",
-                    color: "#4f46e5",
+                    bgcolor: "var(--color-accent-soft-bg)",
+                    color: "var(--color-accent-soft-ink)",
                     fontWeight: "bold",
+                    borderRadius: "var(--radius-pill)",
                   }}
                 />
               </Box>
@@ -131,38 +170,38 @@ export function SettingsPage() {
           </CardContent>
         </Card>
 
-        <Card sx={{ borderRadius: 2 }}>
+        <Card sx={{ borderRadius: "var(--radius-md)" }}>
           <CardContent sx={{ p: 3 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-              <ShieldIcon sx={{ color: "#4f46e5", fontSize: 24 }} />
-              <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+              <ShieldIcon sx={{ color: "var(--color-accent)", fontSize: 24 }} />
+              <Typography variant="h6" sx={{ fontWeight: "bold", color: "var(--color-ink)" }}>
                 Terms of Service & Data Safety
               </Typography>
             </Box>
 
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
               <Box sx={{ display: "flex", gap: 1.5 }}>
-                <ArticleIcon sx={{ color: "#4f46e5", mt: 0.25 }} />
+                <ArticleIcon sx={{ color: "var(--color-accent)", mt: 0.25 }} />
                 <Box>
-                  <Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 0.5 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 0.5, color: "var(--color-ink)" }}>
                     Terms of Service
                   </Typography>
-                  <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                  <Typography variant="body2" sx={{ color: "var(--color-muted)" }}>
                     YouOme is intended for personal and small-group expense tracking. Keep your account
                     details accurate and use shared spaces responsibly.
                   </Typography>
                 </Box>
               </Box>
 
-              <Divider />
+              <Divider sx={{ borderColor: "var(--color-border)" }} />
 
               <Box sx={{ display: "flex", gap: 1.5 }}>
-                <ShieldIcon sx={{ color: "#16a34a", mt: 0.25 }} />
+                <ShieldIcon sx={{ color: "var(--color-success)", mt: 0.25 }} />
                 <Box>
-                  <Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 0.5 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: "bold", mb: 0.5, color: "var(--color-ink)" }}>
                     Data Safety
                   </Typography>
-                  <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                  <Typography variant="body2" sx={{ color: "var(--color-muted)" }}>
                     Your session is stored locally in this browser. Deleting your account removes the
                     backend user record, invalidates cached access, and clears the local session.
                   </Typography>
@@ -173,20 +212,21 @@ export function SettingsPage() {
         </Card>
 
         <Paper
+          elevation={0}
           sx={{
-            borderRadius: 2,
-            bgcolor: "#fef2f2",
-            border: "2px solid #fecaca",
+            borderRadius: "var(--radius-md)",
+            bgcolor: "var(--color-danger-soft-bg)",
+            border: "1px solid var(--color-danger-border)",
             p: 3,
           }}
         >
           <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
-            <WarningIcon sx={{ color: "#dc2626", fontSize: 28, flexShrink: 0, mt: 0.5 }} />
+            <WarningIcon sx={{ color: "var(--color-danger)", fontSize: 28, flexShrink: 0, mt: 0.5 }} />
             <Box>
-              <Typography variant="h6" sx={{ fontWeight: "bold", color: "#7f1d1d", mb: 0.5 }}>
+              <Typography variant="h6" sx={{ fontWeight: "bold", color: "var(--color-danger)", mb: 0.5 }}>
                 Danger Zone
               </Typography>
-              <Typography variant="body2" sx={{ color: "#be123c" }}>
+              <Typography variant="body2" sx={{ color: "var(--color-danger)" }}>
                 These actions cannot be undone
               </Typography>
             </Box>
@@ -198,13 +238,14 @@ export function SettingsPage() {
               startIcon={<LogoutIcon />}
               onClick={handleClearSession}
               sx={{
-                bgcolor: "#dc2626",
-                color: "white",
+                bgcolor: "var(--color-danger)",
+                color: "var(--color-accent-contrast)",
                 textTransform: "none",
                 fontWeight: "bold",
                 alignSelf: "flex-start",
                 "&:hover": {
-                  bgcolor: "#b91c1c",
+                  bgcolor: "var(--color-danger)",
+                  filter: "brightness(0.9)",
                 },
               }}
             >
@@ -217,14 +258,14 @@ export function SettingsPage() {
               onClick={handleDeleteAccount}
               disabled={isDeleting}
               sx={{
-                borderColor: "#dc2626",
-                color: "#dc2626",
+                borderColor: "var(--color-danger)",
+                color: "var(--color-danger)",
                 textTransform: "none",
                 fontWeight: "bold",
                 alignSelf: "flex-start",
                 "&:hover": {
-                  borderColor: "#b91c1c",
-                  bgcolor: "rgba(220, 38, 38, 0.04)",
+                  borderColor: "var(--color-danger)",
+                  bgcolor: "var(--color-danger-soft-bg)",
                 },
               }}
             >

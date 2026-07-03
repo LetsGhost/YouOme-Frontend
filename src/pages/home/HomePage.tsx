@@ -1,18 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import TrendingUpIcon from "@mui/icons-material/TrendingUp";
-import PeopleIcon from "@mui/icons-material/People";
-import WarningIcon from "@mui/icons-material/Warning";
-import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
-import {
-  Box,
-  Card,
-  CardContent,
-  Typography,
-  Button,
-  Avatar,
-  Chip,
-  Link as MuiLink,
-} from "@mui/material";
+import { ArrowUpRight, ArrowDownLeft, Clock, Users, Activity, Receipt, ChevronRight } from "lucide-react";
+import { Box, Typography, Link as MuiLink } from "@mui/material";
 import { Link } from "react-router-dom";
 
 import { useAppState } from "../../app/AppStateContext";
@@ -80,7 +68,7 @@ export function HomePage() {
 
   const dashboardStats = useMemo(() => {
     const uniqueMembers = new Map<string, string>();
-    const recentActivities: Array<{ user: string; action: string; group: string; time: string }> = [];
+    const recentActivities: Array<{ user: string; action: string; group: string; time: string; kind: "expense" | "group" }> = [];
 
     for (const group of groups) {
       const memberList = group.members ?? [];
@@ -101,6 +89,7 @@ export function HomePage() {
           action: "added expense in",
           group: group.name,
           time: expense.createdAt || expense.date || "Recently",
+          kind: "expense",
         });
       }
     }
@@ -112,6 +101,7 @@ export function HomePage() {
           action: "group loaded from",
           group: group.name,
           time: group.updatedAt || group.createdAt || "Recently",
+          kind: "group",
         });
       }
     }
@@ -123,116 +113,228 @@ export function HomePage() {
     };
   }, [currentUser?.email, currentUser?.id, groups]);
 
+  const balanceTotal = globalDebtStats.youOwe + globalDebtStats.owedToYou;
+  const youOwePct = balanceTotal > 0 ? (globalDebtStats.youOwe / balanceTotal) * 100 : 0;
+  const owedPct = balanceTotal > 0 ? 100 - youOwePct : 0;
+  const net = globalDebtStats.owedToYou - globalDebtStats.youOwe;
+  const netSign = net >= 0 ? "+" : "-";
+
+  const microLabelSx = {
+    fontFamily: "var(--font-mono)",
+    textTransform: "uppercase",
+    letterSpacing: "0.06em",
+    fontSize: "10.5px",
+    color: "var(--color-muted)",
+  } as const;
+
   return (
     <Box
       sx={{
         width: "100%",
         maxWidth: "1080px",
         mx: "auto",
-        display: "flex",
-        flexDirection: "column",
-        gap: { xs: 2.5, md: 3.5 },
+        borderRadius: "var(--radius-lg)",
+        border: "1px solid var(--color-border)",
+        bgcolor: "var(--color-surface)",
+        boxShadow: "var(--shadow-md)",
+        overflow: "hidden",
       }}
     >
       <ChangelogDialog />
 
       {/* Header */}
-      <Box sx={{ textAlign: { xs: "center", md: "left" } }}>
-        <Typography variant="h3" sx={{ fontWeight: "bold", mb: 1, fontSize: { xs: "1.9rem", md: "2.2rem" } }}>
-          Welcome back, {currentUser?.name || "Friend"}
-        </Typography>
-      </Box>
-
-      {/* Quick Stats Grid */}
       <Box
         sx={{
-          display: "grid",
-          gap: 2.2,
-          gridTemplateColumns: {
-            xs: "1fr",
-            sm: "repeat(2, minmax(0, 1fr))",
-            md: "repeat(4, minmax(0, 1fr))",
-          },
+          px: { xs: 2.5, md: 3.5 },
+          py: { xs: 2.75, md: 3.25 },
+          borderBottom: "1px solid var(--color-border)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 2,
         }}
       >
         <Box>
-          <StatCard
-            icon={<TrendingUpIcon sx={{ fontSize: 32, color: "#4f46e5" }} />}
-            label="You owe"
-            value={formatMoney(globalDebtStats.youOwe)}
-            bgColor="#eef2ff"
-          />
+          <Typography sx={{ ...microLabelSx, mb: 0.5 }}>Welcome back</Typography>
+          <Typography sx={{ fontWeight: 700, fontSize: { xs: "1.4rem", md: "1.6rem" }, color: "var(--color-ink)" }}>
+            {currentUser?.name || "Friend"}
+          </Typography>
         </Box>
-        <Box>
-          <StatCard
-            icon={<FavoriteBorderIcon sx={{ fontSize: 32, color: "#22c55e" }} />}
-            label="Owed to you"
-            value={formatMoney(globalDebtStats.owedToYou)}
-            bgColor="#f0fdf4"
-          />
-        </Box>
-        <Box>
-          <StatCard
-            icon={<WarningIcon sx={{ fontSize: 32, color: "#f59e0b" }} />}
-            label="Pending"
-            value={`${formatCount(globalDebtStats.pendingPayments)} payments`}
-            bgColor="#fffbeb"
-          />
-        </Box>
-        <Box>
-          <StatCard
-            icon={<PeopleIcon sx={{ fontSize: 32, color: "#3b82f6" }} />}
-            label="Groups"
-            value={`${formatCount(dashboardStats.groupsCount)} active`}
-            bgColor="#eff6ff"
-          />
+        <Box
+          sx={{
+            width: 48,
+            height: 48,
+            flexShrink: 0,
+            borderRadius: "var(--radius-sm)",
+            display: "grid",
+            placeItems: "center",
+            bgcolor: "var(--color-accent-soft-bg)",
+            color: "var(--color-accent-soft-ink)",
+            fontFamily: "var(--font-mono)",
+            fontWeight: 700,
+            fontSize: "1.1rem",
+          }}
+        >
+          {(currentUser?.name || "F")[0].toUpperCase()}
         </Box>
       </Box>
 
-      {/* Recent Activities */}
-      <Card sx={{ borderRadius: 3 }}>
-        <CardContent sx={{ p: { xs: 2, md: 3 } }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}>
-            <WarningIcon sx={{ fontSize: 28, color: "#4f46e5" }} />
-            <Typography variant="h6" sx={{ fontWeight: "bold" }}>
-              Recent Activities
-            </Typography>
-          </Box>
-
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            {dashboardStats.recentActivities.map((activity, idx) => (
-              <Box
-                key={idx}
+      <Box sx={{ px: { xs: 2.5, md: 3.5 }, py: { xs: 2.5, md: 3 }, display: "flex", flexDirection: "column", gap: { xs: 2.5, md: 3 } }}>
+        {/* Balance summary card */}
+        <Box
+          sx={{
+            borderRadius: "var(--radius-md)",
+            border: "1px solid var(--color-border)",
+            bgcolor: "var(--color-surface-2)",
+            p: { xs: 2, md: 2.5 },
+          }}
+        >
+          <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
+            <Box sx={{ pr: 2 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 0.75 }}>
+                <ArrowUpRight size={16} strokeWidth={2.2} color="var(--color-warning)" />
+                <Typography sx={{ ...microLabelSx, color: "var(--color-warning)" }}>You owe</Typography>
+              </Box>
+              <Typography
                 sx={{
-                  display: "flex",
-                  gap: 2,
-                  p: { xs: 1.5, md: 2 },
-                  borderRadius: 1,
-                  bgcolor: "#eef2ff",
-                  border: "1px solid #e0e7ff",
-                  cursor: "pointer",
-                  transition: "all 0.2s",
-                  "&:hover": {
-                    bgcolor: "#dbeafe",
-                  },
+                  fontFamily: "var(--font-mono)",
+                  fontWeight: 700,
+                  fontSize: { xs: "1.3rem", md: "1.5rem" },
+                  color: "var(--color-ink)",
                 }}
               >
-                <Avatar sx={{ bgcolor: "#4f46e5", color: "white", fontWeight: "bold", flexShrink: 0 }}>
-                  {activity.user?.[0] || "?"}
-                </Avatar>
-                <Box sx={{ flex: 1 }}>
-                  <Typography variant="body2">
-                    <strong>{activity.user}</strong> {activity.action}{" "}
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    sx={{ color: "text.secondary", mt: 0.5, display: "block" }}
-                  >
-                    {activity.time}
-                  </Typography>
-                </Box>
+                {formatMoney(globalDebtStats.youOwe)}
+              </Typography>
+            </Box>
+            <Box sx={{ pl: 2, borderLeft: "1px solid var(--color-border)" }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 0.75 }}>
+                <ArrowDownLeft size={16} strokeWidth={2.2} color="var(--color-success)" />
+                <Typography sx={{ ...microLabelSx, color: "var(--color-success)" }}>Owed to you</Typography>
               </Box>
-            ))}
+              <Typography
+                sx={{
+                  fontFamily: "var(--font-mono)",
+                  fontWeight: 700,
+                  fontSize: { xs: "1.3rem", md: "1.5rem" },
+                  color: "var(--color-ink)",
+                }}
+              >
+                {formatMoney(globalDebtStats.owedToYou)}
+              </Typography>
+            </Box>
+          </Box>
+
+          <Box
+            sx={{
+              display: "flex",
+              height: 6,
+              borderRadius: "var(--radius-pill)",
+              overflow: "hidden",
+              bgcolor: "var(--color-surface-3)",
+              mt: 2.25,
+            }}
+          >
+            {balanceTotal > 0 ? (
+              <>
+                <Box sx={{ width: `${youOwePct}%`, bgcolor: "var(--color-warning)" }} />
+                <Box sx={{ width: `${owedPct}%`, bgcolor: "var(--color-success)" }} />
+              </>
+            ) : null}
+          </Box>
+
+          <Typography sx={{ ...microLabelSx, mt: 1.25 }}>
+            Net {netSign}
+            {formatMoney(Math.abs(net))}
+          </Typography>
+        </Box>
+
+        {/* Mini stat grid */}
+        <Box
+          sx={{
+            display: "grid",
+            gap: 1.5,
+            gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+          }}
+        >
+          <Box
+            sx={{
+              borderRadius: "var(--radius-sm)",
+              border: "1px solid var(--color-border)",
+              p: { xs: 1.5, md: 2 },
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 0.75 }}>
+              <Clock size={16} strokeWidth={2} color="var(--color-warning)" />
+              <Typography sx={microLabelSx}>Pending</Typography>
+            </Box>
+            <Typography sx={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: "1.15rem", color: "var(--color-ink)" }}>
+              {formatCount(globalDebtStats.pendingPayments)}
+            </Typography>
+          </Box>
+          <Box
+            sx={{
+              borderRadius: "var(--radius-sm)",
+              border: "1px solid var(--color-border)",
+              p: { xs: 1.5, md: 2 },
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 0.75 }}>
+              <Users size={16} strokeWidth={2} color="var(--color-accent)" />
+              <Typography sx={microLabelSx}>Groups</Typography>
+            </Box>
+            <Typography sx={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: "1.15rem", color: "var(--color-ink)" }}>
+              {formatCount(dashboardStats.groupsCount)}
+            </Typography>
+          </Box>
+        </Box>
+
+        {/* Recent activity */}
+        <Box>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
+            <Activity size={18} strokeWidth={2} color="var(--color-ink)" />
+            <Typography sx={{ fontWeight: 700, fontSize: "1.05rem", color: "var(--color-ink)" }}>Recent activity</Typography>
+          </Box>
+
+          <Box sx={{ display: "flex", flexDirection: "column" }}>
+            {dashboardStats.recentActivities.map((activity, idx) => {
+              const Icon = activity.kind === "expense" ? Receipt : Users;
+              return (
+                <Box
+                  key={idx}
+                  sx={{
+                    display: "flex",
+                    gap: 1.5,
+                    alignItems: "flex-start",
+                    py: 1.5,
+                    borderTop: idx === 0 ? "none" : "1px solid var(--color-border)",
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: 36,
+                      height: 36,
+                      flexShrink: 0,
+                      borderRadius: "var(--radius-sm)",
+                      display: "grid",
+                      placeItems: "center",
+                      bgcolor: "var(--color-accent-soft-bg)",
+                      color: "var(--color-accent-soft-ink)",
+                    }}
+                  >
+                    <Icon size={16} strokeWidth={2} />
+                  </Box>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography variant="body2" sx={{ color: "var(--color-ink-soft)" }}>
+                      <Box component="strong" sx={{ color: "var(--color-ink)" }}>
+                        {activity.user}
+                      </Box>{" "}
+                      {activity.action} {activity.group}
+                    </Typography>
+                    <Typography sx={{ ...microLabelSx, mt: 0.5 }}>{activity.time}</Typography>
+                  </Box>
+                </Box>
+              );
+            })}
           </Box>
 
           <MuiLink
@@ -241,53 +343,22 @@ export function HomePage() {
             sx={{
               display: "inline-flex",
               alignItems: "center",
+              gap: 0.5,
               mt: 2,
-              color: "#4f46e5",
-              fontWeight: "bold",
+              color: "var(--color-accent-strong-ink)",
+              fontWeight: 700,
               fontSize: "0.875rem",
               textDecoration: "none",
               "&:hover": {
-                color: "#4338ca",
+                textDecoration: "underline",
               },
             }}
           >
-            View all notifications →
+            View all notifications
+            <ChevronRight size={16} strokeWidth={2.2} />
           </MuiLink>
-        </CardContent>
-      </Card>
+        </Box>
+      </Box>
     </Box>
-  );
-}
-
-function StatCard({
-  icon,
-  label,
-  value,
-  bgColor,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  bgColor: string;
-}) {
-  return (
-    <Card
-      sx={{
-        borderRadius: 3,
-        bgcolor: bgColor,
-        border: "1px solid #e5e7eb",
-        height: "100%",
-      }}
-    >
-      <CardContent sx={{ p: { xs: 2, md: 3 } }}>
-        <Box sx={{ mb: 1.5 }}>{icon}</Box>
-        <Typography variant="body2" sx={{ color: "text.secondary", mb: 0.5 }}>
-          {label}
-        </Typography>
-        <Typography variant="h5" sx={{ fontWeight: "bold" }}>
-          {value}
-        </Typography>
-      </CardContent>
-    </Card>
   );
 }

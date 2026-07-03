@@ -18,12 +18,7 @@ import {
   Typography,
   Skeleton,
 } from "@mui/material";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import CancelIcon from "@mui/icons-material/Cancel";
-import DeleteIcon from "@mui/icons-material/Delete";
-import EditIcon from "@mui/icons-material/Edit";
-import PendingActionsIcon from "@mui/icons-material/PendingActions";
-import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
+import { CheckCircle2, X, Trash2, Pencil, Clock3, RefreshCw } from "lucide-react";
 
 import {
   confirmExpensePayment,
@@ -44,6 +39,23 @@ type GroupDebtWidgetProps = {
   currentUserId?: string;
   accessToken?: string;
   onBoardChange?: (board: GroupDebtBoard | null) => void;
+};
+
+const microLabelSx = {
+  fontFamily: "var(--font-mono)",
+  fontSize: "10px",
+  fontWeight: 600,
+  letterSpacing: "0.06em",
+  textTransform: "uppercase" as const,
+  color: "var(--color-muted)",
+  display: "block",
+};
+
+const monoStatSx = {
+  fontFamily: "var(--font-mono)",
+  fontWeight: 700,
+  fontSize: "1.35rem",
+  color: "var(--color-ink)",
 };
 
 function getStatusLabel(status: GroupDebtParticipant["status"]) {
@@ -68,6 +80,20 @@ function getStatusTone(status: GroupDebtParticipant["status"]) {
   }
 
   return "default";
+}
+
+function getStatusChipSx(status: GroupDebtParticipant["status"]) {
+  const tone = getStatusTone(status);
+
+  if (tone === "success") {
+    return { bgcolor: "var(--color-success-soft-bg)", color: "var(--color-success)", border: "1px solid var(--color-success-border)" };
+  }
+
+  if (tone === "warning") {
+    return { bgcolor: "var(--color-warning-soft-bg)", color: "var(--color-warning)", border: "1px solid var(--color-warning-border)" };
+  }
+
+  return { bgcolor: "transparent", color: "var(--color-muted)", border: "1px solid var(--color-border)" };
 }
 
 function hasReviewAction(expense: GroupDebtExpense, participant: GroupDebtParticipant, currentUserId?: string) {
@@ -210,22 +236,22 @@ export function GroupDebtWidget({ backendUrl, groupId, currentUserId, accessToke
   };
 
   return (
-    <Card sx={{ borderRadius: 3 }}>
+    <Card sx={{ borderRadius: "var(--radius-md)" }}>
       <CardContent sx={{ p: 3 }}>
         <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 2, mb: 2 }}>
           <Box>
-            <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: "var(--color-ink)" }}>
               Current debts
             </Typography>
-            <Typography variant="body2" sx={{ color: "text.secondary" }}>
-              Track pending payments and creator approvals for this group.
+            <Typography variant="body2" sx={{ color: "var(--color-muted)" }}>
+              Pending payments & approvals
             </Typography>
           </Box>
           <Button
             variant="outlined"
-            startIcon={<ReceiptLongIcon />}
+            startIcon={<RefreshCw size={16} strokeWidth={2} />}
             onClick={() => void loadBoard()}
-            sx={{ textTransform: "none", fontWeight: 700 }}
+            sx={{ textTransform: "none", fontWeight: 700, borderColor: "var(--color-border)", color: "var(--color-ink)" }}
           >
             Refresh
           </Button>
@@ -237,38 +263,22 @@ export function GroupDebtWidget({ backendUrl, groupId, currentUserId, accessToke
             gap: 1.5,
             gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" },
             mb: 2,
+            pt: 2,
+            borderTop: "1px solid var(--color-border)",
           }}
         >
-          <Card variant="outlined" sx={{ borderRadius: 2 }}>
-            <CardContent sx={{ p: 2 }}>
-              <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
-                Open expenses
-              </Typography>
-              <Typography variant="h5" sx={{ fontWeight: "bold" }}>
-                {isLoading ? <Skeleton width={48} /> : summary.expenseCount}
-              </Typography>
-            </CardContent>
-          </Card>
-          <Card variant="outlined" sx={{ borderRadius: 2 }}>
-            <CardContent sx={{ p: 2 }}>
-              <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
-                Waiting on you
-              </Typography>
-              <Typography variant="h5" sx={{ fontWeight: "bold" }}>
-                {isLoading ? <Skeleton width={48} /> : summary.pendingMyPayment}
-              </Typography>
-            </CardContent>
-          </Card>
-          <Card variant="outlined" sx={{ borderRadius: 2 }}>
-            <CardContent sx={{ p: 2 }}>
-              <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
-                Awaiting review
-              </Typography>
-              <Typography variant="h5" sx={{ fontWeight: "bold" }}>
-                {isLoading ? <Skeleton width={48} /> : summary.awaitingReview}
-              </Typography>
-            </CardContent>
-          </Card>
+          <Box>
+            <Typography sx={microLabelSx}>Open</Typography>
+            <Typography sx={monoStatSx}>{isLoading ? <Skeleton width={48} /> : summary.expenseCount}</Typography>
+          </Box>
+          <Box>
+            <Typography sx={microLabelSx}>Waiting</Typography>
+            <Typography sx={monoStatSx}>{isLoading ? <Skeleton width={48} /> : summary.pendingMyPayment}</Typography>
+          </Box>
+          <Box>
+            <Typography sx={microLabelSx}>Review</Typography>
+            <Typography sx={monoStatSx}>{isLoading ? <Skeleton width={48} /> : summary.awaitingReview}</Typography>
+          </Box>
         </Box>
 
         {errorMessage && (
@@ -280,7 +290,7 @@ export function GroupDebtWidget({ backendUrl, groupId, currentUserId, accessToke
         {isLoading ? (
           <Stack spacing={1.5}>
             {Array.from({ length: 2 }).map((_, index) => (
-              <Card key={index} variant="outlined" sx={{ borderRadius: 2 }}>
+              <Card key={index} variant="outlined" sx={{ borderRadius: "var(--radius-md)", borderColor: "var(--color-border)" }}>
                 <CardContent sx={{ p: 2 }}>
                   <Skeleton width="45%" />
                   <Skeleton width="75%" />
@@ -292,44 +302,48 @@ export function GroupDebtWidget({ backendUrl, groupId, currentUserId, accessToke
         ) : board?.expenses.length ? (
           <Stack spacing={1.5}>
             {board.expenses.map((expense) => (
-              <Card key={expense.id} variant="outlined" sx={{ borderRadius: 2 }}>
+              <Card key={expense.id} variant="outlined" sx={{ borderRadius: "var(--radius-md)", borderColor: "var(--color-border)", bgcolor: "var(--color-surface-2)" }}>
                 <CardContent sx={{ p: 2 }}>
                   <Box sx={{ display: "flex", justifyContent: "space-between", gap: 2, mb: 2 }}>
                     <Box sx={{ minWidth: 0 }}>
-                      <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "var(--color-ink)" }}>
                         {expense.title}
                       </Typography>
-                      <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                      <Typography variant="body2" sx={{ color: "var(--color-muted)" }}>
                         {expense.description}
                       </Typography>
-                      <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mt: 0.5 }}>
+                      <Typography variant="caption" sx={{ color: "var(--color-muted)", display: "block", mt: 0.5 }}>
                         Paid by {expense.paidByName}
                       </Typography>
                     </Box>
                     <Box sx={{ textAlign: "right", flexShrink: 0 }}>
-                      <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+                      <Typography sx={{ fontFamily: "var(--font-mono)", fontWeight: 700, color: "var(--color-ink)" }}>
                         {formatMoney(expense.totalAmount)}
                       </Typography>
-                      <Chip label={expense.status} size="small" variant="outlined" sx={{ textTransform: "capitalize" }} />
+                      <Chip
+                        label={expense.status}
+                        size="small"
+                        variant="outlined"
+                        sx={{ textTransform: "capitalize", borderColor: "var(--color-border)", color: "var(--color-muted)" }}
+                      />
                       {canModifyExpense(expense, currentUserId) && (
                         <Box sx={{ mt: 0.75, display: "flex", gap: 0.5, justifyContent: "flex-end" }}>
                           <Button
                             size="small"
-                            startIcon={<EditIcon fontSize="small" />}
+                            startIcon={<Pencil size={14} strokeWidth={2} />}
                             onClick={() => openEditDialog(expense)}
-                            sx={{ textTransform: "none", fontWeight: 700 }}
+                            sx={{ textTransform: "none", fontWeight: 700, color: "var(--color-ink)" }}
                           >
                             Edit
                           </Button>
                           <Button
                             size="small"
-                            color="error"
-                            startIcon={<DeleteIcon fontSize="small" />}
+                            startIcon={<Trash2 size={14} strokeWidth={2} />}
                             onClick={() => {
                               setDeleteExpenseError(null);
                               setDeletingExpense(expense);
                             }}
-                            sx={{ textTransform: "none", fontWeight: 700 }}
+                            sx={{ textTransform: "none", fontWeight: 700, color: "var(--color-danger)" }}
                           >
                             Delete
                           </Button>
@@ -338,7 +352,7 @@ export function GroupDebtWidget({ backendUrl, groupId, currentUserId, accessToke
                     </Box>
                   </Box>
 
-                  <Divider sx={{ mb: 2 }} />
+                  <Divider sx={{ mb: 2, borderColor: "var(--color-border)" }} />
 
                   <Stack spacing={1.25}>
                     {expense.participants.map((participant) => {
@@ -357,22 +371,28 @@ export function GroupDebtWidget({ backendUrl, groupId, currentUserId, accessToke
                             gridTemplateColumns: { xs: "1fr", md: "1.4fr auto auto" },
                             alignItems: { md: "center" },
                             p: 1.5,
-                            borderRadius: 2,
-                            bgcolor: "rgba(15, 23, 42, 0.03)",
+                            borderRadius: "var(--radius-sm)",
+                            bgcolor: "var(--color-surface-3)",
                           }}
                         >
                           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, minWidth: 0 }}>
-                            <Avatar sx={{ bgcolor: "#4f46e5", width: 36, height: 36, fontSize: "0.9rem" }}>
+                            <Avatar sx={{ bgcolor: "var(--color-accent-soft-bg)", color: "var(--color-accent-soft-ink)", width: 36, height: 36, fontSize: "0.9rem" }}>
                               {participant.name?.[0] || "?"}
                             </Avatar>
                             <Box sx={{ minWidth: 0 }}>
                               <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
-                                <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                                <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--color-ink)" }}>
                                   {participant.name}
                                 </Typography>
-                                {participant.isCurrentUser && <Chip label="You" size="small" sx={{ height: 22 }} />}
+                                {participant.isCurrentUser && (
+                                  <Chip
+                                    label="You"
+                                    size="small"
+                                    sx={{ height: 22, bgcolor: "var(--color-accent-soft-bg)", color: "var(--color-accent-soft-ink)" }}
+                                  />
+                                )}
                               </Box>
-                              <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
+                              <Typography variant="caption" sx={{ color: "var(--color-muted)", display: "block" }}>
                                 {formatMoney(participant.shareAmount)} due
                                 {participant.comment ? ` · ${participant.comment}` : ""}
                               </Typography>
@@ -381,17 +401,15 @@ export function GroupDebtWidget({ backendUrl, groupId, currentUserId, accessToke
 
                           <Chip
                             label={getStatusLabel(participant.status)}
-                            color={getStatusTone(participant.status) as "success" | "warning" | "default"}
                             variant={participant.status === "pending" ? "outlined" : "filled"}
                             size="small"
-                            icon={participant.status === "payment-confirmed" ? <CheckCircleIcon /> : undefined}
-                            sx={{ justifySelf: { md: "end" } }}
+                            icon={participant.status === "payment-confirmed" ? <CheckCircle2 size={14} strokeWidth={2} /> : undefined}
+                            sx={{ justifySelf: { md: "end" }, ...getStatusChipSx(participant.status) }}
                           />
 
                           <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", justifyContent: { md: "flex-end" } }}>
                             {canSubmit && (
                               <Button
-                                variant="contained"
                                 size="small"
                                 disabled={activeAction === submitKey}
                                 onClick={() =>
@@ -399,7 +417,13 @@ export function GroupDebtWidget({ backendUrl, groupId, currentUserId, accessToke
                                     submitExpensePayment(backendUrl, expense.id, participant.userId, undefined, accessToken)
                                   )
                                 }
-                                sx={{ textTransform: "none", fontWeight: 700 }}
+                                sx={{
+                                  textTransform: "none",
+                                  fontWeight: 700,
+                                  bgcolor: "var(--color-accent)",
+                                  color: "var(--color-accent-contrast)",
+                                  "&:hover": { bgcolor: "var(--color-accent)", filter: "brightness(0.92)" },
+                                }}
                               >
                                 I paid
                               </Button>
@@ -408,32 +432,41 @@ export function GroupDebtWidget({ backendUrl, groupId, currentUserId, accessToke
                             {canReview && (
                               <>
                                 <Button
-                                  variant="contained"
-                                  color="success"
                                   size="small"
                                   disabled={activeAction === approveKey}
-                                  startIcon={<CheckCircleIcon />}
+                                  startIcon={<CheckCircle2 size={14} strokeWidth={2} />}
                                   onClick={() =>
                                     void runAction(approveKey, () =>
                                       confirmExpensePayment(backendUrl, expense.id, participant.userId, accessToken)
                                     )
                                   }
-                                  sx={{ textTransform: "none", fontWeight: 700 }}
+                                  sx={{
+                                    textTransform: "none",
+                                    fontWeight: 700,
+                                    bgcolor: "var(--color-success)",
+                                    color: "var(--color-accent-contrast)",
+                                    "&:hover": { bgcolor: "var(--color-success)", filter: "brightness(0.92)" },
+                                  }}
                                 >
                                   Approve
                                 </Button>
                                 <Button
                                   variant="outlined"
-                                  color="error"
                                   size="small"
                                   disabled={activeAction === rejectKey}
-                                  startIcon={<CancelIcon />}
+                                  startIcon={<X size={14} strokeWidth={2} />}
                                   onClick={() =>
                                     void runAction(rejectKey, () =>
                                       rejectExpensePayment(backendUrl, expense.id, participant.userId, accessToken)
                                     )
                                   }
-                                  sx={{ textTransform: "none", fontWeight: 700 }}
+                                  sx={{
+                                    textTransform: "none",
+                                    fontWeight: 700,
+                                    color: "var(--color-danger)",
+                                    borderColor: "var(--color-danger-border)",
+                                    "&:hover": { borderColor: "var(--color-danger)", bgcolor: "var(--color-danger-soft-bg)" },
+                                  }}
                                 >
                                   Disapprove
                                 </Button>
@@ -441,7 +474,12 @@ export function GroupDebtWidget({ backendUrl, groupId, currentUserId, accessToke
                             )}
 
                             {participant.status === "payment-submitted" && !canReview && (
-                              <Chip icon={<PendingActionsIcon />} label="Waiting for creator" size="small" />
+                              <Chip
+                                icon={<Clock3 size={14} strokeWidth={2} />}
+                                label="Waiting for creator"
+                                size="small"
+                                sx={{ bgcolor: "var(--color-warning-soft-bg)", color: "var(--color-warning)" }}
+                              />
                             )}
                           </Box>
                         </Box>
@@ -454,19 +492,25 @@ export function GroupDebtWidget({ backendUrl, groupId, currentUserId, accessToke
           </Stack>
         ) : (
           <Box sx={{ textAlign: "center", py: 4 }}>
-            <PendingActionsIcon sx={{ fontSize: 48, color: "text.disabled", mb: 1 }} />
-            <Typography variant="body1" sx={{ fontWeight: 700, mb: 0.5 }}>
+            <Clock3 size={48} strokeWidth={1.8} color="var(--color-muted-3)" style={{ marginBottom: 8 }} />
+            <Typography variant="body1" sx={{ fontWeight: 700, mb: 0.5, color: "var(--color-ink)" }}>
               No unsettled debts
             </Typography>
-            <Typography variant="body2" sx={{ color: "text.secondary" }}>
+            <Typography variant="body2" sx={{ color: "var(--color-muted)" }}>
               Everything in this group has been settled already.
             </Typography>
           </Box>
         )}
       </CardContent>
 
-      <Dialog open={Boolean(editingExpense)} onClose={() => (isSavingEdit ? undefined : setEditingExpense(null))} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontWeight: 800 }}>Edit expense</DialogTitle>
+      <Dialog
+        open={Boolean(editingExpense)}
+        onClose={() => (isSavingEdit ? undefined : setEditingExpense(null))}
+        maxWidth="sm"
+        fullWidth
+        slotProps={{ paper: { sx: { borderRadius: "var(--radius-lg)", border: "1px solid var(--color-border)" } } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, color: "var(--color-ink)" }}>Edit expense</DialogTitle>
         <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
           <TextField
             label="Title"
@@ -495,14 +539,19 @@ export function GroupDebtWidget({ backendUrl, groupId, currentUserId, accessToke
           {editError && <Alert severity="error">{editError}</Alert>}
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setEditingExpense(null)} disabled={isSavingEdit} sx={{ textTransform: "none", fontWeight: 700 }}>
+          <Button onClick={() => setEditingExpense(null)} disabled={isSavingEdit} sx={{ textTransform: "none", fontWeight: 700, color: "var(--color-ink)" }}>
             Cancel
           </Button>
           <Button
-            variant="contained"
             onClick={() => void handleSaveEdit()}
             disabled={isSavingEdit}
-            sx={{ textTransform: "none", fontWeight: 700 }}
+            sx={{
+              textTransform: "none",
+              fontWeight: 700,
+              bgcolor: "var(--color-accent)",
+              color: "var(--color-accent-contrast)",
+              "&:hover": { bgcolor: "var(--color-accent)", filter: "brightness(0.92)" },
+            }}
           >
             {isSavingEdit ? "Saving..." : "Save changes"}
           </Button>
@@ -512,10 +561,11 @@ export function GroupDebtWidget({ backendUrl, groupId, currentUserId, accessToke
       <Dialog
         open={Boolean(deletingExpense)}
         onClose={() => (isDeletingExpense ? undefined : setDeletingExpense(null))}
+        slotProps={{ paper: { sx: { borderRadius: "var(--radius-lg)", border: "1px solid var(--color-border)" } } }}
       >
-        <DialogTitle sx={{ fontWeight: 800 }}>Delete {deletingExpense?.title ?? "this expense"}?</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 800, color: "var(--color-ink)" }}>Delete {deletingExpense?.title ?? "this expense"}?</DialogTitle>
         <DialogContent>
-          <DialogContentText>
+          <DialogContentText sx={{ color: "var(--color-muted)" }}>
             This action can't be undone. The expense and its participant shares will be permanently removed.
           </DialogContentText>
           {deleteExpenseError && (
@@ -528,16 +578,20 @@ export function GroupDebtWidget({ backendUrl, groupId, currentUserId, accessToke
           <Button
             onClick={() => setDeletingExpense(null)}
             disabled={isDeletingExpense}
-            sx={{ textTransform: "none", fontWeight: 700 }}
+            sx={{ textTransform: "none", fontWeight: 700, color: "var(--color-ink)" }}
           >
             Cancel
           </Button>
           <Button
-            variant="contained"
-            color="error"
             onClick={() => void handleDeleteExpense()}
             disabled={isDeletingExpense}
-            sx={{ textTransform: "none", fontWeight: 700 }}
+            sx={{
+              textTransform: "none",
+              fontWeight: 700,
+              bgcolor: "var(--color-danger)",
+              color: "var(--color-accent-contrast)",
+              "&:hover": { bgcolor: "var(--color-danger)", filter: "brightness(0.92)" },
+            }}
           >
             {isDeletingExpense ? "Deleting..." : "Delete expense"}
           </Button>

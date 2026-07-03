@@ -1,11 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import PeopleIcon from "@mui/icons-material/People";
-import PersonAddIcon from "@mui/icons-material/PersonAdd";
-import ChatIcon from "@mui/icons-material/Chat";
-import SearchIcon from "@mui/icons-material/Search";
-import SendIcon from "@mui/icons-material/Send";
-import CheckIcon from "@mui/icons-material/Check";
-import CloseIcon from "@mui/icons-material/Close";
+import { Users, Mail, Search, Send, MessageCircle, Clock, Check, X } from "lucide-react";
 import {
   Box,
   Card,
@@ -14,7 +8,6 @@ import {
   Typography,
   Avatar,
   IconButton,
-  Chip,
   InputAdornment,
   Button,
   Alert,
@@ -41,6 +34,24 @@ function readString(value: unknown) {
 function getInvitePayload(notification: NotificationRecord) {
   return notification.payload && typeof notification.payload === "object" ? notification.payload : {};
 }
+
+const microLabelSx = {
+  fontFamily: "var(--font-mono)",
+  fontSize: 10.5,
+  fontWeight: 600,
+  textTransform: "uppercase" as const,
+  letterSpacing: "0.05em",
+  color: "var(--color-muted)",
+};
+
+const outlinedFieldSx = {
+  "& .MuiOutlinedInput-root": {
+    bgcolor: "var(--color-surface)",
+    "& fieldset": { borderColor: "var(--color-border)" },
+    "&:hover fieldset": { borderColor: "var(--color-border-strong)" },
+    "&.Mui-focused fieldset": { borderColor: "var(--color-accent)" },
+  },
+};
 
 export function FriendsPage() {
   const { backendUrl, session, currentUser, setNotice } = useAppState();
@@ -161,70 +172,135 @@ export function FriendsPage() {
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-        <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: -0.4 }}>
-          Friends
-        </Typography>
-        <Typography variant="h6" sx={{ color: "text.secondary" }}>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 1.5,
+          pb: 3,
+          borderBottom: "1px solid var(--color-border)",
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          <Box
+            sx={{
+              width: 40,
+              height: 40,
+              borderRadius: "var(--radius-sm)",
+              bgcolor: "var(--color-accent-soft-bg)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <Users size={20} color="var(--color-accent-soft-ink)" strokeWidth={2} />
+          </Box>
+          <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: -0.4, color: "var(--color-ink)" }}>
+            Friends
+          </Typography>
+        </Box>
+        <Typography variant="body2" sx={{ color: "var(--color-muted)" }}>
           Invite people by email, review requests, and keep your friend list in sync.
         </Typography>
       </Box>
 
-      {errorMessage && <Alert severity="warning">{errorMessage}</Alert>}
+      {errorMessage && (
+        <Alert
+          severity="warning"
+          sx={{
+            borderRadius: "var(--radius-md)",
+            bgcolor: "var(--color-warning-soft-bg)",
+            color: "var(--color-warning)",
+            border: "1px solid var(--color-warning-border)",
+            "& .MuiAlert-icon": { color: "var(--color-warning)" },
+          }}
+        >
+          {errorMessage}
+        </Alert>
+      )}
 
-      <Card sx={{ borderRadius: 3 }}>
+      <Card sx={{ bgcolor: "var(--color-surface-2)" }}>
         <CardContent sx={{ display: "grid", gap: 2 }}>
           <Box sx={{ display: "grid", gap: 0.5 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "var(--color-ink)" }}>
               Send a friend request
             </Typography>
-            <Typography variant="body2" sx={{ color: "text.secondary" }}>
+            <Typography variant="body2" sx={{ color: "var(--color-muted)" }}>
               Enter the email address the other person used to register.
             </Typography>
           </Box>
 
-          <Box sx={{ display: "grid", gap: 1.5, gridTemplateColumns: { xs: "1fr", sm: "1fr auto" }, alignItems: "center" }}>
-            <TextField
-              fullWidth
-              label="Friend email"
-              placeholder="friend@example.com"
-              value={inviteEmail}
-              onChange={(event) => setInviteEmail(event.target.value)}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <PersonAddIcon />
-                    </InputAdornment>
-                  ),
-                },
+          <Box sx={{ display: "grid", gap: 1 }}>
+            <Typography sx={microLabelSx}>Friend email</Typography>
+            <Box
+              sx={{
+                display: "grid",
+                gap: 1.5,
+                gridTemplateColumns: { xs: "1fr", sm: "1fr auto" },
+                alignItems: "center",
               }}
-            />
-
-            <Button
-              variant="contained"
-              onClick={() => void handleSendInvite()}
-              disabled={isSubmitting}
-              startIcon={<SendIcon />}
-              sx={{ minHeight: 56, px: 3, fontWeight: 700 }}
             >
-              Send request
-            </Button>
+              <TextField
+                fullWidth
+                placeholder="friend@example.com"
+                value={inviteEmail}
+                onChange={(event) => setInviteEmail(event.target.value)}
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Mail size={18} color="var(--color-muted)" strokeWidth={1.8} />
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+                sx={outlinedFieldSx}
+              />
+
+              <Button
+                variant="contained"
+                onClick={() => void handleSendInvite()}
+                disabled={isSubmitting}
+                startIcon={<Send size={18} strokeWidth={2} />}
+                sx={{
+                  minHeight: 56,
+                  px: 3,
+                  fontWeight: 700,
+                  bgcolor: "var(--color-accent)",
+                  color: "var(--color-accent-contrast)",
+                  "&:hover": { bgcolor: "var(--color-accent)", opacity: 0.9 },
+                }}
+              >
+                Send request
+              </Button>
+            </Box>
           </Box>
         </CardContent>
       </Card>
 
       <Box sx={{ display: "grid", gap: 3, gridTemplateColumns: { xs: "1fr", lg: "1.2fr 0.8fr" } }}>
-        <Card sx={{ borderRadius: 3 }}>
+        <Card>
           <CardContent sx={{ display: "grid", gap: 2 }}>
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2 }}>
-              <Box>
-                <Typography variant="h6" sx={{ fontWeight: 800 }}>
-                  Your friends
-                </Typography>
-                <Typography variant="body2" sx={{ color: "text.secondary" }}>
-                  {friends.length} connected friend{friends.length === 1 ? "" : "s"}
-                </Typography>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: 2,
+                flexWrap: "wrap",
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Users size={18} color="var(--color-ink)" strokeWidth={2} />
+                <Box>
+                  <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--color-ink)" }}>
+                    Your friends
+                  </Typography>
+                  <Typography sx={microLabelSx}>
+                    {friends.length} connected
+                  </Typography>
+                </Box>
               </Box>
 
               <TextField
@@ -236,35 +312,49 @@ export function FriendsPage() {
                   input: {
                     startAdornment: (
                       <InputAdornment position="start">
-                        <SearchIcon fontSize="small" />
+                        <Search size={16} color="var(--color-muted)" strokeWidth={1.8} />
                       </InputAdornment>
                     ),
                   },
                 }}
-                sx={{ minWidth: { xs: 0, sm: 280 } }}
+                sx={{ minWidth: { xs: 0, sm: 240 }, ...outlinedFieldSx }}
               />
             </Box>
 
-            <Divider />
+            <Divider sx={{ borderColor: "var(--color-border)" }} />
 
             {isLoading ? (
               <Box sx={{ display: "grid", gap: 2 }}>
                 {Array.from({ length: 3 }).map((_, index) => (
-                  <Skeleton key={index} variant="rounded" height={92} />
+                  <Skeleton
+                    key={index}
+                    variant="rounded"
+                    height={92}
+                    sx={{ borderRadius: "var(--radius-md)", bgcolor: "var(--color-surface-2)" }}
+                  />
                 ))}
               </Box>
             ) : filteredFriends.length > 0 ? (
               <Box sx={{ display: "grid", gap: 2 }}>
                 {filteredFriends.map((friend) => (
-                  <Card key={friend.id} variant="outlined" sx={{ borderRadius: 2, borderColor: friend.blocked ? "warning.light" : "divider" }}>
+                  <Card
+                    key={friend.id}
+                    variant="outlined"
+                    sx={{
+                      bgcolor: "var(--color-surface-2)",
+                      border: `1px solid ${friend.blocked ? "var(--color-warning-border)" : "var(--color-border)"}`,
+                      boxShadow: "none",
+                    }}
+                  >
                     <CardContent sx={{ p: 2 }}>
                       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2 }}>
                         <Box sx={{ display: "flex", gap: 2, alignItems: "center", flex: 1, minWidth: 0 }}>
                           <Avatar
                             sx={{
-                              width: 52,
-                              height: 52,
-                              background: "linear-gradient(135deg, #1d4ed8 0%, #0f766e 100%)",
+                              width: 48,
+                              height: 48,
+                              bgcolor: "var(--color-accent)",
+                              color: "var(--color-accent-contrast)",
                               fontWeight: 800,
                             }}
                           >
@@ -272,29 +362,65 @@ export function FriendsPage() {
                           </Avatar>
 
                           <Box sx={{ minWidth: 0 }}>
-                            <Typography variant="subtitle1" sx={{ fontWeight: 700 }} noWrap>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "var(--color-ink)" }} noWrap>
                               {friend.name}
                             </Typography>
-                            <Typography variant="body2" sx={{ color: "text.secondary" }} noWrap>
+                            <Typography
+                              noWrap
+                              sx={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--color-muted)" }}
+                            >
                               {friend.email}
                             </Typography>
-                            <Box sx={{ mt: 1 }}>
-                              <Chip
-                                label={friend.blocked ? "Blocked" : "Active"}
-                                size="small"
-                                color={friend.blocked ? "warning" : "success"}
-                                variant="outlined"
-                              />
-                            </Box>
                           </Box>
                         </Box>
 
-                        <Box sx={{ display: "flex", gap: 0.5 }}>
-                          <IconButton size="small" sx={{ color: "#0f766e" }}>
-                            <ChatIcon fontSize="small" />
-                          </IconButton>
-                          <IconButton size="small" sx={{ color: "#0f766e" }}>
-                            <PersonAddIcon fontSize="small" />
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0 }}>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 0.6,
+                              px: 1.2,
+                              py: 0.5,
+                              borderRadius: "var(--radius-pill)",
+                              border: `1px solid ${friend.blocked ? "var(--color-warning-border)" : "var(--color-success-border)"}`,
+                              bgcolor: friend.blocked ? "var(--color-warning-soft-bg)" : "var(--color-success-soft-bg)",
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                width: 6,
+                                height: 6,
+                                borderRadius: "50%",
+                                bgcolor: friend.blocked ? "var(--color-warning)" : "var(--color-success)",
+                              }}
+                            />
+                            <Typography
+                              sx={{
+                                fontFamily: "var(--font-mono)",
+                                fontSize: 10.5,
+                                fontWeight: 600,
+                                letterSpacing: "0.05em",
+                                textTransform: "uppercase",
+                                color: friend.blocked ? "var(--color-warning)" : "var(--color-success)",
+                              }}
+                            >
+                              {friend.blocked ? "Blocked" : "Active"}
+                            </Typography>
+                          </Box>
+
+                          <IconButton
+                            size="small"
+                            sx={{
+                              width: 34,
+                              height: 34,
+                              borderRadius: "var(--radius-sm)",
+                              bgcolor: "var(--color-accent-soft-bg)",
+                              color: "var(--color-accent-soft-ink)",
+                              "&:hover": { bgcolor: "var(--color-accent-soft-bg)", opacity: 0.85 },
+                            }}
+                          >
+                            <MessageCircle size={16} strokeWidth={2} />
                           </IconButton>
                         </Box>
                       </Box>
@@ -303,12 +429,12 @@ export function FriendsPage() {
                 ))}
               </Box>
             ) : (
-              <Box sx={{ textAlign: "center", py: 5 }}>
-                <PeopleIcon sx={{ fontSize: 64, color: "text.disabled", mb: 1.5 }} />
-                <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5 }}>
+              <Box sx={{ textAlign: "center", py: 6 }}>
+                <Users size={56} strokeWidth={1.6} color="var(--color-muted-3)" style={{ marginBottom: 12 }} />
+                <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5, color: "var(--color-ink)" }}>
                   No friends yet
                 </Typography>
-                <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                <Typography variant="body2" sx={{ color: "var(--color-muted)" }}>
                   Send a request by email and accepted users will appear here.
                 </Typography>
               </Box>
@@ -316,48 +442,100 @@ export function FriendsPage() {
           </CardContent>
         </Card>
 
-        <Card sx={{ borderRadius: 3 }}>
+        <Card>
           <CardContent sx={{ display: "grid", gap: 2 }}>
-            <Box>
-              <Typography variant="h6" sx={{ fontWeight: 800 }}>
-                Pending requests
-              </Typography>
-              <Typography variant="body2" sx={{ color: "text.secondary" }}>
-                {filteredInvites.length} request{filteredInvites.length === 1 ? "" : "s"} waiting for your reply
-              </Typography>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Clock size={18} color="var(--color-warning)" strokeWidth={2} />
+              <Box>
+                <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--color-ink)" }}>
+                  Pending requests
+                </Typography>
+                <Typography sx={microLabelSx}>
+                  {filteredInvites.length} request{filteredInvites.length === 1 ? "" : "s"} waiting
+                </Typography>
+              </Box>
             </Box>
 
-            <Divider />
+            <Divider sx={{ borderColor: "var(--color-border)" }} />
 
             {filteredInvites.length > 0 ? (
               <Box sx={{ display: "grid", gap: 1.5 }}>
                 {filteredInvites.map((invite) => (
-                  <Card key={invite.id} variant="outlined" sx={{ borderRadius: 2 }}>
+                  <Card
+                    key={invite.id}
+                    variant="outlined"
+                    sx={{ bgcolor: "var(--color-surface-2)", border: "1px solid var(--color-border)", boxShadow: "none" }}
+                  >
                     <CardContent sx={{ p: 2, display: "grid", gap: 1.5 }}>
                       <Box sx={{ display: "flex", justifyContent: "space-between", gap: 2, alignItems: "flex-start" }}>
-                        <Box>
-                          <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                            {invite.fromUserName}
-                          </Typography>
-                          <Typography variant="body2" sx={{ color: "text.secondary" }}>
-                            {invite.fromUserEmail || "Friend request sent to your account"}
-                          </Typography>
-                          {invite.createdAt && (
-                            <Typography variant="caption" sx={{ color: "text.disabled", display: "block", mt: 0.5 }}>
-                              {formatTimestamp(invite.createdAt)}
+                        <Box sx={{ display: "flex", gap: 1.5, alignItems: "center", minWidth: 0 }}>
+                          <Avatar
+                            sx={{
+                              width: 40,
+                              height: 40,
+                              bgcolor: "var(--color-accent)",
+                              color: "var(--color-accent-contrast)",
+                              fontWeight: 800,
+                            }}
+                          >
+                            {invite.fromUserName?.[0] || "?"}
+                          </Avatar>
+                          <Box sx={{ minWidth: 0 }}>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "var(--color-ink)" }} noWrap>
+                              {invite.fromUserName}
                             </Typography>
-                          )}
+                            <Typography variant="body2" sx={{ color: "var(--color-muted)" }} noWrap>
+                              {invite.fromUserEmail || "Friend request sent to your account"}
+                            </Typography>
+                            {invite.createdAt && (
+                              <Typography
+                                sx={{
+                                  fontFamily: "var(--font-mono)",
+                                  fontSize: 10.5,
+                                  color: "var(--color-muted)",
+                                  display: "block",
+                                  mt: 0.5,
+                                }}
+                              >
+                                {formatTimestamp(invite.createdAt)}
+                              </Typography>
+                            )}
+                          </Box>
                         </Box>
-                        <Chip label="Request" size="small" color="primary" variant="outlined" />
+                        <Box
+                          sx={{
+                            px: 1.2,
+                            py: 0.4,
+                            borderRadius: "var(--radius-pill)",
+                            bgcolor: "var(--color-accent-soft-bg)",
+                            color: "var(--color-accent-soft-ink)",
+                            fontFamily: "var(--font-mono)",
+                            fontSize: 10.5,
+                            fontWeight: 600,
+                            textTransform: "uppercase",
+                            letterSpacing: "0.05em",
+                            flexShrink: 0,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          Request
+                        </Box>
                       </Box>
 
                       <Box sx={{ display: "flex", gap: 1, justifyContent: "flex-end" }}>
                         <Button
                           variant="outlined"
-                          color="error"
                           onClick={() => void handleInviteResponse(invite.id, invite.inviteId, false)}
                           disabled={isSubmitting}
-                          startIcon={<CloseIcon />}
+                          startIcon={<X size={16} strokeWidth={2} />}
+                          sx={{
+                            borderColor: "var(--color-danger-border)",
+                            color: "var(--color-danger)",
+                            "&:hover": {
+                              borderColor: "var(--color-danger)",
+                              bgcolor: "var(--color-danger-soft-bg)",
+                            },
+                          }}
                         >
                           Reject
                         </Button>
@@ -365,7 +543,12 @@ export function FriendsPage() {
                           variant="contained"
                           onClick={() => void handleInviteResponse(invite.id, invite.inviteId, true)}
                           disabled={isSubmitting}
-                          startIcon={<CheckIcon />}
+                          startIcon={<Check size={16} strokeWidth={2} />}
+                          sx={{
+                            bgcolor: "var(--color-accent)",
+                            color: "var(--color-accent-contrast)",
+                            "&:hover": { bgcolor: "var(--color-accent)", opacity: 0.9 },
+                          }}
                         >
                           Accept
                         </Button>
@@ -375,12 +558,12 @@ export function FriendsPage() {
                 ))}
               </Box>
             ) : (
-              <Box sx={{ textAlign: "center", py: 5 }}>
-                <PeopleIcon sx={{ fontSize: 48, color: "text.disabled", mb: 1.5 }} />
-                <Typography variant="body1" sx={{ fontWeight: 700 }}>
+              <Box sx={{ textAlign: "center", py: 6 }}>
+                <Clock size={48} strokeWidth={1.6} color="var(--color-muted-3)" style={{ marginBottom: 12 }} />
+                <Typography variant="body1" sx={{ fontWeight: 700, color: "var(--color-ink)" }}>
                   No pending requests
                 </Typography>
-                <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                <Typography variant="body2" sx={{ color: "var(--color-muted)" }}>
                   Incoming requests will appear here and in notifications.
                 </Typography>
               </Box>

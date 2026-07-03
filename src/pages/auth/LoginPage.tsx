@@ -11,11 +11,13 @@ import {
   Alert,
 } from "@mui/material";
 import { useAppState } from "../../app/AppStateContext";
+import { ThemeToggle } from "../../widgets/layout/ThemeToggle";
 
 export function LoginPage() {
-  const { login, notice, setNotice } = useAppState();
+  const { login } = useAppState();
   const [form, setForm] = useState({ email: "", password: "" });
   const [isBusy, setIsBusy] = useState(false);
+  const [loginError, setLoginError] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -34,6 +36,7 @@ export function LoginPage() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsBusy(true);
+    setLoginError("");
 
     try {
       await login(form);
@@ -41,10 +44,7 @@ export function LoginPage() {
     } catch (error) {
       const message = error instanceof Error ? error.message : "Login failed.";
 
-      setNotice({
-        tone: "error",
-        message,
-      });
+      setLoginError(message);
     } finally {
       setIsBusy(false);
     }
@@ -54,21 +54,28 @@ export function LoginPage() {
     <Box
       sx={{
         minHeight: "100dvh",
+        position: "relative",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)",
+        background: "var(--color-bg)",
         py: 4,
         px: 2,
       }}
     >
+      <Box sx={{ position: "fixed", top: 16, right: 16, zIndex: 10 }}>
+        <ThemeToggle />
+      </Box>
+
       <Container maxWidth="sm">
         <Paper
-          elevation={3}
+          elevation={0}
           sx={{
             p: 4,
-            borderRadius: 2,
-            background: "#ffffff",
+            borderRadius: "var(--radius-lg)",
+            background: "var(--color-surface)",
+            border: "1px solid var(--color-border)",
+            boxShadow: "var(--shadow-md)",
           }}
         >
           <Typography
@@ -77,7 +84,7 @@ export function LoginPage() {
             sx={{
               mb: 1,
               fontWeight: 700,
-              color: "#1e293b",
+              color: "var(--color-ink)",
               textAlign: "center",
             }}
           >
@@ -88,7 +95,7 @@ export function LoginPage() {
             sx={{
               mb: 4,
               textAlign: "center",
-              color: "#64748b",
+              color: "var(--color-muted)",
             }}
           >
             Sign in to your account
@@ -124,11 +131,7 @@ export function LoginPage() {
               required
             />
 
-            {notice.message && (
-              <Alert severity={notice.tone === "idle" ? "info" : notice.tone}>
-                {notice.message}
-              </Alert>
-            )}
+            {loginError && <Alert severity="error">{loginError}</Alert>}
 
             <Button
               type="submit"
@@ -149,7 +152,7 @@ export function LoginPage() {
             variant="body2"
             sx={{
               textAlign: "center",
-              color: "#64748b",
+              color: "var(--color-muted)",
               mt: 3,
             }}
           >
@@ -157,7 +160,7 @@ export function LoginPage() {
             <Link
               href="/register"
               sx={{
-                color: "primary.main",
+                color: "var(--color-accent-strong-ink)",
                 fontWeight: 600,
                 textDecoration: "none",
                 cursor: "pointer",
@@ -168,17 +171,6 @@ export function LoginPage() {
             >
               Sign up
             </Link>
-          </Typography>
-
-          <Typography
-            variant="caption"
-            sx={{
-              textAlign: "center",
-              color: "#64748b",
-              display: "block",
-              mt: 3,
-            }}
-          >
           </Typography>
         </Paper>
       </Container>

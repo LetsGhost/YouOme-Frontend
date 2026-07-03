@@ -1,9 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import AddIcon from "@mui/icons-material/Add";
-import SettingsIcon from "@mui/icons-material/Settings";
-import SearchIcon from "@mui/icons-material/Search";
-import PeopleIcon from "@mui/icons-material/People";
+import { Plus, Settings, Search, Users } from "lucide-react";
 import {
   Box,
   Button,
@@ -25,6 +22,20 @@ import {
 import { useAppState } from "../../app/AppStateContext";
 import { createGroup } from "../../shared/api/backend";
 import { formatCount, formatMoney } from "../../shared/lib/format";
+
+const microLabelSx = {
+  fontFamily: "var(--font-mono)",
+  fontSize: "10px",
+  fontWeight: 600,
+  letterSpacing: "0.06em",
+  textTransform: "uppercase" as const,
+  color: "var(--color-muted)",
+};
+
+const monoValueSx = {
+  fontFamily: "var(--font-mono)",
+  fontWeight: 700,
+};
 
 export function GroupsPage() {
   const navigate = useNavigate();
@@ -95,27 +106,30 @@ export function GroupsPage() {
           justifyContent: "space-between",
           alignItems: { sm: "center" },
           gap: 2,
+          pb: 2,
+          borderBottom: "1px solid var(--color-border)",
         }}
       >
         <Box>
-          <Typography variant="h4" sx={{ fontWeight: "bold", mb: 0.5 }}>
+          <Typography variant="h4" sx={{ fontWeight: 700, color: "var(--color-ink)", mb: 0.5 }}>
             Groups
           </Typography>
-          <Typography variant="h6" sx={{ color: "text.secondary" }}>
+          <Typography variant="body2" sx={{ color: "var(--color-muted)" }}>
             Manage and view all your shared groups
           </Typography>
         </Box>
         <Button
-          variant="contained"
-          startIcon={<AddIcon />}
+          startIcon={<Plus size={18} strokeWidth={2} />}
           onClick={() => setShowCreateModal(true)}
           sx={{
-            bgcolor: "#4f46e5",
-            color: "white",
-            p: 1.5,
-            fontWeight: "bold",
+            bgcolor: "var(--color-accent)",
+            color: "var(--color-accent-contrast)",
+            borderRadius: "var(--radius-pill)",
+            px: 2.5,
+            fontWeight: 700,
             "&:hover": {
-              bgcolor: "#4338ca",
+              bgcolor: "var(--color-accent)",
+              filter: "brightness(0.92)",
             },
           }}
         >
@@ -126,21 +140,25 @@ export function GroupsPage() {
       {/* Search Bar */}
       <TextField
         fullWidth
-        placeholder="Search groups..."
+        placeholder="Search groups…"
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
         slotProps={{
           input: {
             startAdornment: (
               <InputAdornment position="start">
-                <SearchIcon />
+                <Search size={18} strokeWidth={2} color="var(--color-muted)" />
               </InputAdornment>
             ),
           },
         }}
         sx={{
           "& .MuiOutlinedInput-root": {
-            borderRadius: 1,
+            borderRadius: "var(--radius-sm)",
+            bgcolor: "var(--color-surface-2)",
+            "& fieldset": {
+              borderColor: "var(--color-border)",
+            },
           },
         }}
       />
@@ -163,12 +181,15 @@ export function GroupsPage() {
               <Card
                 onClick={() => navigate(`/groups/${getGroupId(group)}`)}
                 sx={{
-                  borderRadius: 2,
+                  borderRadius: "var(--radius-md)",
+                  bgcolor: "var(--color-surface-2)",
+                  border: "1px solid var(--color-border)",
                   cursor: "pointer",
                   transition: "all 0.2s",
                   "&:hover": {
-                    boxShadow: 3,
+                    boxShadow: "var(--shadow-md)",
                     transform: "translateY(-2px)",
+                    borderColor: "var(--color-border-strong)",
                   },
                 }}
               >
@@ -182,84 +203,82 @@ export function GroupsPage() {
                       mb: 2,
                     }}
                   >
-                    <Box sx={{ display: "flex", gap: 1, alignItems: "flex-start", flex: 1 }}>
+                    <Box sx={{ display: "flex", gap: 1.5, alignItems: "flex-start", flex: 1, minWidth: 0 }}>
                       <Box
                         sx={{
-                          width: 48,
-                          height: 48,
-                          borderRadius: 1,
-                          background: "linear-gradient(135deg, #4f46e5 0%, #4338ca 100%)",
+                          width: 44,
+                          height: 44,
+                          borderRadius: "var(--radius-sm)",
+                          bgcolor: "var(--color-accent-soft-bg)",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          color: "white",
-                          fontWeight: "bold",
-                          fontSize: "1.25rem",
                           flexShrink: 0,
                         }}
                       >
-                        {group.name?.[0] || "?"}
+                        <Users size={20} strokeWidth={2} color="var(--color-accent-soft-ink)" />
                       </Box>
                       <Box sx={{ flex: 1, minWidth: 0 }}>
                         <Typography
                           variant="subtitle1"
-                          sx={{ fontWeight: "bold", overflow: "hidden", textOverflow: "ellipsis" }}
+                          sx={{ fontWeight: 700, color: "var(--color-ink)", overflow: "hidden", textOverflow: "ellipsis" }}
                         >
                           {group.name}
                         </Typography>
                         <Typography
                           variant="body2"
-                          sx={{ color: "text.secondary", overflow: "hidden", textOverflow: "ellipsis" }}
+                          sx={{ color: "var(--color-muted)", overflow: "hidden", textOverflow: "ellipsis" }}
                         >
                           {group.description}
                         </Typography>
                       </Box>
                     </Box>
-                    <Box sx={{ display: "flex", gap: 0.5 }}>
+                    <Box sx={{ display: "flex", gap: 0.5, flexShrink: 0 }}>
                       <IconButton
                         size="small"
-                        sx={{ color: "text.secondary" }}
+                        sx={{ color: "var(--color-muted)", "&:hover": { color: "var(--color-ink)" } }}
                         onClick={(event) => {
                           event.stopPropagation();
                           navigate(`/groups/${getGroupId(group)}/settings`);
                         }}
                       >
-                        <SettingsIcon />
+                        <Settings size={18} strokeWidth={2} />
                       </IconButton>
                     </Box>
                   </Box>
 
                   {/* Stats */}
-                  <Box sx={{ py: 2, borderTop: "1px solid #e5e7eb", borderBottom: "1px solid #e5e7eb" }}>
+                  <Box sx={{ pt: 2, borderTop: "1px solid var(--color-border)" }}>
                     <Box sx={{ display: "grid", gap: 1, gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}>
                       <Box>
-                        <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 0.5 }}>
-                          Members
-                        </Typography>
-                        <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.5 }}>
+                          <Users size={12} strokeWidth={2} color="var(--color-muted)" />
+                          <Typography sx={{ ...microLabelSx }}>Members</Typography>
+                        </Box>
+                        <Typography sx={{ ...monoValueSx, fontSize: "1.05rem", color: "var(--color-ink)" }}>
                           {formatCount(group.memberCount ?? group.members?.length ?? 0)}
                         </Typography>
                       </Box>
                       <Box>
-                        <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 0.5 }}>
-                          Total
-                        </Typography>
-                        <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+                        <Typography sx={{ ...microLabelSx, mb: 0.5 }}>Total</Typography>
+                        <Typography sx={{ ...monoValueSx, fontSize: "1.05rem", color: "var(--color-ink)" }}>
                           {formatMoney(group.totalExpense)}
                         </Typography>
                       </Box>
                       <Box>
-                        <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 0.5 }}>
-                          Your Share
-                        </Typography>
-                        <Typography variant="h6" sx={{ fontWeight: "bold", color: "#4f46e5" }}>
+                        <Typography sx={{ ...microLabelSx, mb: 0.5 }}>Your Share</Typography>
+                        <Typography
+                          sx={{
+                            ...monoValueSx,
+                            fontSize: "1.05rem",
+                            color: Number(group.yourShare ?? 0) > 0 ? "var(--color-warning)" : "var(--color-ink)",
+                          }}
+                        >
                           {formatMoney(group.yourShare)}
                         </Typography>
                       </Box>
                     </Box>
                   </Box>
-
-                  {/* Actions */}
                 </CardContent>
               </Card>
             </Box>
@@ -267,22 +286,24 @@ export function GroupsPage() {
         </Box>
       ) : (
         <Box sx={{ textAlign: "center", py: 4 }}>
-          <PeopleIcon sx={{ fontSize: 64, color: "text.disabled", mb: 2 }} />
-          <Typography variant="h6" sx={{ fontWeight: "bold", mb: 1 }}>
+          <Users size={64} strokeWidth={1.8} color="var(--color-muted-3)" style={{ marginBottom: 16 }} />
+          <Typography variant="h6" sx={{ fontWeight: 700, color: "var(--color-ink)", mb: 1 }}>
             No groups found
           </Typography>
-          <Typography sx={{ color: "text.secondary", mb: 2 }}>
+          <Typography sx={{ color: "var(--color-muted)", mb: 2 }}>
             Create your first group to get started
           </Typography>
           <Button
-            variant="contained"
-            startIcon={<AddIcon />}
+            startIcon={<Plus size={18} strokeWidth={2} />}
             onClick={() => setShowCreateModal(true)}
             sx={{
-              bgcolor: "#4f46e5",
-              color: "white",
+              bgcolor: "var(--color-accent)",
+              color: "var(--color-accent-contrast)",
+              borderRadius: "var(--radius-pill)",
+              px: 2.5,
               "&:hover": {
-                bgcolor: "#4338ca",
+                bgcolor: "var(--color-accent)",
+                filter: "brightness(0.92)",
               },
             }}
           >
@@ -297,11 +318,19 @@ export function GroupsPage() {
         onClose={() => setShowCreateModal(false)}
         maxWidth="sm"
         fullWidth
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: "var(--radius-lg)",
+              border: "1px solid var(--color-border)",
+            },
+          },
+        }}
       >
-        <DialogTitle sx={{ fontWeight: "bold", fontSize: "1.5rem" }}>
+        <DialogTitle sx={{ fontWeight: 700, fontSize: "1.5rem", color: "var(--color-ink)" }}>
           Create New Group
         </DialogTitle>
-        <Divider />
+        <Divider sx={{ borderColor: "var(--color-border)" }} />
         <DialogContent sx={{ pt: 2 }}>
           <Box component="form" onSubmit={handleCreateGroup} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <TextField
@@ -326,26 +355,26 @@ export function GroupsPage() {
             />
           </Box>
         </DialogContent>
-        <Divider />
+        <Divider sx={{ borderColor: "var(--color-border)" }} />
         <DialogActions sx={{ p: 2, gap: 1 }}>
           <Button
             onClick={() => setShowCreateModal(false)}
             variant="outlined"
-            sx={{ textTransform: "none", fontWeight: "bold" }}
+            sx={{ textTransform: "none", fontWeight: 700, borderColor: "var(--color-border)", color: "var(--color-ink)" }}
           >
             Cancel
           </Button>
           <Button
             onClick={handleCreateGroup}
-            variant="contained"
             disabled={isSubmitting}
             sx={{
-              bgcolor: "#4f46e5",
-              color: "white",
+              bgcolor: "var(--color-accent)",
+              color: "var(--color-accent-contrast)",
               textTransform: "none",
-              fontWeight: "bold",
+              fontWeight: 700,
               "&:hover": {
-                bgcolor: "#4338ca",
+                bgcolor: "var(--color-accent)",
+                filter: "brightness(0.92)",
               },
             }}
           >

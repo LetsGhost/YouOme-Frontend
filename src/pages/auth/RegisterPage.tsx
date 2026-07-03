@@ -16,6 +16,7 @@ import { Visibility, VisibilityOff, PersonAdd } from "@mui/icons-material";
 import { FormEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppState } from "../../app/AppStateContext";
+import { ThemeToggle } from "../../widgets/layout/ThemeToggle";
 
 export function RegisterPage() {
   const { register, notice, setNotice } = useAppState();
@@ -45,20 +46,27 @@ export function RegisterPage() {
     <Box
       sx={{
         minHeight: "100dvh",
+        position: "relative",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)",
+        background: "var(--color-bg)",
         py: 4,
         px: 2,
       }}
     >
+      <Box sx={{ position: "fixed", top: 16, right: 16, zIndex: 10 }}>
+        <ThemeToggle />
+      </Box>
+
       <Container maxWidth="sm">
         <Card
-          elevation={3}
+          elevation={0}
           sx={{
-            borderRadius: 2,
-            background: "#ffffff",
+            borderRadius: "var(--radius-lg)",
+            background: "var(--color-surface)",
+            border: "1px solid var(--color-border)",
+            boxShadow: "var(--shadow-md)",
           }}
         >
           <CardContent sx={{ p: 4 }}>
@@ -68,7 +76,7 @@ export function RegisterPage() {
               sx={{
                 mb: 1,
                 fontWeight: 700,
-                color: "#1e293b",
+                color: "var(--color-ink)",
                 textAlign: "center",
               }}
             >
@@ -79,7 +87,7 @@ export function RegisterPage() {
               sx={{
                 mb: 4,
                 textAlign: "center",
-                color: "#64748b",
+                color: "var(--color-muted)",
               }}
             >
               Join YouOme and start managing finances
@@ -161,9 +169,11 @@ export function RegisterPage() {
                   py: 1.5,
                   fontSize: "1rem",
                   fontWeight: 600,
-                  backgroundColor: "#6366f1",
+                  backgroundColor: "var(--color-accent)",
+                  color: "var(--color-accent-contrast)",
                   "&:hover": {
-                    backgroundColor: "#4f46e5",
+                    backgroundColor: "var(--color-accent)",
+                    filter: "brightness(0.92)",
                   },
                 }}
               >

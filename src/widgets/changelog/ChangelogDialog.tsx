@@ -37,7 +37,7 @@ export function ChangelogDialog() {
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontWeight: 800 }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <CampaignIcon sx={{ color: "#4f46e5" }} />
+          <CampaignIcon sx={{ color: "var(--color-accent)" }} />
           What's new
         </Box>
         <IconButton onClick={handleClose} size="small" aria-label="Close">
@@ -55,7 +55,12 @@ export function ChangelogDialog() {
               <Chip
                 label={entry.version}
                 size="small"
-                sx={{ bgcolor: "#eef2ff", color: "#4f46e5", fontWeight: 700 }}
+                sx={{
+                  bgcolor: "var(--color-accent-soft-bg)",
+                  color: "var(--color-accent-soft-ink)",
+                  fontWeight: 700,
+                  fontFamily: "var(--font-mono)",
+                }}
               />
             </Box>
             <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 1 }}>

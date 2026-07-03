@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from "react-router-dom";
 import { House, Users, UserRound, Settings, LogOut } from "lucide-react";
 import { useAppState } from "../../app/AppStateContext";
+import { ThemeToggle } from "./ThemeToggle";
 
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: House },
@@ -15,6 +16,9 @@ export function AppShell() {
   return (
     <div className="shell-root">
       <main className="shell-main">
+        <div className="shell-topbar">
+          <ThemeToggle />
+        </div>
         <div className="shell-content">
           <Outlet />
         </div>

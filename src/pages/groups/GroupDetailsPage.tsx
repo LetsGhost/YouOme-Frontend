@@ -1,10 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import AddIcon from "@mui/icons-material/Add";
-import PeopleIcon from "@mui/icons-material/People";
-import TrendingUpIcon from "@mui/icons-material/TrendingUp";
-import SettingsIcon from "@mui/icons-material/Settings";
+import { ChevronLeft, Plus, Users, TrendingUp, Settings, TrendingDown, Wallet } from "lucide-react";
 import {
   Box,
   Button,
@@ -39,6 +35,14 @@ type ExpenseDraft = {
   splitType: SplitType;
   participantIds: string[];
   participantShares: Record<string, string>;
+};
+
+const microLabelSx = {
+  fontFamily: "var(--font-mono)",
+  fontSize: "10px",
+  fontWeight: 600,
+  letterSpacing: "0.06em",
+  textTransform: "uppercase" as const,
 };
 
 function getMemberLabel(member: GroupMember) {
@@ -391,28 +395,40 @@ export function GroupDetailsPage() {
       {errorMessage && <Alert severity="error">{errorMessage}</Alert>}
 
       {/* Header with Back Button */}
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 2, mb: 1 }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <IconButton onClick={() => navigate("/groups")} sx={{ color: "text.secondary" }}>
-            <ArrowBackIcon />
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 2, pb: 2, borderBottom: "1px solid var(--color-border)" }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          <IconButton onClick={() => navigate("/groups")} sx={{ color: "var(--color-muted)", "&:hover": { color: "var(--color-ink)" } }}>
+            <ChevronLeft size={22} strokeWidth={2} />
           </IconButton>
           <Box>
             {isLoading ? (
               <Skeleton variant="text" width={260} height={42} />
             ) : (
-              <Typography variant="h4" sx={{ fontWeight: "bold" }}>
+              <Typography variant="h4" sx={{ fontWeight: 700, color: "var(--color-ink)" }}>
                 {group?.name || "Group"}
               </Typography>
             )}
-            {isLoading ? <Skeleton variant="text" width={220} /> : <Typography variant="body2" sx={{ color: "text.secondary" }}>{group?.description || "No description provided."}</Typography>}
+            {isLoading ? (
+              <Skeleton variant="text" width={220} />
+            ) : (
+              <Typography variant="body2" sx={{ color: "var(--color-muted)" }}>
+                {group?.description || "No description provided."}
+              </Typography>
+            )}
           </Box>
         </Box>
 
         <Button
           variant="outlined"
-          startIcon={<SettingsIcon />}
+          startIcon={<Settings size={16} strokeWidth={2} />}
           onClick={() => navigate(`/groups/${id}/settings`)}
-          sx={{ textTransform: "none", fontWeight: 700, whiteSpace: "nowrap" }}
+          sx={{
+            textTransform: "none",
+            fontWeight: 700,
+            whiteSpace: "nowrap",
+            borderColor: "var(--color-border)",
+            color: "var(--color-ink)",
+          }}
         >
           Settings
         </Button>
@@ -426,54 +442,72 @@ export function GroupDetailsPage() {
           gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", md: "repeat(3, 1fr)" },
         }}
       >
-        <Card sx={{ borderRadius: 3, background: "linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)" }}>
-          <CardContent sx={{ p: 2 }}>
-            <Typography variant="caption" sx={{ color: "#991b1b", fontWeight: "bold", display: "block", mb: 0.5 }}>
-              You Owe
-            </Typography>
-            <Typography variant="h5" sx={{ fontWeight: "bold", color: "#991b1b" }}>
-              {formatMoney(youOwe)}
-            </Typography>
-          </CardContent>
-        </Card>
+        <Box
+          sx={{
+            borderRadius: "var(--radius-md)",
+            border: "1px solid var(--color-warning-border)",
+            bgcolor: "var(--color-warning-soft-bg)",
+            p: 2,
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 0.75 }}>
+            <TrendingDown size={14} strokeWidth={2} color="var(--color-warning)" />
+            <Typography sx={{ ...microLabelSx, color: "var(--color-warning)" }}>You Owe</Typography>
+          </Box>
+          <Typography sx={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: "1.35rem", color: "var(--color-warning)" }}>
+            {formatMoney(youOwe)}
+          </Typography>
+        </Box>
 
-        <Card sx={{ borderRadius: 3, background: "linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%)" }}>
-          <CardContent sx={{ p: 2 }}>
-            <Typography variant="caption" sx={{ color: "#166534", fontWeight: "bold", display: "block", mb: 0.5 }}>
-              Owed to You
-            </Typography>
-            <Typography variant="h5" sx={{ fontWeight: "bold", color: "#166534" }}>
-              {formatMoney(owedToYou)}
-            </Typography>
-          </CardContent>
-        </Card>
+        <Box
+          sx={{
+            borderRadius: "var(--radius-md)",
+            border: "1px solid var(--color-success-border)",
+            bgcolor: "var(--color-success-soft-bg)",
+            p: 2,
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 0.75 }}>
+            <TrendingUp size={14} strokeWidth={2} color="var(--color-success)" />
+            <Typography sx={{ ...microLabelSx, color: "var(--color-success)" }}>Owed to You</Typography>
+          </Box>
+          <Typography sx={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: "1.35rem", color: "var(--color-success)" }}>
+            {formatMoney(owedToYou)}
+          </Typography>
+        </Box>
 
-        <Card sx={{ borderRadius: 3, background: "linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%)" }}>
-          <CardContent sx={{ p: 2 }}>
-            <Typography variant="caption" sx={{ color: "#312e81", fontWeight: "bold", display: "block", mb: 0.5 }}>
-              Members
-            </Typography>
-            <Typography variant="h5" sx={{ fontWeight: "bold", color: "#312e81" }}>
-              {members.length}
-            </Typography>
-          </CardContent>
-        </Card>
+        <Box
+          sx={{
+            borderRadius: "var(--radius-md)",
+            border: "1px solid var(--color-border)",
+            bgcolor: "var(--color-accent-soft-bg)",
+            p: 2,
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 0.75 }}>
+            <Users size={14} strokeWidth={2} color="var(--color-accent-soft-ink)" />
+            <Typography sx={{ ...microLabelSx, color: "var(--color-accent-soft-ink)" }}>Members</Typography>
+          </Box>
+          <Typography sx={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: "1.35rem", color: "var(--color-accent-soft-ink)" }}>
+            {members.length}
+          </Typography>
+        </Box>
       </Box>
 
       <Button
-        variant="contained"
-        startIcon={<AddIcon />}
+        startIcon={<Plus size={18} strokeWidth={2} />}
         onClick={openExpenseDialog}
         fullWidth
         sx={{
-          bgcolor: "#4f46e5",
-          color: "white",
+          bgcolor: "var(--color-accent)",
+          color: "var(--color-accent-contrast)",
           p: 1.5,
-          fontWeight: "bold",
+          fontWeight: 700,
           textTransform: "none",
           fontSize: "1rem",
           "&:hover": {
-            bgcolor: "#4338ca",
+            bgcolor: "var(--color-accent)",
+            filter: "brightness(0.92)",
           },
         }}
       >
@@ -481,11 +515,11 @@ export function GroupDetailsPage() {
       </Button>
 
       {/* Members Section */}
-      <Card sx={{ borderRadius: 3 }}>
+      <Card sx={{ borderRadius: "var(--radius-md)" }}>
         <CardContent sx={{ p: 3 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-            <PeopleIcon sx={{ color: "#4f46e5" }} />
-            <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+            <Users size={18} strokeWidth={2} color="var(--color-accent)" />
+            <Typography variant="h6" sx={{ fontWeight: 700, color: "var(--color-ink)" }}>
               Members
             </Typography>
           </Box>
@@ -499,31 +533,38 @@ export function GroupDetailsPage() {
                   alignItems: "center",
                   gap: 2,
                   p: 1.5,
-                  borderRadius: 1,
-                  bgcolor: "#f8fafc",
-                  border: "1px solid #e2e8f0",
+                  borderRadius: "var(--radius-md)",
+                  bgcolor: "var(--color-surface-2)",
+                  border: "1px solid var(--color-border)",
                 }}
               >
-                <Avatar sx={{ bgcolor: "#4f46e5", color: "white", fontWeight: "bold" }}>
+                <Avatar sx={{ bgcolor: "var(--color-accent-soft-bg)", color: "var(--color-accent-soft-ink)", fontWeight: 700 }}>
                   {member.avatar || member.name?.[0] || "?"}
                 </Avatar>
                 <Box sx={{ flex: 1 }}>
-                  <Typography variant="body2" sx={{ fontWeight: "bold" }}>
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--color-ink)" }}>
                     {member.name}
                   </Typography>
-                  <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                  <Typography variant="caption" sx={{ color: "var(--color-muted)" }}>
                     {member.email || "No email available"}
                   </Typography>
                 </Box>
                 {(member.id === currentUser?.id || member.email === currentUser?.email) && (
-                  <Chip label="You" size="small" sx={{ bgcolor: "#e0e7ff", color: "#4f46e5" }} />
+                  <Chip
+                    label="You"
+                    size="small"
+                    sx={{ bgcolor: "var(--color-accent-soft-bg)", color: "var(--color-accent-soft-ink)" }}
+                  />
                 )}
               </Box>
             ))}
             {members.length === 0 && !isLoading && (
-              <Typography variant="body2" sx={{ color: "text.secondary", textAlign: "center", py: 2 }}>
-                No members found in this group.
-              </Typography>
+              <Box sx={{ textAlign: "center", py: 4 }}>
+                <Users size={48} strokeWidth={1.8} color="var(--color-muted-3)" style={{ marginBottom: 8 }} />
+                <Typography variant="body2" sx={{ color: "var(--color-muted)" }}>
+                  No members found in this group.
+                </Typography>
+              </Box>
             )}
           </Box>
         </CardContent>
@@ -538,11 +579,11 @@ export function GroupDetailsPage() {
       />
 
       {/* Recent Expenses */}
-      <Card sx={{ borderRadius: 3 }}>
+      <Card sx={{ borderRadius: "var(--radius-md)" }}>
         <CardContent sx={{ p: 3 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-            <TrendingUpIcon sx={{ color: "#4f46e5" }} />
-            <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+            <Wallet size={18} strokeWidth={2} color="var(--color-accent)" />
+            <Typography variant="h6" sx={{ fontWeight: 700, color: "var(--color-ink)" }}>
               Recent Expenses
             </Typography>
           </Box>
@@ -557,24 +598,24 @@ export function GroupDetailsPage() {
                     alignItems: "center",
                     justifyContent: "space-between",
                     p: 1.5,
-                    borderRadius: 1,
-                    bgcolor: "#f8fafc",
-                    border: "1px solid #e2e8f0",
+                    borderRadius: "var(--radius-md)",
+                    bgcolor: "var(--color-surface-2)",
+                    border: "1px solid var(--color-border)",
                   }}
                 >
                   <Box sx={{ minWidth: 0 }}>
-                    <Typography variant="body2" sx={{ fontWeight: "bold" }}>
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--color-ink)" }}>
                       {expense.description || "Expense"}
                     </Typography>
-                    <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
+                    <Typography variant="caption" sx={{ color: "var(--color-muted)", display: "block" }}>
                       {expenseSummary}
                     </Typography>
                   </Box>
                   <Typography
-                    variant="body2"
                     sx={{
-                      fontWeight: "bold",
-                      color: "#4f46e5",
+                      fontFamily: "var(--font-mono)",
+                      fontWeight: 700,
+                      color: "var(--color-accent)",
                     }}
                   >
                     {formatMoney(expense.amount)}
@@ -583,7 +624,7 @@ export function GroupDetailsPage() {
               ))}
             </Box>
           ) : (
-            <Typography variant="body2" sx={{ color: "text.secondary", textAlign: "center", py: 2 }}>
+            <Typography variant="body2" sx={{ color: "var(--color-muted)", textAlign: "center", py: 2 }}>
               No expenses found for this group.
             </Typography>
           )}
@@ -591,8 +632,18 @@ export function GroupDetailsPage() {
       </Card>
 
       {/* Add Expense Dialog */}
-      <Dialog open={showExpenseDialog} onClose={() => setShowExpenseDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontWeight: "bold", fontSize: "1.25rem" }}>Add Expense</DialogTitle>
+      <Dialog
+        open={showExpenseDialog}
+        onClose={() => setShowExpenseDialog(false)}
+        maxWidth="sm"
+        fullWidth
+        slotProps={{
+          paper: {
+            sx: { borderRadius: "var(--radius-lg)", border: "1px solid var(--color-border)" },
+          },
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 700, fontSize: "1.25rem", color: "var(--color-ink)" }}>Add Expense</DialogTitle>
         <form onSubmit={handleCreateExpense}>
           <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, py: 2 }}>
             <TextField
@@ -664,10 +715,10 @@ export function GroupDetailsPage() {
               <MenuItem value="custom">Custom amounts</MenuItem>
             </TextField>
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "var(--color-ink)" }}>
                 Who participated?
               </Typography>
-              <Typography variant="caption" sx={{ color: "text.secondary" }}>
+              <Typography variant="caption" sx={{ color: "var(--color-muted)" }}>
                 Pick everyone who should owe part of this expense. The payer's share is added automatically.
               </Typography>
               <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
@@ -679,8 +730,12 @@ export function GroupDetailsPage() {
                       key={member.id}
                       label={getMemberLabel(member)}
                       clickable
-                      color={selected ? "primary" : "default"}
                       variant={selected ? "filled" : "outlined"}
+                      sx={
+                        selected
+                          ? { bgcolor: "var(--color-accent)", color: "var(--color-accent-contrast)" }
+                          : { borderColor: "var(--color-border)", color: "var(--color-ink)" }
+                      }
                       onClick={() => {
                         setExpenseData((current) => {
                           const participantIds = current.participantIds.includes(member.id)
@@ -703,30 +758,55 @@ export function GroupDetailsPage() {
               </Box>
             </Box>
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "var(--color-ink)" }}>
                 Split preview
               </Typography>
               {previewMembers.length > 0 && Number(expenseData.amount) > 0 ? (
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
                   {expenseData.splitType === "equal" &&
                     previewMembers.map((member) => (
-                      <Box key={member.id} sx={{ display: "flex", justifyContent: "space-between", gap: 2, bgcolor: member.id === expenseData.paidBy ? "#eff6ff" : "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 1, px: 1.5, py: 1 }}>
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      <Box
+                        key={member.id}
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          gap: 2,
+                          bgcolor: member.id === expenseData.paidBy ? "var(--color-accent-soft-bg)" : "var(--color-surface-2)",
+                          border: "1px solid var(--color-border)",
+                          borderRadius: "var(--radius-sm)",
+                          px: 1.5,
+                          py: 1,
+                        }}
+                      >
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: "var(--color-ink)" }}>
                           {member.id === expenseData.paidBy ? `${getMemberLabel(member)} (paid upfront)` : getMemberLabel(member)}
                         </Typography>
-                        <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                        <Typography sx={{ fontFamily: "var(--font-mono)", fontWeight: 700, color: "var(--color-ink)" }}>
                           {formatMoney(previewShares.get(member.id) ?? 0)}
                         </Typography>
                       </Box>
                     ))}
 
                   {expenseData.splitType === "percentage" && previewMembers.map((member) => (
-                    <Box key={member.id} sx={{ display: "grid", gridTemplateColumns: "1fr 120px 120px", gap: 1, alignItems: "center", bgcolor: member.id === expenseData.paidBy ? "#eff6ff" : "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 1, px: 1.5, py: 1 }}>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                    <Box
+                      key={member.id}
+                      sx={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 120px 120px",
+                        gap: 1,
+                        alignItems: "center",
+                        bgcolor: member.id === expenseData.paidBy ? "var(--color-accent-soft-bg)" : "var(--color-surface-2)",
+                        border: "1px solid var(--color-border)",
+                        borderRadius: "var(--radius-sm)",
+                        px: 1.5,
+                        py: 1,
+                      }}
+                    >
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: "var(--color-ink)" }}>
                         {member.id === expenseData.paidBy ? `${getMemberLabel(member)} (paid upfront)` : getMemberLabel(member)}
                       </Typography>
                       {member.id === expenseData.paidBy ? (
-                        <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                        <Typography variant="body2" sx={{ color: "var(--color-muted)" }}>
                           Included automatically
                         </Typography>
                       ) : (
@@ -747,19 +827,32 @@ export function GroupDetailsPage() {
                           slotProps={{ htmlInput: { min: 0, max: 100, step: "0.01" } }}
                         />
                       )}
-                      <Typography variant="body2" sx={{ fontWeight: 700, textAlign: "right" }}>
+                      <Typography sx={{ fontFamily: "var(--font-mono)", fontWeight: 700, textAlign: "right", color: "var(--color-ink)" }}>
                         {formatMoney(previewShares.get(member.id) ?? 0)}
                       </Typography>
                     </Box>
                   ))}
 
                   {expenseData.splitType === "custom" && previewMembers.map((member) => (
-                    <Box key={member.id} sx={{ display: "grid", gridTemplateColumns: "1fr 160px", gap: 1, alignItems: "center", bgcolor: member.id === expenseData.paidBy ? "#eff6ff" : "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 1, px: 1.5, py: 1 }}>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                    <Box
+                      key={member.id}
+                      sx={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 160px",
+                        gap: 1,
+                        alignItems: "center",
+                        bgcolor: member.id === expenseData.paidBy ? "var(--color-accent-soft-bg)" : "var(--color-surface-2)",
+                        border: "1px solid var(--color-border)",
+                        borderRadius: "var(--radius-sm)",
+                        px: 1.5,
+                        py: 1,
+                      }}
+                    >
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: "var(--color-ink)" }}>
                         {member.id === expenseData.paidBy ? `${getMemberLabel(member)} (paid upfront)` : getMemberLabel(member)}
                       </Typography>
                       {member.id === expenseData.paidBy ? (
-                        <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 700, textAlign: "right" }}>
+                        <Typography sx={{ fontFamily: "var(--font-mono)", color: "var(--color-muted)", fontWeight: 700, textAlign: "right" }}>
                           {formatMoney(previewShares.get(member.id) ?? 0)}
                         </Typography>
                       ) : (
@@ -784,7 +877,7 @@ export function GroupDetailsPage() {
                   ))}
                 </Box>
               ) : (
-                <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                <Typography variant="body2" sx={{ color: "var(--color-muted)" }}>
                   Add an amount and participants to see the split breakdown.
                 </Typography>
               )}
@@ -800,8 +893,17 @@ export function GroupDetailsPage() {
             />
           </DialogContent>
           <DialogActions sx={{ p: 2 }}>
-            <Button onClick={() => setShowExpenseDialog(false)}>Cancel</Button>
-            <Button type="submit" variant="contained" sx={{ bgcolor: "#4f46e5" }}>
+            <Button onClick={() => setShowExpenseDialog(false)} sx={{ color: "var(--color-ink)" }}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              sx={{
+                bgcolor: "var(--color-accent)",
+                color: "var(--color-accent-contrast)",
+                "&:hover": { bgcolor: "var(--color-accent)", filter: "brightness(0.92)" },
+              }}
+            >
               Add Expense
             </Button>
           </DialogActions>

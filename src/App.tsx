@@ -1,10 +1,11 @@
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useMemo } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 
-import { theme } from "./config/theme";
+import { buildTheme } from "./config/theme";
 import { AppProvider } from "./app/AppStateContext";
+import { ThemeModeProvider, useThemeMode } from "./app/ThemeModeContext";
 import { AppShell } from "./widgets/layout/AppShell";
 import { AdminRoute, ProtectedRoute, PublicOnlyRoute } from "./app/RouteGuards";
 
@@ -37,7 +38,10 @@ function RouteFallback() {
   );
 }
 
-export default function App() {
+function ThemedApp() {
+  const { mode } = useThemeMode();
+  const theme = useMemo(() => buildTheme(mode), [mode]);
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -95,5 +99,13 @@ export default function App() {
         </BrowserRouter>
       </AppProvider>
     </ThemeProvider>
+  );
+}
+
+export default function App() {
+  return (
+    <ThemeModeProvider>
+      <ThemedApp />
+    </ThemeModeProvider>
   );
 }
