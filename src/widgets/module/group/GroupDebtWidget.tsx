@@ -96,6 +96,42 @@ function getStatusChipSx(status: GroupDebtParticipant["status"]) {
   return { bgcolor: "transparent", color: "var(--color-muted)", border: "1px solid var(--color-border)" };
 }
 
+// The board endpoint only ever returns open (non-settled) expenses, so
+// expense.status is always the same generic "not fully settled" value here —
+// it carries no info about individual participant progress. Derive the
+// user-facing chip from the participants instead, so it reflects reality.
+function summarizeExpenseProgress(expense: GroupDebtExpense) {
+  const total = expense.participants.length;
+  const confirmed = expense.participants.filter((participant) => participant.status === "payment-confirmed").length;
+  const submitted = expense.participants.filter((participant) => participant.status === "payment-submitted").length;
+
+  if (expense.status === "settled" || (total > 0 && confirmed === total)) {
+    return { label: "Settled", tone: "success" as const };
+  }
+
+  if (confirmed > 0) {
+    return { label: `${confirmed}/${total} confirmed`, tone: "success" as const };
+  }
+
+  if (submitted > 0) {
+    return { label: "Awaiting review", tone: "warning" as const };
+  }
+
+  return { label: "Awaiting payment", tone: "neutral" as const };
+}
+
+function getExpenseStatusChipSx(tone: "success" | "warning" | "neutral") {
+  if (tone === "success") {
+    return { bgcolor: "var(--color-success-soft-bg)", color: "var(--color-success)", border: "1px solid var(--color-success-border)" };
+  }
+
+  if (tone === "warning") {
+    return { bgcolor: "var(--color-warning-soft-bg)", color: "var(--color-warning)", border: "1px solid var(--color-warning-border)" };
+  }
+
+  return { bgcolor: "var(--color-accent-soft-bg)", color: "var(--color-accent-soft-ink)", border: "1px solid var(--color-border)" };
+}
+
 function hasReviewAction(expense: GroupDebtExpense, participant: GroupDebtParticipant, currentUserId?: string) {
   return Boolean(currentUserId && expense.createdByUserId === currentUserId && participant.status === "payment-submitted");
 }
@@ -261,7 +297,7 @@ export function GroupDebtWidget({ backendUrl, groupId, currentUserId, accessToke
           sx={{
             display: "grid",
             gap: 1.5,
-            gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" },
+            gridTemplateColumns: "repeat(3, 1fr)",
             mb: 2,
             pt: 2,
             borderTop: "1px solid var(--color-border)",
@@ -301,7 +337,10 @@ export function GroupDebtWidget({ backendUrl, groupId, currentUserId, accessToke
           </Stack>
         ) : board?.expenses.length ? (
           <Stack spacing={1.5}>
-            {board.expenses.map((expense) => (
+            {board.expenses.map((expense) => {
+              const expenseProgress = summarizeExpenseProgress(expense);
+
+              return (
               <Card key={expense.id} variant="outlined" sx={{ borderRadius: "var(--radius-md)", borderColor: "var(--color-border)", bgcolor: "var(--color-surface-2)" }}>
                 <CardContent sx={{ p: 2 }}>
                   <Box sx={{ display: "flex", justifyContent: "space-between", gap: 2, mb: 2 }}>
@@ -321,10 +360,9 @@ export function GroupDebtWidget({ backendUrl, groupId, currentUserId, accessToke
                         {formatMoney(expense.totalAmount)}
                       </Typography>
                       <Chip
-                        label={expense.status}
+                        label={expenseProgress.label}
                         size="small"
-                        variant="outlined"
-                        sx={{ textTransform: "capitalize", borderColor: "var(--color-border)", color: "var(--color-muted)" }}
+                        sx={getExpenseStatusChipSx(expenseProgress.tone)}
                       />
                       {canModifyExpense(expense, currentUserId) && (
                         <Box sx={{ mt: 0.75, display: "flex", gap: 0.5, justifyContent: "flex-end" }}>
@@ -488,7 +526,8 @@ export function GroupDebtWidget({ backendUrl, groupId, currentUserId, accessToke
                   </Stack>
                 </CardContent>
               </Card>
-            ))}
+              );
+            })}
           </Stack>
         ) : (
           <Box sx={{ textAlign: "center", py: 4 }}>

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ChevronLeft, Search, UserPlus, Users, Settings, ShieldCheck, Trash2, TriangleAlert } from "lucide-react";
+import { ChevronLeft, Search, UserPlus, Users, ShieldCheck, Trash2, TriangleAlert } from "lucide-react";
 import {
   Box,
   Button,
@@ -274,7 +274,7 @@ export function GroupSettingsPage() {
 
         <Button
           variant="outlined"
-          startIcon={<Settings size={16} strokeWidth={2} />}
+          startIcon={<ChevronLeft size={16} strokeWidth={2} />}
           onClick={() => navigate(`/groups/${id}`)}
           sx={{
             textTransform: "none",
