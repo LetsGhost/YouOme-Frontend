@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ChevronLeft, Plus, Users, TrendingUp, Settings, TrendingDown, Wallet } from "lucide-react";
+import { ChevronLeft, ChevronDown, ChevronUp, Plus, Users, TrendingUp, Settings, TrendingDown, Wallet } from "lucide-react";
 import {
   Box,
   Button,
@@ -18,12 +18,27 @@ import {
   Alert,
   Skeleton,
   MenuItem,
+  Collapse,
+  Pagination,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 
 import { useAppState } from "../../app/AppStateContext";
-import { createExpense, getGroup, listGroupMembers, type Group, type GroupDebtBoard, type GroupMember } from "../../shared/api/backend";
-import { formatMoney } from "../../shared/lib/format";
+import {
+  createExpense,
+  getGroup,
+  listGroupExpenses,
+  listGroupMembers,
+  type Group,
+  type GroupDebtBoard,
+  type GroupMember,
+  type PaginatedGroupExpenses,
+} from "../../shared/api/backend";
+import { formatMoney, formatTimestamp } from "../../shared/lib/format";
 import { GroupDebtWidget } from "../../widgets/module/group/GroupDebtWidget";
+
+const EXPENSES_PAGE_SIZE = 10;
 
 type SplitType = "equal" | "custom" | "percentage";
 
@@ -179,12 +194,19 @@ export function GroupDetailsPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const { backendUrl, currentUser, session } = useAppState();
+  const theme = useTheme();
+  const isPhoneScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const [group, setGroup] = useState<Group | null>(null);
   const [groupMembers, setGroupMembers] = useState<GroupMember[]>([]);
   const [debtBoard, setDebtBoard] = useState<GroupDebtBoard | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showExpenseDialog, setShowExpenseDialog] = useState(false);
+  const [membersExpanded, setMembersExpanded] = useState(false);
+  const [expensesExpanded, setExpensesExpanded] = useState(false);
+  const [expensesData, setExpensesData] = useState<PaginatedGroupExpenses | null>(null);
+  const [expensesPageNum, setExpensesPageNum] = useState(1);
+  const [isExpensesLoading, setIsExpensesLoading] = useState(true);
   const [expenseData, setExpenseData] = useState<ExpenseDraft>({
     title: "",
     amount: "",
@@ -246,8 +268,33 @@ export function GroupDetailsPage() {
     };
   }, [backendUrl, currentUser?.email, id, session?.accessToken]);
 
+  const loadExpensesPage = useCallback(
+    async (page: number) => {
+      if (!id) {
+        return;
+      }
+
+      setIsExpensesLoading(true);
+
+      try {
+        const data = await listGroupExpenses(backendUrl, id, { page, limit: EXPENSES_PAGE_SIZE }, session?.accessToken);
+        setExpensesData(data);
+      } catch (error) {
+        setErrorMessage(error instanceof Error ? error.message : "Failed to load expenses.");
+      } finally {
+        setIsExpensesLoading(false);
+      }
+    },
+    [backendUrl, id, session?.accessToken]
+  );
+
+  useEffect(() => {
+    void loadExpensesPage(expensesPageNum);
+  }, [expensesPageNum, loadExpensesPage]);
+
   const members = groupMembers.length > 0 ? groupMembers : group?.members ?? [];
-  const expenses = group?.expenses ?? [];
+  const expenses = expensesData?.items ?? [];
+  const totalExpensesCount = expensesData?.total ?? 0;
 
   const { youOwe, owedToYou } = useMemo(() => {
     const currentUserId = currentUser?.id;
@@ -372,6 +419,8 @@ export function GroupDetailsPage() {
 
         const refreshed = await getGroup(backendUrl, id, session?.accessToken);
         setGroup(refreshed);
+        setExpensesPageNum(1);
+        void loadExpensesPage(1);
         setShowExpenseDialog(false);
         setExpenseData({
           title: "",
@@ -388,23 +437,31 @@ export function GroupDetailsPage() {
     })();
   };
 
-  const expenseSummary = expenses.length > 0 ? `${expenses.length} tracked expense${expenses.length === 1 ? "" : "s"}` : "No expenses yet";
-
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
       {errorMessage && <Alert severity="error">{errorMessage}</Alert>}
 
       {/* Header with Back Button */}
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 2, pb: 2, borderBottom: "1px solid var(--color-border)" }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+      <Box
+        sx={{
+          display: "flex",
+          flexWrap: "wrap",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          gap: 2,
+          pb: 2,
+          borderBottom: "1px solid var(--color-border)",
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, minWidth: 0 }}>
           <IconButton onClick={() => navigate("/groups")} sx={{ color: "var(--color-muted)", "&:hover": { color: "var(--color-ink)" } }}>
             <ChevronLeft size={22} strokeWidth={2} />
           </IconButton>
-          <Box>
+          <Box sx={{ minWidth: 0 }}>
             {isLoading ? (
               <Skeleton variant="text" width={260} height={42} />
             ) : (
-              <Typography variant="h4" sx={{ fontWeight: 700, color: "var(--color-ink)" }}>
+              <Typography variant="h4" sx={{ fontWeight: 700, color: "var(--color-ink)", fontSize: { xs: "1.5rem", sm: "2.125rem" } }}>
                 {group?.name || "Group"}
               </Typography>
             )}
@@ -439,7 +496,7 @@ export function GroupDetailsPage() {
         sx={{
           display: "grid",
           gap: 2,
-          gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", md: "repeat(3, 1fr)" },
+          gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)" },
         }}
       >
         <Box
@@ -475,23 +532,6 @@ export function GroupDetailsPage() {
             {formatMoney(owedToYou)}
           </Typography>
         </Box>
-
-        <Box
-          sx={{
-            borderRadius: "var(--radius-md)",
-            border: "1px solid var(--color-border)",
-            bgcolor: "var(--color-accent-soft-bg)",
-            p: 2,
-          }}
-        >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 0.75 }}>
-            <Users size={14} strokeWidth={2} color="var(--color-accent-soft-ink)" />
-            <Typography sx={{ ...microLabelSx, color: "var(--color-accent-soft-ink)" }}>Members</Typography>
-          </Box>
-          <Typography sx={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: "1.35rem", color: "var(--color-accent-soft-ink)" }}>
-            {members.length}
-          </Typography>
-        </Box>
       </Box>
 
       <Button
@@ -514,62 +554,6 @@ export function GroupDetailsPage() {
         Add Expense
       </Button>
 
-      {/* Members Section */}
-      <Card sx={{ borderRadius: "var(--radius-md)" }}>
-        <CardContent sx={{ p: 3 }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-            <Users size={18} strokeWidth={2} color="var(--color-accent)" />
-            <Typography variant="h6" sx={{ fontWeight: 700, color: "var(--color-ink)" }}>
-              Members
-            </Typography>
-          </Box>
-
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            {members.map((member) => (
-              <Box
-                key={member.id}
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 2,
-                  p: 1.5,
-                  borderRadius: "var(--radius-md)",
-                  bgcolor: "var(--color-surface-2)",
-                  border: "1px solid var(--color-border)",
-                }}
-              >
-                <Avatar sx={{ bgcolor: "var(--color-accent-soft-bg)", color: "var(--color-accent-soft-ink)", fontWeight: 700 }}>
-                  {member.avatar || member.name?.[0] || "?"}
-                </Avatar>
-                <Box sx={{ flex: 1 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--color-ink)" }}>
-                    {member.name}
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: "var(--color-muted)" }}>
-                    {member.email || "No email available"}
-                  </Typography>
-                </Box>
-                {(member.id === currentUser?.id || member.email === currentUser?.email) && (
-                  <Chip
-                    label="You"
-                    size="small"
-                    sx={{ bgcolor: "var(--color-accent-soft-bg)", color: "var(--color-accent-soft-ink)" }}
-                  />
-                )}
-              </Box>
-            ))}
-            {members.length === 0 && !isLoading && (
-              <Box sx={{ textAlign: "center", py: 4 }}>
-                <Users size={48} strokeWidth={1.8} color="var(--color-muted-3)" style={{ marginBottom: 8 }} />
-                <Typography variant="body2" sx={{ color: "var(--color-muted)" }}>
-                  No members found in this group.
-                </Typography>
-              </Box>
-            )}
-          </Box>
-        </CardContent>
-      </Card>
-
       <GroupDebtWidget
         backendUrl={backendUrl}
         groupId={id || ""}
@@ -580,54 +564,180 @@ export function GroupDetailsPage() {
 
       {/* Recent Expenses */}
       <Card sx={{ borderRadius: "var(--radius-md)" }}>
-        <CardContent sx={{ p: 3 }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-            <Wallet size={18} strokeWidth={2} color="var(--color-accent)" />
-            <Typography variant="h6" sx={{ fontWeight: 700, color: "var(--color-ink)" }}>
-              Recent Expenses
-            </Typography>
+        <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+          <Box
+            onClick={() => setExpensesExpanded((current) => !current)}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 1,
+              cursor: "pointer",
+              userSelect: "none",
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
+              <Wallet size={18} strokeWidth={2} color="var(--color-accent)" />
+              <Typography variant="h6" sx={{ fontWeight: 700, color: "var(--color-ink)" }}>
+                Recent Expenses
+              </Typography>
+              <Chip
+                label={totalExpensesCount}
+                size="small"
+                sx={{ bgcolor: "var(--color-accent-soft-bg)", color: "var(--color-accent-soft-ink)", fontWeight: 700 }}
+              />
+            </Box>
+            <IconButton size="small" sx={{ color: "var(--color-muted)" }}>
+              {expensesExpanded ? <ChevronUp size={20} strokeWidth={2} /> : <ChevronDown size={20} strokeWidth={2} />}
+            </IconButton>
           </Box>
 
-          {expenses.length > 0 ? (
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-              {expenses.map((expense) => (
+          <Collapse in={expensesExpanded}>
+            <Box sx={{ pt: 2 }}>
+              {isExpensesLoading && expenses.length === 0 ? (
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                  {Array.from({ length: 3 }).map((_, index) => (
+                    <Skeleton key={index} variant="rounded" height={58} sx={{ borderRadius: "var(--radius-md)" }} />
+                  ))}
+                </Box>
+              ) : expenses.length > 0 ? (
+                <>
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, opacity: isExpensesLoading ? 0.6 : 1 }}>
+                    {expenses.map((expense) => (
+                      <Box
+                        key={expense.id}
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          gap: 1,
+                          p: 1.5,
+                          borderRadius: "var(--radius-md)",
+                          bgcolor: "var(--color-surface-2)",
+                          border: "1px solid var(--color-border)",
+                        }}
+                      >
+                        <Box sx={{ minWidth: 0 }}>
+                          <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--color-ink)" }} noWrap>
+                            {expense.description || "Expense"}
+                          </Typography>
+                          <Typography variant="caption" sx={{ color: "var(--color-muted)", display: "block" }}>
+                            {expense.date ? formatTimestamp(expense.date) : "Unknown date"}
+                          </Typography>
+                        </Box>
+                        <Typography
+                          sx={{
+                            fontFamily: "var(--font-mono)",
+                            fontWeight: 700,
+                            color: "var(--color-accent)",
+                            flexShrink: 0,
+                          }}
+                        >
+                          {formatMoney(expense.amount)}
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Box>
+
+                  {expensesData && expensesData.totalPages > 1 && (
+                    <Box sx={{ display: "flex", justifyContent: "center", pt: 2 }}>
+                      <Pagination
+                        count={expensesData.totalPages}
+                        page={expensesPageNum}
+                        onChange={(_event, value) => setExpensesPageNum(value)}
+                        size="small"
+                        siblingCount={isPhoneScreen ? 0 : 1}
+                        boundaryCount={1}
+                        disabled={isExpensesLoading}
+                      />
+                    </Box>
+                  )}
+                </>
+              ) : (
+                <Typography variant="body2" sx={{ color: "var(--color-muted)", textAlign: "center", py: 2 }}>
+                  No expenses found for this group.
+                </Typography>
+              )}
+            </Box>
+          </Collapse>
+        </CardContent>
+      </Card>
+
+      {/* Members Section */}
+      <Card sx={{ borderRadius: "var(--radius-md)" }}>
+        <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+          <Box
+            onClick={() => setMembersExpanded((current) => !current)}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 1,
+              cursor: "pointer",
+              userSelect: "none",
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Users size={18} strokeWidth={2} color="var(--color-accent)" />
+              <Typography variant="h6" sx={{ fontWeight: 700, color: "var(--color-ink)" }}>
+                Members
+              </Typography>
+              <Chip
+                label={members.length}
+                size="small"
+                sx={{ bgcolor: "var(--color-accent-soft-bg)", color: "var(--color-accent-soft-ink)", fontWeight: 700 }}
+              />
+            </Box>
+            <IconButton size="small" sx={{ color: "var(--color-muted)" }}>
+              {membersExpanded ? <ChevronUp size={20} strokeWidth={2} /> : <ChevronDown size={20} strokeWidth={2} />}
+            </IconButton>
+          </Box>
+
+          <Collapse in={membersExpanded}>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 2 }}>
+              {members.map((member) => (
                 <Box
-                  key={expense.id}
+                  key={member.id}
                   sx={{
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "space-between",
+                    gap: 2,
                     p: 1.5,
                     borderRadius: "var(--radius-md)",
                     bgcolor: "var(--color-surface-2)",
                     border: "1px solid var(--color-border)",
                   }}
                 >
-                  <Box sx={{ minWidth: 0 }}>
+                  <Avatar sx={{ bgcolor: "var(--color-accent-soft-bg)", color: "var(--color-accent-soft-ink)", fontWeight: 700 }}>
+                    {member.avatar || member.name?.[0] || "?"}
+                  </Avatar>
+                  <Box sx={{ flex: 1 }}>
                     <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--color-ink)" }}>
-                      {expense.description || "Expense"}
+                      {member.name}
                     </Typography>
-                    <Typography variant="caption" sx={{ color: "var(--color-muted)", display: "block" }}>
-                      {expenseSummary}
+                    <Typography variant="caption" sx={{ color: "var(--color-muted)" }}>
+                      {member.email || "No email available"}
                     </Typography>
                   </Box>
-                  <Typography
-                    sx={{
-                      fontFamily: "var(--font-mono)",
-                      fontWeight: 700,
-                      color: "var(--color-accent)",
-                    }}
-                  >
-                    {formatMoney(expense.amount)}
-                  </Typography>
+                  {(member.id === currentUser?.id || member.email === currentUser?.email) && (
+                    <Chip
+                      label="You"
+                      size="small"
+                      sx={{ bgcolor: "var(--color-accent-soft-bg)", color: "var(--color-accent-soft-ink)" }}
+                    />
+                  )}
                 </Box>
               ))}
+              {members.length === 0 && !isLoading && (
+                <Box sx={{ textAlign: "center", py: 4 }}>
+                  <Users size={48} strokeWidth={1.8} color="var(--color-muted-3)" style={{ marginBottom: 8 }} />
+                  <Typography variant="body2" sx={{ color: "var(--color-muted)" }}>
+                    No members found in this group.
+                  </Typography>
+                </Box>
+              )}
             </Box>
-          ) : (
-            <Typography variant="body2" sx={{ color: "var(--color-muted)", textAlign: "center", py: 2 }}>
-              No expenses found for this group.
-            </Typography>
-          )}
+          </Collapse>
         </CardContent>
       </Card>
 
@@ -637,9 +747,10 @@ export function GroupDetailsPage() {
         onClose={() => setShowExpenseDialog(false)}
         maxWidth="sm"
         fullWidth
+        fullScreen={isPhoneScreen}
         slotProps={{
           paper: {
-            sx: { borderRadius: "var(--radius-lg)", border: "1px solid var(--color-border)" },
+            sx: isPhoneScreen ? undefined : { borderRadius: "var(--radius-lg)", border: "1px solid var(--color-border)" },
           },
         }}
       >

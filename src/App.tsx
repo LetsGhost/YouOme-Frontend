@@ -6,6 +6,7 @@ import CssBaseline from "@mui/material/CssBaseline";
 import { buildTheme } from "./config/theme";
 import { AppProvider } from "./app/AppStateContext";
 import { ThemeModeProvider, useThemeMode } from "./app/ThemeModeContext";
+import { GlobalErrorBoundary } from "./app/GlobalErrorBoundary";
 import { AppShell } from "./widgets/layout/AppShell";
 import { AdminRoute, ProtectedRoute, PublicOnlyRoute } from "./app/RouteGuards";
 
@@ -29,6 +30,9 @@ const NotificationsPage = lazy(() =>
   import("./pages/notifications/NotificationsPage").then((m) => ({ default: m.NotificationsPage }))
 );
 const SettingsPage = lazy(() => import("./pages/settings/SettingsPage").then((m) => ({ default: m.SettingsPage })));
+const NotFoundPage = lazy(() =>
+  import("./pages/errors/NotFoundPage").then((m) => ({ default: m.NotFoundPage }))
+);
 
 function RouteFallback() {
   return (
@@ -93,7 +97,7 @@ function ThemedApp() {
                 />
               </Route>
 
-              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+              <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </Suspense>
         </BrowserRouter>
@@ -104,8 +108,10 @@ function ThemedApp() {
 
 export default function App() {
   return (
-    <ThemeModeProvider>
-      <ThemedApp />
-    </ThemeModeProvider>
+    <GlobalErrorBoundary>
+      <ThemeModeProvider>
+        <ThemedApp />
+      </ThemeModeProvider>
+    </GlobalErrorBoundary>
   );
 }

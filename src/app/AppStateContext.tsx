@@ -21,6 +21,7 @@ import {
   setApiBaseUrl as persistApiBaseUrl,
   login as loginUser,
 } from "../shared/api/backend";
+import { onSessionExpired } from "../shared/api/sessionEvents";
 
 export type NotificationTone = "idle" | "success" | "warning" | "error" | "info";
 
@@ -109,6 +110,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     saveSession(session);
   }, [session]);
+
+  useEffect(() => {
+    return onSessionExpired(() => {
+      setCurrentUser(null);
+      setSession(null);
+      saveSession(null);
+    });
+  }, []);
 
   const reloadHealth = useCallback(async () => {
     const healthSnapshot = await fetchJson<HealthResponse>(`${backendUrl}/health`);

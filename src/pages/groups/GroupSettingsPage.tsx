@@ -258,16 +258,13 @@ export function GroupSettingsPage() {
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 2, pb: 2, borderBottom: "1px solid var(--color-border)" }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, minWidth: 0 }}>
           <IconButton onClick={() => navigate(`/groups/${id}`)} sx={{ color: "var(--color-muted)", "&:hover": { color: "var(--color-ink)" } }}>
             <ChevronLeft size={22} strokeWidth={2} />
           </IconButton>
-          <Box>
+          <Box sx={{ minWidth: 0 }}>
             <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: -0.4, color: "var(--color-ink)" }}>
               Group settings
-            </Typography>
-            <Typography variant="body2" sx={{ color: "var(--color-muted)" }}>
-              Invite friends, review the member list, and manage access for this group.
             </Typography>
           </Box>
         </Box>
@@ -282,6 +279,7 @@ export function GroupSettingsPage() {
             whiteSpace: "nowrap",
             borderColor: "var(--color-border)",
             color: "var(--color-ink)",
+            flexShrink: 0,
           }}
         >
           Back to group

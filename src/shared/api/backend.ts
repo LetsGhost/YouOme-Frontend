@@ -1,3 +1,5 @@
+import { emitSessionExpired } from "./sessionEvents";
+
 export type HealthResponse = {
   status: string;
   timestamp: string;
@@ -110,6 +112,14 @@ export type Group = {
   debtHistory?: DebtHistoryEntry[];
   createdAt?: string;
   updatedAt?: string;
+};
+
+export type PaginatedGroupExpenses = {
+  items: GroupExpense[];
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
 };
 
 export type GroupPolicy = {
@@ -499,6 +509,30 @@ export async function getGroupDebtBoard(backendUrl: string, groupId: string, tok
   });
 }
 
+export async function listGroupExpenses(
+  backendUrl: string,
+  groupId: string,
+  params: { page?: number; limit?: number } = {},
+  token?: string
+) {
+  const query = new URLSearchParams();
+
+  if (params.page) {
+    query.set("page", String(params.page));
+  }
+
+  if (params.limit) {
+    query.set("limit", String(params.limit));
+  }
+
+  const queryString = query.toString();
+
+  return fetchJson<PaginatedGroupExpenses>(
+    `${backendUrl}/api/groups/${groupId}/expenses${queryString ? `?${queryString}` : ""}`,
+    { token }
+  );
+}
+
 export async function createGroup(backendUrl: string, input: CreateGroupInput, token?: string) {
   return fetchJson<Group>(`${backendUrl}/api/groups`, {
     method: "POST",
@@ -673,6 +707,11 @@ export async function fetchJson<T>(url: string, options: ApiRequestOptions = {})
 
     if (!response.ok) {
       const apiError = payload as ApiError | null;
+
+      if (response.status === 401) {
+        emitSessionExpired();
+      }
+
       throw new Error(apiError?.message || `Request failed with status ${response.status}`);
     }
 
