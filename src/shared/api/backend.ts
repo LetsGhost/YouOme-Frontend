@@ -609,6 +609,13 @@ export async function updateExpense(
   });
 }
 
+export async function deleteExpense(backendUrl: string, expenseId: string, token?: string) {
+  return fetchJson<{ message: string }>(`${backendUrl}/api/expenses/${expenseId}`, {
+    method: "DELETE",
+    token,
+  });
+}
+
 export async function confirmExpenseReceipt(backendUrl: string, expenseId: string, token?: string) {
   return fetchJson<GroupExpense>(`${backendUrl}/api/expenses/${expenseId}/confirm-receipt`, {
     method: "POST",

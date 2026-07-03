@@ -10,6 +10,7 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
+  DialogContentText,
   DialogTitle,
   Divider,
   Stack,
@@ -19,12 +20,14 @@ import {
 } from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
+import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import PendingActionsIcon from "@mui/icons-material/PendingActions";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 
 import {
   confirmExpensePayment,
+  deleteExpense,
   getGroupDebtBoard,
   rejectExpensePayment,
   submitExpensePayment,
@@ -70,7 +73,7 @@ function hasReviewAction(expense: GroupDebtExpense, participant: GroupDebtPartic
   return Boolean(currentUserId && expense.createdByUserId === currentUserId && participant.status === "payment-submitted");
 }
 
-function canEditExpense(expense: GroupDebtExpense, currentUserId?: string) {
+function canModifyExpense(expense: GroupDebtExpense, currentUserId?: string) {
   const isCreator = Boolean(currentUserId && expense.createdByUserId === currentUserId);
   const hasSubmission = expense.participants.some((participant) => participant.status !== "pending");
   return isCreator && !hasSubmission;
@@ -85,6 +88,9 @@ export function GroupDebtWidget({ backendUrl, groupId, currentUserId, accessToke
   const [editForm, setEditForm] = useState({ title: "", totalAmount: "", note: "" });
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
+  const [deletingExpense, setDeletingExpense] = useState<GroupDebtExpense | null>(null);
+  const [isDeletingExpense, setIsDeletingExpense] = useState(false);
+  const [deleteExpenseError, setDeleteExpenseError] = useState<string | null>(null);
 
   const loadBoard = useCallback(async () => {
     setIsLoading(true);
@@ -178,6 +184,25 @@ export function GroupDebtWidget({ backendUrl, groupId, currentUserId, accessToke
       setEditError(error instanceof Error ? error.message : "Failed to update expense.");
     } finally {
       setIsSavingEdit(false);
+    }
+  };
+
+  const handleDeleteExpense = async () => {
+    if (!deletingExpense) {
+      return;
+    }
+
+    setIsDeletingExpense(true);
+    setDeleteExpenseError(null);
+
+    try {
+      await deleteExpense(backendUrl, deletingExpense.id, accessToken);
+      setDeletingExpense(null);
+      await loadBoard();
+    } catch (error) {
+      setDeleteExpenseError(error instanceof Error ? error.message : "Failed to delete expense.");
+    } finally {
+      setIsDeletingExpense(false);
     }
   };
 
@@ -283,8 +308,8 @@ export function GroupDebtWidget({ backendUrl, groupId, currentUserId, accessToke
                         {formatMoney(expense.totalAmount)}
                       </Typography>
                       <Chip label={expense.status} size="small" variant="outlined" sx={{ textTransform: "capitalize" }} />
-                      {canEditExpense(expense, currentUserId) && (
-                        <Box sx={{ mt: 0.75 }}>
+                      {canModifyExpense(expense, currentUserId) && (
+                        <Box sx={{ mt: 0.75, display: "flex", gap: 0.5, justifyContent: "flex-end" }}>
                           <Button
                             size="small"
                             startIcon={<EditIcon fontSize="small" />}
@@ -292,6 +317,18 @@ export function GroupDebtWidget({ backendUrl, groupId, currentUserId, accessToke
                             sx={{ textTransform: "none", fontWeight: 700 }}
                           >
                             Edit
+                          </Button>
+                          <Button
+                            size="small"
+                            color="error"
+                            startIcon={<DeleteIcon fontSize="small" />}
+                            onClick={() => {
+                              setDeleteExpenseError(null);
+                              setDeletingExpense(expense);
+                            }}
+                            sx={{ textTransform: "none", fontWeight: 700 }}
+                          >
+                            Delete
                           </Button>
                         </Box>
                       )}
@@ -465,6 +502,41 @@ export function GroupDebtWidget({ backendUrl, groupId, currentUserId, accessToke
             sx={{ textTransform: "none", fontWeight: 700 }}
           >
             {isSavingEdit ? "Saving..." : "Save changes"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(deletingExpense)}
+        onClose={() => (isDeletingExpense ? undefined : setDeletingExpense(null))}
+      >
+        <DialogTitle sx={{ fontWeight: 800 }}>Delete {deletingExpense?.title ?? "this expense"}?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            This action can't be undone. The expense and its participant shares will be permanently removed.
+          </DialogContentText>
+          {deleteExpenseError && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {deleteExpenseError}
+            </Alert>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button
+            onClick={() => setDeletingExpense(null)}
+            disabled={isDeletingExpense}
+            sx={{ textTransform: "none", fontWeight: 700 }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={() => void handleDeleteExpense()}
+            disabled={isDeletingExpense}
+            sx={{ textTransform: "none", fontWeight: 700 }}
+          >
+            {isDeletingExpense ? "Deleting..." : "Delete expense"}
           </Button>
         </DialogActions>
       </Dialog>
