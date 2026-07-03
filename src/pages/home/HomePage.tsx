@@ -139,10 +139,7 @@ export function HomePage() {
       {/* Header */}
       <Box sx={{ textAlign: { xs: "center", md: "left" } }}>
         <Typography variant="h3" sx={{ fontWeight: "bold", mb: 1, fontSize: { xs: "1.9rem", md: "2.2rem" } }}>
-          Welcome back, {currentUser?.name || "Friend"}! 👋
-        </Typography>
-        <Typography variant="h6" sx={{ color: "text.secondary", fontSize: { xs: "1rem", md: "1.1rem" } }}>
-          Here's what's happening with your finances
+          Welcome back, {currentUser?.name || "Friend"}
         </Typography>
       </Box>
 
