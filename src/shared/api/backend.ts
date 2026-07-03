@@ -265,6 +265,16 @@ export type RegisterResponse = {
   refreshToken: string;
 };
 
+export type UpdateProfileInput = {
+  name?: string;
+  email?: string;
+};
+
+export type ChangePasswordInput = {
+  currentPassword: string;
+  newPassword: string;
+};
+
 export type ApiError = {
   message?: string;
 };
@@ -363,6 +373,22 @@ export async function register(backendUrl: string, input: RegisterInput) {
 export async function deleteCurrentUser(backendUrl: string, token?: string) {
   return fetchJson<{ message: string }>(`${backendUrl}/api/auth/me`, {
     method: "DELETE",
+    token,
+  });
+}
+
+export async function updateProfile(backendUrl: string, input: UpdateProfileInput, token?: string) {
+  return fetchJson<CurrentUser>(`${backendUrl}/api/auth/me`, {
+    method: "PATCH",
+    json: input,
+    token,
+  });
+}
+
+export async function changePassword(backendUrl: string, input: ChangePasswordInput, token?: string) {
+  return fetchJson<{ message: string }>(`${backendUrl}/api/auth/me/password`, {
+    method: "POST",
+    json: input,
     token,
   });
 }

@@ -1,10 +1,10 @@
 import { useState } from "react";
 import SettingsIcon from "@mui/icons-material/Settings";
-import LogoutIcon from "@mui/icons-material/Logout";
 import WarningIcon from "@mui/icons-material/Warning";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 import ArticleIcon from "@mui/icons-material/Article";
 import ShieldIcon from "@mui/icons-material/Shield";
+import LockIcon from "@mui/icons-material/Lock";
 import {
   Box,
   Card,
@@ -15,17 +15,91 @@ import {
   Divider,
   Container,
   Paper,
+  TextField,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
 import { useAppState } from "../../app/AppStateContext";
-import { deleteUserAvatar, resolveAvatarUrl, uploadUserAvatar } from "../../shared/api/backend";
+import {
+  changePassword,
+  deleteUserAvatar,
+  resolveAvatarUrl,
+  updateProfile,
+  uploadUserAvatar,
+} from "../../shared/api/backend";
 import { AvatarUploader } from "../../widgets/avatar/AvatarUploader";
 
 export function SettingsPage() {
   const navigate = useNavigate();
-  const { currentUser, backendUrl, session, logout, deleteCurrentUser, updateCurrentUser, setNotice } = useAppState();
+  const { currentUser, backendUrl, session, deleteCurrentUser, updateCurrentUser, setNotice } = useAppState();
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const [name, setName] = useState(currentUser?.name ?? "");
+  const [email, setEmail] = useState(currentUser?.email ?? "");
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  const isProfileDirty = name !== (currentUser?.name ?? "") || email !== (currentUser?.email ?? "");
+
+  const handleSaveProfile = async () => {
+    setIsSavingProfile(true);
+    try {
+      const updated = await updateProfile(backendUrl, { name, email }, session?.accessToken);
+      updateCurrentUser(updated);
+      setNotice({ tone: "success", message: "Profile updated." });
+    } catch (error) {
+      setNotice({ tone: "error", message: error instanceof Error ? error.message : "Failed to update profile." });
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
+  const handleOpenPasswordDialog = () => {
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setPasswordError(null);
+    setIsPasswordDialogOpen(true);
+  };
+
+  const handleClosePasswordDialog = () => {
+    if (isChangingPassword) return;
+    setIsPasswordDialogOpen(false);
+  };
+
+  const handleChangePassword = async () => {
+    if (newPassword.length < 8) {
+      setPasswordError("New password must be at least 8 characters.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError("New password and confirmation do not match.");
+      return;
+    }
+
+    setPasswordError(null);
+    setIsChangingPassword(true);
+
+    try {
+      await changePassword(backendUrl, { currentPassword, newPassword }, session?.accessToken);
+      setNotice({ tone: "success", message: "Password changed." });
+      setIsPasswordDialogOpen(false);
+    } catch (error) {
+      setPasswordError(error instanceof Error ? error.message : "Failed to change password.");
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
 
   const handleUploadAvatar = async (file: File) => {
     try {
@@ -42,13 +116,6 @@ export function SettingsPage() {
       updateCurrentUser(updated);
     } catch (error) {
       setNotice({ tone: "error", message: error instanceof Error ? error.message : "Failed to remove avatar." });
-    }
-  };
-
-  const handleClearSession = async () => {
-    if (confirm("Are you sure you want to clear your session? You will be logged out.")) {
-      await logout();
-      navigate("/login", { replace: true });
     }
   };
 
@@ -119,62 +186,41 @@ export function SettingsPage() {
             </Box>
 
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              <Box>
-                <Typography
-                  variant="caption"
-                  sx={{
-                    color: "var(--color-muted)",
-                    fontFamily: "var(--font-mono)",
-                    fontWeight: 600,
-                    letterSpacing: "0.05em",
-                    textTransform: "uppercase",
-                    display: "block",
-                    mb: 0.5,
-                  }}
-                >
-                  Name
-                </Typography>
-                <Box
-                  sx={{
-                    p: 1.5,
-                    bgcolor: "var(--color-surface-2)",
-                    border: "1px solid var(--color-border)",
-                    borderRadius: "var(--radius-sm)",
-                  }}
-                >
-                  <Typography variant="body2" sx={{ color: "var(--color-ink-soft)" }}>
-                    {currentUser?.name || "Not set"}
-                  </Typography>
-                </Box>
-              </Box>
+              <TextField
+                label="Name"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                fullWidth
+                size="small"
+              />
 
-              <Box>
-                <Typography
-                  variant="caption"
-                  sx={{
-                    color: "var(--color-muted)",
-                    fontFamily: "var(--font-mono)",
-                    fontWeight: 600,
-                    letterSpacing: "0.05em",
-                    textTransform: "uppercase",
-                    display: "block",
-                    mb: 0.5,
-                  }}
+              <TextField
+                label="Email"
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                fullWidth
+                size="small"
+              />
+
+              <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap" }}>
+                <Button
+                  variant="contained"
+                  onClick={handleSaveProfile}
+                  disabled={!isProfileDirty || isSavingProfile}
+                  sx={{ textTransform: "none", fontWeight: "bold" }}
                 >
-                  Email
-                </Typography>
-                <Box
-                  sx={{
-                    p: 1.5,
-                    bgcolor: "var(--color-surface-2)",
-                    border: "1px solid var(--color-border)",
-                    borderRadius: "var(--radius-sm)",
-                  }}
+                  {isSavingProfile ? "Saving..." : "Save changes"}
+                </Button>
+
+                <Button
+                  variant="outlined"
+                  startIcon={<LockIcon />}
+                  onClick={handleOpenPasswordDialog}
+                  sx={{ textTransform: "none", fontWeight: "bold" }}
                 >
-                  <Typography variant="body2" sx={{ color: "var(--color-ink-soft)" }}>
-                    {currentUser?.email || "Not set"}
-                  </Typography>
-                </Box>
+                  Change password
+                </Button>
               </Box>
 
               <Box>
@@ -270,25 +316,6 @@ export function SettingsPage() {
 
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
             <Button
-              variant="contained"
-              startIcon={<LogoutIcon />}
-              onClick={handleClearSession}
-              sx={{
-                bgcolor: "var(--color-danger)",
-                color: "var(--color-accent-contrast)",
-                textTransform: "none",
-                fontWeight: "bold",
-                alignSelf: "flex-start",
-                "&:hover": {
-                  bgcolor: "var(--color-danger)",
-                  filter: "brightness(0.9)",
-                },
-              }}
-            >
-              Clear session & logout
-            </Button>
-
-            <Button
               variant="outlined"
               startIcon={<DeleteForeverIcon />}
               onClick={handleDeleteAccount}
@@ -310,6 +337,57 @@ export function SettingsPage() {
           </Box>
         </Paper>
       </Box>
+
+      <Dialog open={isPasswordDialogOpen} onClose={handleClosePasswordDialog} fullWidth maxWidth="xs">
+        <DialogTitle>Change password</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
+            <TextField
+              label="Current password"
+              type="password"
+              value={currentPassword}
+              onChange={(event) => setCurrentPassword(event.target.value)}
+              fullWidth
+              size="small"
+              autoFocus
+            />
+            <TextField
+              label="New password"
+              type="password"
+              value={newPassword}
+              onChange={(event) => setNewPassword(event.target.value)}
+              fullWidth
+              size="small"
+            />
+            <TextField
+              label="Confirm new password"
+              type="password"
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              fullWidth
+              size="small"
+            />
+            {passwordError && (
+              <Typography variant="body2" sx={{ color: "var(--color-danger)" }}>
+                {passwordError}
+              </Typography>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={handleClosePasswordDialog} disabled={isChangingPassword} sx={{ textTransform: "none" }}>
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleChangePassword}
+            disabled={isChangingPassword || !currentPassword || !newPassword || !confirmPassword}
+            sx={{ textTransform: "none", fontWeight: "bold" }}
+          >
+            {isChangingPassword ? "Changing..." : "Change password"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 }

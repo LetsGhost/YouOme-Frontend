@@ -8,11 +8,86 @@ export type ChangelogEntry = {
   minor: string[];
 };
 
-// Newest entry first. `version` just needs to change whenever you want the
-// dialog to resurface — it doesn't have to match package.json.
+// Newest entry first. `version` follows the same SemVer scheme as
+// `CHANGELOG.md` / package.json (see that file for the PATCH/MINOR/MAJOR
+// rule) and should be bumped in lockstep with it. Not every CHANGELOG.md
+// entry needs one here — only add a version once something in it is
+// actually worth telling a user about.
 export const CHANGELOG: ChangelogEntry[] = [
   {
-    version: "2026.07.03",
+    version: "v0.6.0",
+    date: "2026-07-03",
+    title: "Edit your profile",
+    highlights: [
+      "Your name and email on the Settings page are now editable.",
+      "Added a \"Change password\" option on the Settings page.",
+    ],
+    minor: [
+      "Removed the redundant \"Clear session & logout\" button from the Danger Zone (logout already lives in the nav).",
+    ],
+  },
+  {
+    version: "v0.5.0",
+    date: "2026-07-03",
+    title: "Redesigned expense cards",
+    highlights: [
+      "Redesigned the expense cards on the group debt board with a cleaner, more compact layout and a detail view when you tap into one.",
+    ],
+    minor: [
+      "Fixed the expense detail view sometimes showing outdated payment status right after approving or paying from inside it.",
+    ],
+  },
+  {
+    version: "v0.4.0",
+    date: "2026-07-03",
+    title: "Profile & group pictures",
+    highlights: [
+      "Added profile pictures for you and your groups — upload, view, and remove an avatar from Settings, Group Settings, member lists, and more.",
+    ],
+    minor: [
+      "Uploaded photos are automatically cropped and compressed to keep storage usage low.",
+    ],
+  },
+  {
+    version: "v0.3.0",
+    date: "2026-07-03",
+    title: "Smarter expense splitting",
+    highlights: [
+      "When splitting an expense equally leaves a leftover cent, you can now choose to absorb it yourself instead of some participants paying slightly more.",
+    ],
+    minor: [
+      "Registration errors now show inline on the form.",
+      "Removed a redundant subtitle on the group debt board.",
+    ],
+  },
+  {
+    version: "v0.2.0",
+    date: "2026-07-03",
+    title: "Faster group pages",
+    highlights: [
+      "Group pages load expenses page-by-page instead of all at once — noticeably faster for groups with a long history.",
+      "Recent Expenses and Members are now collapsible sections, so group pages open shorter by default.",
+      "The Add Expense dialog opens full-screen on phones for easier input.",
+      "You're now automatically signed out if your session expires, instead of the app getting stuck.",
+      "Added a friendly error screen for unexpected crashes and a proper \"Page not found\" screen for unknown links.",
+      "The app now looks and behaves more like a native app when added to your phone's home screen.",
+    ],
+    minor: [
+      "This changelog dialog now shows past updates collapsed by default.",
+      "Removed a redundant subtitle on the group settings page.",
+    ],
+  },
+  {
+    version: "v0.1.1",
+    date: "2026-07-03",
+    title: "Debt board polish",
+    highlights: [
+      "The group debt board now shows a clear progress badge (Awaiting payment / Awaiting review / partially confirmed / Settled) instead of a raw status label.",
+    ],
+    minor: [],
+  },
+  {
+    version: "v0.1.0",
     date: "2026-07-03",
     title: "What's new",
     highlights: [
