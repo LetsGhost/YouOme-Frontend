@@ -17,6 +17,7 @@ import { Link } from "react-router-dom";
 
 import { useAppState } from "../../app/AppStateContext";
 import { formatCount, formatMoney } from "../../shared/lib/format";
+import { ChangelogDialog } from "../../widgets/changelog/ChangelogDialog";
 
 export function HomePage() {
   const { currentUser, groups } = useAppState();
@@ -101,6 +102,8 @@ export function HomePage() {
         gap: { xs: 2.5, md: 3.5 },
       }}
     >
+      <ChangelogDialog />
+
       {/* Header */}
       <Box sx={{ textAlign: { xs: "center", md: "left" } }}>
         <Typography variant="h3" sx={{ fontWeight: "bold", mb: 1, fontSize: { xs: "1.9rem", md: "2.2rem" } }}>

@@ -278,6 +278,7 @@ export const STORAGE_KEYS = {
   session: "youome.session",
   apiBaseUrl: "youome.apiBaseUrl",
   devUserId: "youome.devUserId",
+  changelogVersion: "youome.changelog.seenVersion",
 } as const;
 
 export const DEFAULT_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
@@ -316,6 +317,14 @@ export function saveSession(session: AuthSession | null) {
   }
 
   localStorage.setItem(STORAGE_KEYS.session, JSON.stringify(session));
+}
+
+export function getSeenChangelogVersion() {
+  return localStorage.getItem(STORAGE_KEYS.changelogVersion);
+}
+
+export function setSeenChangelogVersion(version: string) {
+  localStorage.setItem(STORAGE_KEYS.changelogVersion, version);
 }
 
 export function normalizeBaseUrl(baseUrl: string) {
