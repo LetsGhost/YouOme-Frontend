@@ -19,24 +19,23 @@ import { useAppState } from "../../app/AppStateContext";
 import { ThemeToggle } from "../../widgets/layout/ThemeToggle";
 
 export function RegisterPage() {
-  const { register, notice, setNotice } = useAppState();
+  const { register } = useAppState();
   const [form, setForm] = useState({ email: "", name: "", password: "" });
   const [isBusy, setIsBusy] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [formError, setFormError] = useState("");
   const navigate = useNavigate();
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsBusy(true);
+    setFormError("");
 
     try {
       await register(form);
       navigate("/dashboard", { replace: true });
     } catch (error) {
-      setNotice({
-        tone: "error",
-        message: error instanceof Error ? error.message : "Registration failed.",
-      });
+      setFormError(error instanceof Error ? error.message : "Registration failed.");
     } finally {
       setIsBusy(false);
     }
@@ -153,11 +152,7 @@ export function RegisterPage() {
                 }}
               />
 
-              {notice.message && (
-                <Alert severity={notice.tone === "idle" ? "info" : notice.tone}>
-                  {notice.message}
-                </Alert>
-              )}
+              {formError && <Alert severity="error">{formError}</Alert>}
 
               <Button
                 fullWidth

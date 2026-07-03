@@ -279,9 +279,6 @@ export function GroupDebtWidget({ backendUrl, groupId, currentUserId, accessToke
             <Typography variant="h6" sx={{ fontWeight: 700, color: "var(--color-ink)" }}>
               Current debts
             </Typography>
-            <Typography variant="body2" sx={{ color: "var(--color-muted)" }}>
-              Pending payments & approvals
-            </Typography>
           </Box>
           <Button
             variant="outlined"

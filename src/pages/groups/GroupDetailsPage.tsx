@@ -22,6 +22,8 @@ import {
   Pagination,
   useMediaQuery,
   useTheme,
+  Checkbox,
+  FormControlLabel,
 } from "@mui/material";
 
 import { useAppState } from "../../app/AppStateContext";
@@ -50,6 +52,7 @@ type ExpenseDraft = {
   splitType: SplitType;
   participantIds: string[];
   participantShares: Record<string, string>;
+  chargeSameAmount: boolean;
 };
 
 const microLabelSx = {
@@ -68,7 +71,7 @@ function toCents(value: number) {
   return Math.round(value * 100);
 }
 
-function buildEqualShares(totalAmount: number, participantIds: string[]) {
+function buildEqualShares(totalAmount: number, participantIds: string[], chargeSameAmount: boolean) {
   const totalCents = toCents(totalAmount);
   const count = participantIds.length;
 
@@ -76,9 +79,18 @@ function buildEqualShares(totalAmount: number, participantIds: string[]) {
     return new Map<string, number>();
   }
 
+  const shares = new Map<string, number>();
+
+  if (chargeSameAmount) {
+    const equalCents = Math.round(totalCents / count);
+    participantIds.forEach((participantId) => {
+      shares.set(participantId, equalCents / 100);
+    });
+    return shares;
+  }
+
   const baseShare = Math.floor(totalCents / count);
   let remainder = totalCents - baseShare * count;
-  const shares = new Map<string, number>();
 
   participantIds.forEach((participantId) => {
     const extraCent = remainder > 0 ? 1 : 0;
@@ -114,14 +126,17 @@ function getParticipantBreakdown(
   splitType: SplitType,
   participantIds: string[],
   participantShares: Record<string, string>,
-  paidById: string
+  paidById: string,
+  chargeSameAmount: boolean = false
 ) {
   if (participantIds.length === 0) {
     return { error: "Add at least one participant." } as const;
   }
 
   if (splitType === "equal") {
-    return { shares: buildEqualShares(totalAmount, paidById ? [paidById, ...participantIds] : participantIds) } as const;
+    return {
+      shares: buildEqualShares(totalAmount, paidById ? [paidById, ...participantIds] : participantIds, chargeSameAmount),
+    } as const;
   }
 
   if (splitType === "percentage") {
@@ -215,6 +230,7 @@ export function GroupDetailsPage() {
     splitType: "equal",
     participantIds: [],
     participantShares: {},
+    chargeSameAmount: false,
   });
 
   useEffect(() => {
@@ -334,15 +350,29 @@ export function GroupDetailsPage() {
       expenseData.splitType,
       expenseData.participantIds.filter((participantId) => participantId !== expenseData.paidBy),
       expenseData.participantShares,
-      expenseData.paidBy
+      expenseData.paidBy,
+      expenseData.chargeSameAmount
     );
-  }, [expenseData.amount, expenseData.participantIds, expenseData.participantShares, expenseData.paidBy, expenseData.splitType]);
+  }, [
+    expenseData.amount,
+    expenseData.participantIds,
+    expenseData.participantShares,
+    expenseData.paidBy,
+    expenseData.splitType,
+    expenseData.chargeSameAmount,
+  ]);
 
   const previewShares: Map<string, number> =
     "shares" in participantBreakdown && participantBreakdown.shares
       ? participantBreakdown.shares
       : new Map<string, number>();
   const previewMembers = payerMember ? [payerMember, ...participantMembers] : participantMembers;
+  const equalSplitHasRemainder =
+    expenseData.splitType === "equal" &&
+    previewMembers.length > 0 &&
+    Number.isFinite(Number(expenseData.amount)) &&
+    Number(expenseData.amount) > 0 &&
+    toCents(Number(expenseData.amount)) % previewMembers.length !== 0;
 
   const openExpenseDialog = () => {
     const defaultPaidBy = currentUser?.id || members[0]?.id || "";
@@ -357,6 +387,7 @@ export function GroupDetailsPage() {
       splitType: "equal",
       participantIds: defaultParticipantIds,
       participantShares: {},
+      chargeSameAmount: false,
     });
     setShowExpenseDialog(true);
   };
@@ -382,7 +413,8 @@ export function GroupDetailsPage() {
       expenseData.splitType,
       participantIds,
       expenseData.participantShares,
-      expenseData.paidBy || currentUser?.id || ""
+      expenseData.paidBy || currentUser?.id || "",
+      expenseData.chargeSameAmount
     );
 
     if ("error" in breakdown) {
@@ -430,6 +462,7 @@ export function GroupDetailsPage() {
           splitType: "equal",
           participantIds: [],
           participantShares: {},
+          chargeSameAmount: false,
         });
       } catch (error) {
         setErrorMessage(error instanceof Error ? error.message : "Failed to create expense.");
@@ -825,6 +858,34 @@ export function GroupDetailsPage() {
               <MenuItem value="percentage">By percentage</MenuItem>
               <MenuItem value="custom">Custom amounts</MenuItem>
             </TextField>
+            {equalSplitHasRemainder && (
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={expenseData.chargeSameAmount}
+                    onChange={(e) =>
+                      setExpenseData((current) => ({
+                        ...current,
+                        chargeSameAmount: e.target.checked,
+                      }))
+                    }
+                  />
+                }
+                label={
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: "var(--color-ink)" }}>
+                      Charge everyone the same rounded amount
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: "var(--color-muted)" }}>
+                      {expenseData.chargeSameAmount
+                        ? "Everyone pays the same rounded share; you absorb the rounding difference yourself."
+                        : "Off: shares are rounded fairly so they sum to the exact total (some people may pay 1 cent more than others)."}
+                    </Typography>
+                  </Box>
+                }
+                sx={{ alignItems: "flex-start", ml: 0 }}
+              />
+            )}
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "var(--color-ink)" }}>
                 Who participated?
