@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, use, useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
 export type ThemeMode = "light" | "dark";
@@ -50,7 +50,7 @@ export function ThemeModeProvider({ children }: { children: ReactNode }) {
 }
 
 export function useThemeMode() {
-  const context = useContext(ThemeModeContext);
+  const context = use(ThemeModeContext);
 
   if (!context) {
     throw new Error("useThemeMode must be used inside ThemeModeProvider");

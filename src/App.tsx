@@ -8,7 +8,9 @@ import { AppProvider } from "./app/AppStateContext";
 import { ThemeModeProvider, useThemeMode } from "./app/ThemeModeContext";
 import { GlobalErrorBoundary } from "./app/GlobalErrorBoundary";
 import { AppShell } from "./widgets/layout/AppShell";
-import { AdminRoute, ProtectedRoute, PublicOnlyRoute } from "./app/RouteGuards";
+import { AdminRoute } from "./app/AdminRoute";
+import { ProtectedRoute } from "./app/ProtectedRoute";
+import { PublicOnlyRoute } from "./app/PublicOnlyRoute";
 
 const HomePage = lazy(() => import("./pages/home/HomePage").then((m) => ({ default: m.HomePage })));
 const AdminPage = lazy(() => import("./pages/admin/AdminPage").then((m) => ({ default: m.AdminPage })));

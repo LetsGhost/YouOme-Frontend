@@ -9,13 +9,15 @@ import {
   Paper,
   Link,
   Alert,
+  Checkbox,
+  FormControlLabel,
 } from "@mui/material";
 import { useAppState } from "../../app/AppStateContext";
 import { ThemeToggle } from "../../widgets/layout/ThemeToggle";
 
 export function LoginPage() {
   const { login } = useAppState();
-  const [form, setForm] = useState({ email: "", password: "" });
+  const [form, setForm] = useState({ email: "", password: "", rememberMe: false });
   const [isBusy, setIsBusy] = useState(false);
   const [loginError, setLoginError] = useState("");
   const navigate = useNavigate();
@@ -129,6 +131,19 @@ export function LoginPage() {
                 setForm((current) => ({ ...current, password: event.target.value }))
               }
               required
+            />
+
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={form.rememberMe}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, rememberMe: event.target.checked }))
+                  }
+                />
+              }
+              label="Remember me"
+              sx={{ color: "var(--color-muted)", mr: "auto" }}
             />
 
             {loginError && <Alert severity="error">{loginError}</Alert>}

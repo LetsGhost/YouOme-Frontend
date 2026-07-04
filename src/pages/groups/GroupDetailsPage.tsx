@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ChevronLeft, ChevronDown, ChevronUp, Plus, Users, TrendingUp, Settings, TrendingDown, Wallet } from "lucide-react";
 import {
+  Avatar,
+  AvatarGroup,
   Box,
   Button,
   Card,
@@ -38,6 +40,7 @@ import {
   type PaginatedGroupExpenses,
 } from "../../shared/api/backend";
 import { formatMoney, formatTimestamp } from "../../shared/lib/format";
+import { useAuthenticatedImage } from "../../shared/lib/useAuthenticatedImage";
 import { GroupDebtWidget } from "../../widgets/module/group/GroupDebtWidget";
 import { AvatarUploader } from "../../widgets/avatar/AvatarUploader";
 
@@ -70,6 +73,26 @@ const microLabelSx = {
 
 function getMemberLabel(member: GroupMember) {
   return member.name || member.email || member.id;
+}
+
+function MemberAvatar({
+  backendUrl,
+  token,
+  member,
+  size,
+}: {
+  backendUrl: string;
+  token?: string;
+  member: GroupMember;
+  size: number;
+}) {
+  const imageUrl = useAuthenticatedImage(resolveAvatarUrl(backendUrl, member.avatarUrl), token);
+
+  return (
+    <Avatar src={imageUrl ?? undefined} alt={getMemberLabel(member)} sx={{ width: size, height: size, fontSize: size / 2.5 }}>
+      {member.avatar || member.name?.[0] || "?"}
+    </Avatar>
+  );
 }
 
 function toCents(value: number) {
@@ -222,7 +245,7 @@ export function GroupDetailsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showExpenseDialog, setShowExpenseDialog] = useState(false);
-  const [membersExpanded, setMembersExpanded] = useState(false);
+  const [showMembersDialog, setShowMembersDialog] = useState(false);
   const [expensesExpanded, setExpensesExpanded] = useState(false);
   const [expensesData, setExpensesData] = useState<PaginatedGroupExpenses | null>(null);
   const [expensesPageNum, setExpensesPageNum] = useState(1);
@@ -491,8 +514,11 @@ export function GroupDetailsPage() {
           borderBottom: "1px solid var(--color-border)",
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, minWidth: 0 }}>
-          <IconButton onClick={() => navigate("/groups")} sx={{ color: "var(--color-muted)", "&:hover": { color: "var(--color-ink)" } }}>
+        <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1.5, minWidth: 0 }}>
+          <IconButton
+            onClick={() => navigate("/groups")}
+            sx={{ color: "var(--color-muted)", mt: "2px", "&:hover": { color: "var(--color-ink)" } }}
+          >
             <ChevronLeft size={22} strokeWidth={2} />
           </IconButton>
           {!isLoading && (
@@ -510,9 +536,18 @@ export function GroupDetailsPage() {
             {isLoading ? (
               <Skeleton variant="text" width={260} height={42} />
             ) : (
-              <Typography variant="h4" sx={{ fontWeight: 700, color: "var(--color-ink)", fontSize: { xs: "1.5rem", sm: "2.125rem" } }}>
-                {group?.name || "Group"}
-              </Typography>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <Typography variant="h4" sx={{ fontWeight: 700, color: "var(--color-ink)", fontSize: { xs: "1.5rem", sm: "2.125rem" } }}>
+                  {group?.name || "Group"}
+                </Typography>
+                <IconButton
+                  onClick={() => navigate(`/groups/${id}/settings`)}
+                  aria-label="Group settings"
+                  sx={{ color: "var(--color-muted)", "&:hover": { color: "var(--color-ink)" } }}
+                >
+                  <Settings size={20} strokeWidth={2} />
+                </IconButton>
+              </Box>
             )}
             {isLoading ? (
               <Skeleton variant="text" width={220} />
@@ -524,20 +559,25 @@ export function GroupDetailsPage() {
           </Box>
         </Box>
 
-        <Button
-          variant="outlined"
-          startIcon={<Settings size={16} strokeWidth={2} />}
-          onClick={() => navigate(`/groups/${id}/settings`)}
-          sx={{
-            textTransform: "none",
-            fontWeight: 700,
-            whiteSpace: "nowrap",
-            borderColor: "var(--color-border)",
-            color: "var(--color-ink)",
-          }}
-        >
-          Settings
-        </Button>
+        {!isLoading && members.length > 0 && (
+          <AvatarGroup
+            max={3}
+            onClick={() => setShowMembersDialog(true)}
+            sx={{
+              cursor: "pointer",
+              "& .MuiAvatar-root": {
+                width: 32,
+                height: 32,
+                fontSize: "0.8rem",
+                border: "2px solid var(--color-surface)",
+              },
+            }}
+          >
+            {members.map((member) => (
+              <MemberAvatar key={member.id} backendUrl={backendUrl} token={session?.accessToken} member={member} size={32} />
+            ))}
+          </AvatarGroup>
+        )}
       </Box>
 
       {/* Quick Stats */}
@@ -712,88 +752,67 @@ export function GroupDetailsPage() {
         </CardContent>
       </Card>
 
-      {/* Members Section */}
-      <Card sx={{ borderRadius: "var(--radius-md)" }}>
-        <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-          <Box
-            onClick={() => setMembersExpanded((current) => !current)}
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 1,
-              cursor: "pointer",
-              userSelect: "none",
-            }}
-          >
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <Users size={18} strokeWidth={2} color="var(--color-accent)" />
-              <Typography variant="h6" sx={{ fontWeight: 700, color: "var(--color-ink)" }}>
-                Members
-              </Typography>
-              <Chip
-                label={members.length}
-                size="small"
-                sx={{ bgcolor: "var(--color-accent-soft-bg)", color: "var(--color-accent-soft-ink)", fontWeight: 700 }}
-              />
-            </Box>
-            <IconButton size="small" sx={{ color: "var(--color-muted)" }}>
-              {membersExpanded ? <ChevronUp size={20} strokeWidth={2} /> : <ChevronDown size={20} strokeWidth={2} />}
-            </IconButton>
-          </Box>
-
-          <Collapse in={membersExpanded}>
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 2 }}>
-              {members.map((member) => (
-                <Box
-                  key={member.id}
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 2,
-                    p: 1.5,
-                    borderRadius: "var(--radius-md)",
-                    bgcolor: "var(--color-surface-2)",
-                    border: "1px solid var(--color-border)",
-                  }}
-                >
-                  <AvatarUploader
-                    src={resolveAvatarUrl(backendUrl, member.avatarUrl)}
-                    token={session?.accessToken}
-                    fallback={member.avatar || member.name?.[0] || "?"}
-                    size={40}
-                    onUpload={noop}
-                    onRemove={noop}
-                  />
-                  <Box sx={{ flex: 1 }}>
-                    <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--color-ink)" }}>
-                      {member.name}
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: "var(--color-muted)" }}>
-                      {member.email || "No email available"}
-                    </Typography>
-                  </Box>
-                  {(member.id === currentUser?.id || member.email === currentUser?.email) && (
-                    <Chip
-                      label="You"
-                      size="small"
-                      sx={{ bgcolor: "var(--color-accent-soft-bg)", color: "var(--color-accent-soft-ink)" }}
-                    />
-                  )}
-                </Box>
-              ))}
-              {members.length === 0 && !isLoading && (
-                <Box sx={{ textAlign: "center", py: 4 }}>
-                  <Users size={48} strokeWidth={1.8} color="var(--color-muted-3)" style={{ marginBottom: 8 }} />
-                  <Typography variant="body2" sx={{ color: "var(--color-muted)" }}>
-                    No members found in this group.
-                  </Typography>
-                </Box>
+      {/* Members Dialog */}
+      <Dialog
+        open={showMembersDialog}
+        onClose={() => setShowMembersDialog(false)}
+        maxWidth="xs"
+        fullWidth
+        slotProps={{
+          paper: { sx: { borderRadius: "var(--radius-lg)", border: "1px solid var(--color-border)" } },
+        }}
+      >
+        <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1, fontWeight: 700, color: "var(--color-ink)" }}>
+          <Users size={18} strokeWidth={2} color="var(--color-accent)" />
+          Members
+          <Chip
+            label={members.length}
+            size="small"
+            sx={{ bgcolor: "var(--color-accent-soft-bg)", color: "var(--color-accent-soft-ink)", fontWeight: 700 }}
+          />
+        </DialogTitle>
+        <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pb: 2 }}>
+          {members.map((member) => (
+            <Box
+              key={member.id}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 2,
+                p: 1.5,
+                borderRadius: "var(--radius-md)",
+                bgcolor: "var(--color-surface-2)",
+                border: "1px solid var(--color-border)",
+              }}
+            >
+              <MemberAvatar backendUrl={backendUrl} token={session?.accessToken} member={member} size={40} />
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--color-ink)" }}>
+                  {member.name}
+                </Typography>
+                <Typography variant="caption" sx={{ color: "var(--color-muted)" }}>
+                  {member.email || "No email available"}
+                </Typography>
+              </Box>
+              {(member.id === currentUser?.id || member.email === currentUser?.email) && (
+                <Chip
+                  label="You"
+                  size="small"
+                  sx={{ bgcolor: "var(--color-accent-soft-bg)", color: "var(--color-accent-soft-ink)" }}
+                />
               )}
             </Box>
-          </Collapse>
-        </CardContent>
-      </Card>
+          ))}
+          {members.length === 0 && (
+            <Box sx={{ textAlign: "center", py: 4 }}>
+              <Users size={48} strokeWidth={1.8} color="var(--color-muted-3)" style={{ marginBottom: 8 }} />
+              <Typography variant="body2" sx={{ color: "var(--color-muted)" }}>
+                No members found in this group.
+              </Typography>
+            </Box>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Add Expense Dialog */}
       <Dialog

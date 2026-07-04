@@ -250,6 +250,7 @@ export type AuthSession = {
 export type LoginInput = {
   email: string;
   password: string;
+  rememberMe?: boolean;
 };
 
 export type RegisterInput = {

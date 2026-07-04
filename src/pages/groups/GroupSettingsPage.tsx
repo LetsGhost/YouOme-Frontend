@@ -310,21 +310,18 @@ export function GroupSettingsPage() {
           </Box>
         </Box>
 
-        <Button
-          variant="outlined"
-          startIcon={<ChevronLeft size={16} strokeWidth={2} />}
+        <IconButton
           onClick={() => navigate(`/groups/${id}`)}
+          aria-label="Back to group"
           sx={{
-            textTransform: "none",
-            fontWeight: 700,
-            whiteSpace: "nowrap",
-            borderColor: "var(--color-border)",
+            border: "1px solid var(--color-border)",
+            borderRadius: "var(--radius-md)",
             color: "var(--color-ink)",
             flexShrink: 0,
           }}
         >
-          Back to group
-        </Button>
+          <ChevronLeft size={18} strokeWidth={2} />
+        </IconButton>
       </Box>
 
       {errorMessage && <Alert severity="warning">{errorMessage}</Alert>}

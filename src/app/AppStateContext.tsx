@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, use, useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
 import {
@@ -33,6 +33,7 @@ export type Notice = {
 type LoginInput = {
   email: string;
   password: string;
+  rememberMe?: boolean;
 };
 
 type RegisterInput = {
@@ -139,14 +140,41 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const storedSession = readSession();
 
     if (storedSession?.accessToken) {
-      const currentUserSnapshot = await fetchJson<CurrentUser>(`${backendUrl}/api/auth/me`, {
-        token: storedSession.accessToken,
-      });
+      try {
+        const currentUserSnapshot = await fetchJson<CurrentUser>(`${backendUrl}/api/auth/me`, {
+          token: storedSession.accessToken,
+        });
 
-      setSession({ ...storedSession, user: currentUserSnapshot });
-      setCurrentUser(currentUserSnapshot);
-      setNotice({ tone: "success", message: "Session restored from local storage." });
-      return;
+        setSession({ ...storedSession, user: currentUserSnapshot });
+        setCurrentUser(currentUserSnapshot);
+        setNotice({ tone: "success", message: "Session restored from local storage." });
+        return;
+      } catch (error) {
+        if (!storedSession.refreshToken) {
+          throw error;
+        }
+
+        const tokens = await fetchJson<Pick<AuthSession, "accessToken" | "refreshToken">>(
+          `${backendUrl}/api/auth/refresh`,
+          {
+            method: "POST",
+            json: { refreshToken: storedSession.refreshToken },
+          }
+        );
+
+        const currentUserSnapshot = await fetchJson<CurrentUser>(`${backendUrl}/api/auth/me`, {
+          token: tokens.accessToken,
+        });
+
+        setSession({
+          user: currentUserSnapshot,
+          accessToken: tokens.accessToken,
+          refreshToken: tokens.refreshToken,
+        });
+        setCurrentUser(currentUserSnapshot);
+        setNotice({ tone: "success", message: "Session restored from local storage." });
+        return;
+      }
     }
 
     const devUser = await fetchJson<CurrentUser>(`${backendUrl}/api/auth/me`);
@@ -184,8 +212,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [reloadGroups]);
 
   const login = useCallback(
-    async ({ email, password }: LoginInput) => {
-      const result = await loginUser(backendUrl, { email, password });
+    async ({ email, password, rememberMe }: LoginInput) => {
+      const result = await loginUser(backendUrl, { email, password, rememberMe });
 
       setSession(result);
       setCurrentUser(result.user);
@@ -393,7 +421,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 }
 
 export function useAppState() {
-  const context = useContext(AppStateContext);
+  const context = use(AppStateContext);
 
   if (!context) {
     throw new Error("useAppState must be used inside AppProvider");
