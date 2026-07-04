@@ -2,12 +2,13 @@ import type { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 
 import { useAppState } from "./AppStateContext";
+import { LoadingScreen } from "../widgets/layout/LoadingScreen";
 
 export function PublicOnlyRoute({ children }: { children: ReactNode }) {
   const { currentUser, isBootstrapping } = useAppState();
 
   if (isBootstrapping) {
-    return <div className="auth-screen"><div className="auth-card panel">Loading session...</div></div>;
+    return <LoadingScreen label="Loading session..." />;
   }
 
   if (currentUser) {

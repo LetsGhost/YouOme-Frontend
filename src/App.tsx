@@ -11,6 +11,7 @@ import { AppShell } from "./widgets/layout/AppShell";
 import { AdminRoute } from "./app/AdminRoute";
 import { ProtectedRoute } from "./app/ProtectedRoute";
 import { PublicOnlyRoute } from "./app/PublicOnlyRoute";
+import { LoadingScreen } from "./widgets/layout/LoadingScreen";
 
 const HomePage = lazy(() => import("./pages/home/HomePage").then((m) => ({ default: m.HomePage })));
 const AdminPage = lazy(() => import("./pages/admin/AdminPage").then((m) => ({ default: m.AdminPage })));
@@ -37,11 +38,7 @@ const NotFoundPage = lazy(() =>
 );
 
 function RouteFallback() {
-  return (
-    <div className="auth-screen">
-      <div className="auth-card panel">Loading...</div>
-    </div>
-  );
+  return <LoadingScreen label="Loading..." />;
 }
 
 function ThemedApp() {
