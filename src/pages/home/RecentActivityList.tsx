@@ -1,4 +1,4 @@
-import { ChevronRight, Receipt, Users } from "lucide-react";
+import { Bell, ChevronRight, Receipt, Users } from "lucide-react";
 import { Box, Typography, Link as MuiLink } from "@mui/material";
 import { Link } from "react-router-dom";
 
@@ -23,8 +23,8 @@ export function RecentActivityList({
   return (
     <Box>
       <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
-        <Receipt size={18} strokeWidth={2} color="var(--color-ink)" />
-        <Typography sx={{ fontWeight: 700, fontSize: "1.05rem", color: "var(--color-ink)" }}>Recent activity</Typography>
+        <Bell size={18} strokeWidth={2} color="var(--color-ink)" />
+        <Typography sx={{ fontWeight: 700, fontSize: "1.05rem", color: "var(--color-ink)" }}>Notifications</Typography>
       </Box>
 
       {isLoading ? <LoadingBlock /> : null}
