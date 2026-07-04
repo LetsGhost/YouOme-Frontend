@@ -15,6 +15,15 @@ export type ChangelogEntry = {
 // actually worth telling a user about.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "v0.9.0",
+    date: "2026-07-04",
+    title: "Expense detail view",
+    highlights: [
+      "Tap any expense in a group's \"Recent Expenses\" list to see a full breakdown: who paid, the date, an overall settlement status, and each participant's share and payment status.",
+    ],
+    minor: [],
+  },
+  {
     version: "v0.8.0",
     date: "2026-07-04",
     title: "Welcome back splash",
@@ -22,6 +31,38 @@ export const CHANGELOG: ChangelogEntry[] = [
       "Signing in now shows a brief spinning-coin splash screen before landing on your dashboard.",
     ],
     minor: [],
+  },
+  {
+    version: "v0.7.2",
+    date: "2026-07-04",
+    title: "Smoother loading states",
+    highlights: [
+      "Loading states across the app now show a small spinning-ring indicator instead of a gray placeholder shape, including a new loading indicator on the dashboard.",
+    ],
+    minor: [],
+  },
+  {
+    version: "v0.7.1",
+    date: "2026-07-04",
+    title: "Debt board polish",
+    highlights: [],
+    minor: [
+      "Current debts board: the \"Mark as paid\" button now shows a plain checkmark instead of a checkmark-in-a-circle.",
+    ],
+  },
+  {
+    version: "v0.7.0",
+    date: "2026-07-04",
+    title: "Remember me & smoother sessions",
+    highlights: [
+      "Added a \"Remember me\" checkbox on login for a longer-lived session.",
+      "Your session now refreshes automatically when it expires, instead of getting stuck logged out.",
+      "Added PWA install support — add YouOme to your phone's home screen like a native app.",
+      "Group details header redesigned: a small settings icon next to the group name, and a clickable stack of member avatars that opens a members dialog.",
+    ],
+    minor: [
+      "Group settings page: replaced the \"Back to group\" text button with an icon-only back button.",
+    ],
   },
   {
     version: "v0.6.0",
