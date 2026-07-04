@@ -1,4 +1,4 @@
-import { CheckCircle2, Clock3, Pencil, Trash2, X } from "lucide-react";
+import { Check, CheckCircle2, Clock3, Pencil, Trash2, X } from "lucide-react";
 import { Box, Card, CardContent, Chip, Divider, IconButton, Stack, Typography } from "@mui/material";
 
 import { resolveAvatarUrl, type GroupDebtExpense } from "../../../shared/api/backend";
@@ -142,7 +142,7 @@ export function ExpenseListCard({
                       onClick={() => onSubmitPayment(expense, participant.userId)}
                       sx={{ ...quickActionButtonSx, bgcolor: "var(--color-accent)", color: "var(--color-accent-contrast)", "&:hover": { bgcolor: "var(--color-accent)", filter: "brightness(0.92)" } }}
                     >
-                      <CheckCircle2 size={15} strokeWidth={2.5} />
+                      <Check size={15} strokeWidth={2.5} />
                     </IconButton>
                   </Box>
                 )}
