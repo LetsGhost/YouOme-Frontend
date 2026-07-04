@@ -1,13 +1,13 @@
 import { NavLink, Outlet } from "react-router-dom";
-import { House, Users, UserRound, Settings, LogOut } from "lucide-react";
+import { House, Users, UserRound, UserPlus, LogOut } from "lucide-react";
 import { useAppState } from "../../app/AppStateContext";
 import { ThemeToggle } from "./ThemeToggle";
 
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: House },
   { to: "/groups", label: "Groups", icon: Users },
-  { to: "/friends", label: "Friends", icon: UserRound },
-  { to: "/settings", label: "Settings", icon: Settings },
+  { to: "/friends", label: "Friends", icon: UserPlus },
+  { to: "/profile", label: "Profile", icon: UserRound },
 ] as const;
 
 export function AppShell() {

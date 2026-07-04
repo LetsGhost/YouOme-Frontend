@@ -1,10 +1,13 @@
-import { Box, Card, CardContent, Typography } from "@mui/material";
+import { Box, Card, CardActionArea, CardContent, Typography } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 
 import { resolveAvatarUrl, type FriendSummary } from "../../shared/api/backend";
 import { AvatarUploader } from "../../widgets/avatar/AvatarUploader";
 import { noop } from "./friendsUtils";
 
 export function FriendCard({ friend, backendUrl, accessToken }: { friend: FriendSummary; backendUrl: string; accessToken?: string }) {
+  const navigate = useNavigate();
+
   return (
     <Card
       variant="outlined"
@@ -14,6 +17,7 @@ export function FriendCard({ friend, backendUrl, accessToken }: { friend: Friend
         boxShadow: "none",
       }}
     >
+      <CardActionArea onClick={() => navigate(`/friends/${friend.id}`)}>
       <CardContent sx={{ p: 2 }}>
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2 }}>
           <Box sx={{ display: "flex", gap: 2, alignItems: "center", flex: 1, minWidth: 0 }}>
@@ -76,6 +80,7 @@ export function FriendCard({ friend, backendUrl, accessToken }: { friend: Friend
           </Box>
         </Box>
       </CardContent>
+      </CardActionArea>
     </Card>
   );
 }

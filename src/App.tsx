@@ -25,6 +25,9 @@ const GroupSettingsPage = lazy(() =>
   import("./pages/groups/GroupSettingsPage").then((m) => ({ default: m.GroupSettingsPage }))
 );
 const FriendsPage = lazy(() => import("./pages/friends/FriendsPage").then((m) => ({ default: m.FriendsPage })));
+const FriendProfilePage = lazy(() =>
+  import("./pages/friends/FriendProfilePage").then((m) => ({ default: m.FriendProfilePage }))
+);
 const ExpensesPage = lazy(() => import("./pages/expenses/ExpensesPage").then((m) => ({ default: m.ExpensesPage })));
 const SettlementsPage = lazy(() =>
   import("./pages/settlements/SettlementsPage").then((m) => ({ default: m.SettlementsPage }))
@@ -33,6 +36,7 @@ const NotificationsPage = lazy(() =>
   import("./pages/notifications/NotificationsPage").then((m) => ({ default: m.NotificationsPage }))
 );
 const SettingsPage = lazy(() => import("./pages/settings/SettingsPage").then((m) => ({ default: m.SettingsPage })));
+const ProfilePage = lazy(() => import("./pages/profile/ProfilePage").then((m) => ({ default: m.ProfilePage })));
 const NotFoundPage = lazy(() =>
   import("./pages/errors/NotFoundPage").then((m) => ({ default: m.NotFoundPage }))
 );
@@ -82,10 +86,12 @@ function ThemedApp() {
                 <Route path="/groups/:id" element={<GroupDetailsPage />} />
                 <Route path="/groups/:id/settings" element={<GroupSettingsPage />} />
                 <Route path="/friends" element={<FriendsPage />} />
+                <Route path="/friends/:id" element={<FriendProfilePage />} />
                 <Route path="/expenses" element={<ExpensesPage />} />
                 <Route path="/settlements" element={<SettlementsPage />} />
                 <Route path="/notifications" element={<NotificationsPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
+                <Route path="/profile" element={<ProfilePage />} />
                 <Route
                   path="/admin"
                   element={

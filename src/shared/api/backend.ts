@@ -14,6 +14,8 @@ export type CurrentUser = {
   name: string;
   role: string;
   avatarUrl?: string | null;
+  bio?: string | null;
+  createdAt?: string;
 };
 
 export type GroupMember = {
@@ -269,6 +271,7 @@ export type RegisterResponse = {
 export type UpdateProfileInput = {
   name?: string;
   email?: string;
+  bio?: string;
 };
 
 export type ChangePasswordInput = {
@@ -419,6 +422,26 @@ export async function listFriendSummaries(backendUrl: string, token?: string) {
   return fetchJson<FriendSummary[]>(`${backendUrl}/api/friend-lists/summary`, {
     token,
   });
+}
+
+export async function getUserById(backendUrl: string, userId: string, token?: string) {
+  return fetchJson<CurrentUser>(`${backendUrl}/api/users/${userId}`, {
+    token,
+  });
+}
+
+export async function getFriendshipStatus(backendUrl: string, otherUserId: string, token?: string) {
+  return fetchJson<{ isFriend: boolean; isBlocked: boolean }>(
+    `${backendUrl}/api/friend-lists/status/${otherUserId}`,
+    { token }
+  );
+}
+
+export async function removeFriend(backendUrl: string, friendUserId: string, token?: string) {
+  return fetchJson<{ friendUserIds: Array<{ friendUserId: string; blocked: boolean }> }>(
+    `${backendUrl}/api/friend-lists/${friendUserId}`,
+    { method: "DELETE", token }
+  );
 }
 
 export async function listGroupMembers(backendUrl: string, groupId: string, token?: string) {
