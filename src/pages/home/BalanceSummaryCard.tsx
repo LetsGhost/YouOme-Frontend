@@ -2,9 +2,18 @@ import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
 import { Box, Typography } from "@mui/material";
 
 import { formatMoney } from "../../shared/lib/format";
+import { InlineSpinner } from "../../shared/ui/InlineSpinner";
 import { microLabelSx } from "./homeStyles";
 
-export function BalanceSummaryCard({ youOwe, owedToYou }: { youOwe: number; owedToYou: number }) {
+export function BalanceSummaryCard({
+  isLoading = false,
+  youOwe,
+  owedToYou,
+}: {
+  isLoading?: boolean;
+  youOwe: number;
+  owedToYou: number;
+}) {
   const balanceTotal = youOwe + owedToYou;
   const youOwePct = balanceTotal > 0 ? (youOwe / balanceTotal) * 100 : 0;
   const owedPct = balanceTotal > 0 ? 100 - youOwePct : 0;
@@ -27,14 +36,18 @@ export function BalanceSummaryCard({ youOwe, owedToYou }: { youOwe: number; owed
             <Typography sx={{ ...microLabelSx, color: "var(--color-warning)" }}>You owe</Typography>
           </Box>
           <Typography
+            component="div"
             sx={{
               fontFamily: "var(--font-mono)",
               fontWeight: 700,
               fontSize: { xs: "1.3rem", md: "1.5rem" },
               color: "var(--color-ink)",
+              display: "flex",
+              alignItems: "center",
+              height: { xs: "1.3rem", md: "1.5rem" },
             }}
           >
-            {formatMoney(youOwe)}
+            {isLoading ? <InlineSpinner size={18} color="var(--color-warning)" /> : formatMoney(youOwe)}
           </Typography>
         </Box>
         <Box sx={{ pl: 2, borderLeft: "1px solid var(--color-border)" }}>
@@ -43,14 +56,18 @@ export function BalanceSummaryCard({ youOwe, owedToYou }: { youOwe: number; owed
             <Typography sx={{ ...microLabelSx, color: "var(--color-success)" }}>Owed to you</Typography>
           </Box>
           <Typography
+            component="div"
             sx={{
               fontFamily: "var(--font-mono)",
               fontWeight: 700,
               fontSize: { xs: "1.3rem", md: "1.5rem" },
               color: "var(--color-ink)",
+              display: "flex",
+              alignItems: "center",
+              height: { xs: "1.3rem", md: "1.5rem" },
             }}
           >
-            {formatMoney(owedToYou)}
+            {isLoading ? <InlineSpinner size={18} color="var(--color-success)" /> : formatMoney(owedToYou)}
           </Typography>
         </Box>
       </Box>
@@ -74,8 +91,14 @@ export function BalanceSummaryCard({ youOwe, owedToYou }: { youOwe: number; owed
       </Box>
 
       <Typography sx={{ ...microLabelSx, mt: 1.25 }}>
-        Net {netSign}
-        {formatMoney(Math.abs(net))}
+        {isLoading ? (
+          "Calculating…"
+        ) : (
+          <>
+            Net {netSign}
+            {formatMoney(Math.abs(net))}
+          </>
+        )}
       </Typography>
     </Box>
   );

@@ -2,9 +2,18 @@ import { Clock, Users } from "lucide-react";
 import { Box, Typography } from "@mui/material";
 
 import { formatCount } from "../../shared/lib/format";
+import { InlineSpinner } from "../../shared/ui/InlineSpinner";
 import { microLabelSx } from "./homeStyles";
 
-export function HomeStatGrid({ pendingPayments, groupsCount }: { pendingPayments: number; groupsCount: number }) {
+export function HomeStatGrid({
+  isLoading = false,
+  pendingPayments,
+  groupsCount,
+}: {
+  isLoading?: boolean;
+  pendingPayments: number;
+  groupsCount: number;
+}) {
   return (
     <Box
       sx={{
@@ -25,7 +34,7 @@ export function HomeStatGrid({ pendingPayments, groupsCount }: { pendingPayments
           <Typography sx={microLabelSx}>Pending</Typography>
         </Box>
         <Typography sx={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: "1.15rem", color: "var(--color-ink)" }}>
-          {formatCount(pendingPayments)}
+          {isLoading ? <InlineSpinner size={16} color="var(--color-warning)" /> : formatCount(pendingPayments)}
         </Typography>
       </Box>
       <Box
@@ -40,7 +49,7 @@ export function HomeStatGrid({ pendingPayments, groupsCount }: { pendingPayments
           <Typography sx={microLabelSx}>Groups</Typography>
         </Box>
         <Typography sx={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: "1.15rem", color: "var(--color-ink)" }}>
-          {formatCount(groupsCount)}
+          {isLoading ? <InlineSpinner size={16} color="var(--color-accent)" /> : formatCount(groupsCount)}
         </Typography>
       </Box>
     </Box>

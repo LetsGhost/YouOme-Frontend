@@ -450,6 +450,34 @@ textarea:focus {
   }
 }
 
+.inline-spinner {
+  flex-shrink: 0;
+  animation: inline-spinner-spin 0.8s linear infinite;
+}
+
+@keyframes inline-spinner-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 32px 0;
+}
+
+.loading-block-label {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
 .auth-screen {
   min-height: 100vh;
   min-height: 100dvh;

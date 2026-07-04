@@ -26,6 +26,7 @@ type AppStateValue = {
   groups: Group[];
   notice: Notice;
   isBootstrapping: boolean;
+  isLoginSplashActive: boolean;
   admin: AdminBundle;
   setApiBaseUrl: (value: string) => void;
   setNotice: (value: Notice) => void;
@@ -55,6 +56,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     notice,
     setNotice,
     isBootstrapping,
+    isLoginSplashActive,
     login,
     register,
     refreshSession,
@@ -78,6 +80,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       groups,
       notice,
       isBootstrapping,
+      isLoginSplashActive,
       admin,
       setApiBaseUrl,
       setNotice,
@@ -102,6 +105,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       groups,
       notice,
       isBootstrapping,
+      isLoginSplashActive,
       admin,
       setApiBaseUrl,
       login,

@@ -15,6 +15,15 @@ export type ChangelogEntry = {
 // actually worth telling a user about.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "v0.8.0",
+    date: "2026-07-04",
+    title: "Welcome back splash",
+    highlights: [
+      "Signing in now shows a brief spinning-coin splash screen before landing on your dashboard.",
+    ],
+    minor: [],
+  },
+  {
     version: "v0.6.0",
     date: "2026-07-03",
     title: "Edit your profile",

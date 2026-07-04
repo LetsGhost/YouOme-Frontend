@@ -1,7 +1,8 @@
 import { Search, Users } from "lucide-react";
-import { Box, Card, CardContent, Divider, InputAdornment, Skeleton, TextField, Typography } from "@mui/material";
+import { Box, Card, CardContent, Divider, InputAdornment, TextField, Typography } from "@mui/material";
 
 import type { FriendSummary } from "../../shared/api/backend";
+import { LoadingBlock } from "../../shared/ui/InlineSpinner";
 import { FriendCard } from "./FriendCard";
 import { microLabelSx, outlinedFieldSx } from "./friendsStyles";
 
@@ -65,16 +66,7 @@ export function FriendsListCard({
         <Divider sx={{ borderColor: "var(--color-border)" }} />
 
         {isLoading ? (
-          <Box sx={{ display: "grid", gap: 2 }}>
-            {Array.from({ length: 3 }).map((_, index) => (
-              <Skeleton
-                key={index}
-                variant="rounded"
-                height={92}
-                sx={{ borderRadius: "var(--radius-md)", bgcolor: "var(--color-surface-2)" }}
-              />
-            ))}
-          </Box>
+          <LoadingBlock label="Loading friends…" />
         ) : friends.length > 0 ? (
           <Box sx={{ display: "grid", gap: 2 }}>
             {friends.map((friend) => (

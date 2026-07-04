@@ -1,7 +1,8 @@
 import { Clock3, RefreshCw } from "lucide-react";
-import { Alert, Box, Button, Card, CardContent, Skeleton, Stack, Typography } from "@mui/material";
+import { Alert, Box, Button, Card, CardContent, Stack, Typography } from "@mui/material";
 
 import type { GroupDebtBoard, GroupDebtExpense } from "../../../shared/api/backend";
+import { LoadingBlock } from "../../../shared/ui/InlineSpinner";
 import { DebtSummaryStats } from "./DebtSummaryStats";
 import { DeleteExpenseDialog } from "./DeleteExpenseDialog";
 import { EditExpenseDialog } from "./EditExpenseDialog";
@@ -91,17 +92,7 @@ export function GroupDebtWidget({ backendUrl, groupId, currentUserId, accessToke
         )}
 
         {isLoading ? (
-          <Stack spacing={1.5}>
-            {Array.from({ length: 2 }).map((_, index) => (
-              <Card key={index} variant="outlined" sx={{ borderRadius: "var(--radius-md)", borderColor: "var(--color-border)" }}>
-                <CardContent sx={{ p: 2 }}>
-                  <Skeleton width="45%" />
-                  <Skeleton width="75%" />
-                  <Skeleton width="65%" />
-                </CardContent>
-              </Card>
-            ))}
-          </Stack>
+          <LoadingBlock label="Loading debts…" />
         ) : board?.expenses.length ? (
           <Stack spacing={1.5}>
             {board.expenses.map((expense) => (

@@ -1,7 +1,8 @@
 import { ShieldCheck } from "lucide-react";
-import { Alert, Box, Button, Card, CardContent, Divider, FormControlLabel, Skeleton, Switch, TextField, Typography } from "@mui/material";
+import { Alert, Box, Button, Card, CardContent, Divider, FormControlLabel, Switch, TextField, Typography } from "@mui/material";
 
 import type { GroupPolicy, GroupPolicyFields } from "../../shared/api/backend";
+import { LoadingBlock } from "../../shared/ui/InlineSpinner";
 
 export function GroupPolicyCard({
   policy,
@@ -38,11 +39,7 @@ export function GroupPolicyCard({
         {policyError && <Alert severity="warning">{policyError}</Alert>}
 
         {isPolicyLoading || !policy ? (
-          <Box sx={{ display: "grid", gap: 1.5 }}>
-            {Array.from({ length: 3 }).map((_, index) => (
-              <Skeleton key={index} variant="rounded" height={40} />
-            ))}
-          </Box>
+          <LoadingBlock label="Loading policy…" />
         ) : (
           <Box sx={{ display: "grid", gap: 1.5 }}>
             <Box sx={{ display: "grid", gap: 1, gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" } }}>

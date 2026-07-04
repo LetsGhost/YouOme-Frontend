@@ -1,7 +1,8 @@
 import { ChevronLeft, Settings, Users } from "lucide-react";
-import { AvatarGroup, Box, IconButton, Skeleton, Typography } from "@mui/material";
+import { AvatarGroup, Box, IconButton, Typography } from "@mui/material";
 
 import { resolveAvatarUrl, type Group, type GroupMember } from "../../shared/api/backend";
+import { InlineSpinner } from "../../shared/ui/InlineSpinner";
 import { AvatarUploader } from "../../widgets/avatar/AvatarUploader";
 import { noop } from "./groupDetailsHelpers";
 import { MemberAvatar } from "./MemberAvatar";
@@ -44,7 +45,22 @@ export function GroupDetailsHeader({
         >
           <ChevronLeft size={22} strokeWidth={2} />
         </IconButton>
-        {!isLoading && (
+        {isLoading ? (
+          <Box
+            sx={{
+              width: 56,
+              height: 56,
+              flexShrink: 0,
+              borderRadius: "var(--radius-sm)",
+              display: "grid",
+              placeItems: "center",
+              bgcolor: "var(--color-surface-2)",
+              border: "1px solid var(--color-border)",
+            }}
+          >
+            <InlineSpinner size={22} color="var(--color-muted)" />
+          </Box>
+        ) : (
           <AvatarUploader
             src={resolveAvatarUrl(backendUrl, group?.avatarUrl)}
             token={accessToken}
@@ -57,7 +73,9 @@ export function GroupDetailsHeader({
         )}
         <Box sx={{ minWidth: 0 }}>
           {isLoading ? (
-            <Skeleton variant="text" width={260} height={42} />
+            <Box sx={{ display: "flex", alignItems: "center", height: 42 }}>
+              <InlineSpinner size={18} color="var(--color-muted)" />
+            </Box>
           ) : (
             <Box sx={{ display: "flex", alignItems: "center", gap: 8 }}>
               <Typography variant="h4" sx={{ fontWeight: 700, color: "var(--color-ink)", fontSize: { xs: "1.5rem", sm: "2.125rem" } }}>
@@ -73,7 +91,9 @@ export function GroupDetailsHeader({
             </Box>
           )}
           {isLoading ? (
-            <Skeleton variant="text" width={220} />
+            <Box sx={{ display: "flex", alignItems: "center", height: 20 }}>
+              <InlineSpinner size={14} color="var(--color-muted)" />
+            </Box>
           ) : (
             <Typography variant="body2" sx={{ color: "var(--color-muted)" }}>
               {group?.description || "No description provided."}

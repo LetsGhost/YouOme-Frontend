@@ -1,7 +1,8 @@
 import { Plus, Users } from "lucide-react";
-import { Box, Button, Skeleton, Typography } from "@mui/material";
+import { Box, Button, Typography } from "@mui/material";
 
 import type { Group } from "../../shared/api/backend";
+import { LoadingBlock } from "../../shared/ui/InlineSpinner";
 import { GroupCard } from "./GroupCard";
 
 const gridSx = { display: "grid", gap: 3, gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))", lg: "repeat(3, minmax(0, 1fr))" } };
@@ -20,15 +21,7 @@ export function GroupsGrid({
   onCreateGroup: () => void;
 }) {
   if (isLoading) {
-    return (
-      <Box sx={gridSx}>
-        {Array.from({ length: 3 }).map((_, index) => (
-          <Box key={index}>
-            <Skeleton variant="rounded" height={260} />
-          </Box>
-        ))}
-      </Box>
-    );
+    return <LoadingBlock label="Loading groups…" minHeight={260} />;
   }
 
   if (groups.length > 0) {

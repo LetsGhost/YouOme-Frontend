@@ -12,14 +12,17 @@ import { RecentActivityList, type RecentActivity } from "./RecentActivityList";
 export function HomePage() {
   const { backendUrl, currentUser, groups, session } = useAppState();
   const [debtBoards, setDebtBoards] = useState<GroupDebtBoard[]>([]);
+  const [isLoadingBoards, setIsLoadingBoards] = useState(true);
 
   useEffect(() => {
     if (groups.length === 0) {
       setDebtBoards([]);
+      setIsLoadingBoards(false);
       return;
     }
 
     let isMounted = true;
+    setIsLoadingBoards(true);
 
     const loadDebtBoards = async () => {
       const boards = await Promise.all(
@@ -30,6 +33,7 @@ export function HomePage() {
 
       if (isMounted) {
         setDebtBoards(boards.filter((board): board is GroupDebtBoard => board !== null));
+        setIsLoadingBoards(false);
       }
     };
 
@@ -132,9 +136,17 @@ export function HomePage() {
       <HomeHeader name={currentUser?.name || "Friend"} />
 
       <Box sx={{ px: { xs: 2.5, md: 3.5 }, py: { xs: 2.5, md: 3 }, display: "flex", flexDirection: "column", gap: { xs: 2.5, md: 3 } }}>
-        <BalanceSummaryCard youOwe={globalDebtStats.youOwe} owedToYou={globalDebtStats.owedToYou} />
-        <HomeStatGrid pendingPayments={globalDebtStats.pendingPayments} groupsCount={dashboardStats.groupsCount} />
-        <RecentActivityList activities={dashboardStats.recentActivities} />
+        <BalanceSummaryCard
+          isLoading={isLoadingBoards}
+          youOwe={globalDebtStats.youOwe}
+          owedToYou={globalDebtStats.owedToYou}
+        />
+        <HomeStatGrid
+          isLoading={isLoadingBoards}
+          pendingPayments={globalDebtStats.pendingPayments}
+          groupsCount={dashboardStats.groupsCount}
+        />
+        <RecentActivityList isLoading={isLoadingBoards} activities={dashboardStats.recentActivities} />
       </Box>
     </Box>
   );

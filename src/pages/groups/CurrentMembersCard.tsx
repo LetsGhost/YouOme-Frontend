@@ -1,8 +1,9 @@
 import { Users } from "lucide-react";
-import { Box, Card, CardContent, Chip, Divider, Skeleton, Typography } from "@mui/material";
+import { Box, Card, CardContent, Chip, Divider, Typography } from "@mui/material";
 
 import { resolveAvatarUrl, type CurrentUser, type GroupMember } from "../../shared/api/backend";
 import { formatCount } from "../../shared/lib/format";
+import { LoadingBlock } from "../../shared/ui/InlineSpinner";
 import { AvatarUploader } from "../../widgets/avatar/AvatarUploader";
 import { noop } from "./groupSettingsHelpers";
 
@@ -37,11 +38,7 @@ export function CurrentMembersCard({
         <Divider sx={{ borderColor: "var(--color-border)" }} />
 
         {isLoading ? (
-          <Box sx={{ display: "grid", gap: 1.5 }}>
-            {Array.from({ length: 4 }).map((_, index) => (
-              <Skeleton key={index} variant="rounded" height={64} />
-            ))}
-          </Box>
+          <LoadingBlock label="Loading members…" />
         ) : members.length > 0 ? (
           <Box sx={{ display: "grid", gap: 1.25 }}>
             {members.map((member) => (

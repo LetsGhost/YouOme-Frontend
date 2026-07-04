@@ -2,6 +2,7 @@ import { ChevronRight, Receipt, Users } from "lucide-react";
 import { Box, Typography, Link as MuiLink } from "@mui/material";
 import { Link } from "react-router-dom";
 
+import { LoadingBlock } from "../../shared/ui/InlineSpinner";
 import { microLabelSx } from "./homeStyles";
 
 export type RecentActivity = {
@@ -12,7 +13,13 @@ export type RecentActivity = {
   kind: "expense" | "group";
 };
 
-export function RecentActivityList({ activities }: { activities: RecentActivity[] }) {
+export function RecentActivityList({
+  isLoading = false,
+  activities,
+}: {
+  isLoading?: boolean;
+  activities: RecentActivity[];
+}) {
   return (
     <Box>
       <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
@@ -20,8 +27,10 @@ export function RecentActivityList({ activities }: { activities: RecentActivity[
         <Typography sx={{ fontWeight: 700, fontSize: "1.05rem", color: "var(--color-ink)" }}>Recent activity</Typography>
       </Box>
 
+      {isLoading ? <LoadingBlock /> : null}
+
       <Box sx={{ display: "flex", flexDirection: "column" }}>
-        {activities.map((activity, idx) => {
+        {!isLoading && activities.map((activity, idx) => {
           const Icon = activity.kind === "expense" ? Receipt : Users;
           return (
             <Box

@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useState } from "react";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 import {
   Box,
   Button,
@@ -20,12 +20,9 @@ export function LoginPage() {
   const [form, setForm] = useState({ email: "", password: "", rememberMe: false });
   const [isBusy, setIsBusy] = useState(false);
   const [loginError, setLoginError] = useState("");
-  const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const locationState = location.state as { from?: string; email?: string } | null;
-
-  const returnTo = locationState?.from || "/dashboard";
 
   useEffect(() => {
     const email = searchParams.get("email") || locationState?.email;
@@ -42,12 +39,12 @@ export function LoginPage() {
 
     try {
       await login(form);
-      navigate(returnTo, { replace: true });
+      // PublicOnlyRoute takes over from here: it shows the splash screen
+      // while isLoginSplashActive is set, then redirects once it clears.
     } catch (error) {
       const message = error instanceof Error ? error.message : "Login failed.";
 
       setLoginError(message);
-    } finally {
       setIsBusy(false);
     }
   }

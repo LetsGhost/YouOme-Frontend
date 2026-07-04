@@ -4,8 +4,10 @@ import { Plus } from "lucide-react";
 import { Alert, Box, Button, useMediaQuery, useTheme } from "@mui/material";
 
 import { useAppState } from "../../app/AppStateContext";
+import type { GroupExpense } from "../../shared/api/backend";
 import { GroupDebtWidget } from "../../widgets/module/group/GroupDebtWidget";
 import { AddExpenseDialog } from "./AddExpenseDialog";
+import { ExpenseViewDialog } from "./ExpenseViewDialog";
 import { GroupDetailsHeader } from "./GroupDetailsHeader";
 import { GroupMembersDialog } from "./GroupMembersDialog";
 import { GroupQuickStats } from "./GroupQuickStats";
@@ -21,6 +23,7 @@ export function GroupDetailsPage() {
   const isPhoneScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const [showMembersDialog, setShowMembersDialog] = useState(false);
   const [expensesExpanded, setExpensesExpanded] = useState(false);
+  const [viewingExpense, setViewingExpense] = useState<GroupExpense | null>(null);
 
   const {
     group,
@@ -119,6 +122,16 @@ export function GroupDetailsPage() {
         expensesPageNum={expensesPageNum}
         onPageChange={setExpensesPageNum}
         isPhoneScreen={isPhoneScreen}
+        onExpenseClick={setViewingExpense}
+      />
+
+      <ExpenseViewDialog
+        expense={viewingExpense}
+        members={members}
+        backendUrl={backendUrl}
+        accessToken={session?.accessToken}
+        currentUserId={currentUser?.id}
+        onClose={() => setViewingExpense(null)}
       />
 
       <GroupMembersDialog

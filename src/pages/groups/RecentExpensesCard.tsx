@@ -1,8 +1,9 @@
 import { ChevronDown, ChevronUp, Wallet } from "lucide-react";
-import { Box, Card, CardContent, Chip, Collapse, IconButton, Pagination, Skeleton, Typography } from "@mui/material";
+import { Box, Card, CardContent, Chip, Collapse, IconButton, Pagination, Typography } from "@mui/material";
 
 import type { GroupExpense, PaginatedGroupExpenses } from "../../shared/api/backend";
 import { formatMoney, formatTimestamp } from "../../shared/lib/format";
+import { LoadingBlock } from "../../shared/ui/InlineSpinner";
 
 export function RecentExpensesCard({
   expensesExpanded,
@@ -14,6 +15,7 @@ export function RecentExpensesCard({
   expensesPageNum,
   onPageChange,
   isPhoneScreen,
+  onExpenseClick,
 }: {
   expensesExpanded: boolean;
   onToggleExpanded: () => void;
@@ -24,6 +26,7 @@ export function RecentExpensesCard({
   expensesPageNum: number;
   onPageChange: (page: number) => void;
   isPhoneScreen: boolean;
+  onExpenseClick: (expense: GroupExpense) => void;
 }) {
   return (
     <Card sx={{ borderRadius: "var(--radius-md)" }}>
@@ -58,17 +61,14 @@ export function RecentExpensesCard({
         <Collapse in={expensesExpanded}>
           <Box sx={{ pt: 2 }}>
             {isExpensesLoading && expenses.length === 0 ? (
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-                {Array.from({ length: 3 }).map((_, index) => (
-                  <Skeleton key={index} variant="rounded" height={58} sx={{ borderRadius: "var(--radius-md)" }} />
-                ))}
-              </Box>
+              <LoadingBlock label="Loading expenses…" />
             ) : expenses.length > 0 ? (
               <>
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, opacity: isExpensesLoading ? 0.6 : 1 }}>
                   {expenses.map((expense) => (
                     <Box
                       key={expense.id}
+                      onClick={() => onExpenseClick(expense)}
                       sx={{
                         display: "flex",
                         alignItems: "center",
@@ -78,6 +78,8 @@ export function RecentExpensesCard({
                         borderRadius: "var(--radius-md)",
                         bgcolor: "var(--color-surface-2)",
                         border: "1px solid var(--color-border)",
+                        cursor: "pointer",
+                        "&:hover": { borderColor: "var(--color-accent)" },
                       }}
                     >
                       <Box sx={{ minWidth: 0 }}>

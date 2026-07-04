@@ -1,7 +1,8 @@
 import { Search, UserPlus } from "lucide-react";
-import { Box, Button, Card, CardContent, Divider, InputAdornment, Skeleton, TextField, Typography } from "@mui/material";
+import { Box, Button, Card, CardContent, Divider, InputAdornment, TextField, Typography } from "@mui/material";
 
 import { resolveAvatarUrl, type FriendSummary } from "../../shared/api/backend";
+import { LoadingBlock } from "../../shared/ui/InlineSpinner";
 import { AvatarUploader } from "../../widgets/avatar/AvatarUploader";
 import { noop, resolveFriendKey } from "./groupSettingsHelpers";
 
@@ -58,11 +59,7 @@ export function InviteFriendsCard({
         <Divider sx={{ borderColor: "var(--color-border)" }} />
 
         {isLoading ? (
-          <Box sx={{ display: "grid", gap: 1.5 }}>
-            {Array.from({ length: 3 }).map((_, index) => (
-              <Skeleton key={index} variant="rounded" height={88} />
-            ))}
-          </Box>
+          <LoadingBlock label="Loading friends…" />
         ) : friends.length > 0 ? (
           <Box sx={{ display: "grid", gap: 1.5 }}>
             {friends.map((friend) => {

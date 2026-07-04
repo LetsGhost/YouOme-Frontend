@@ -1,6 +1,7 @@
 import { Bell } from "lucide-react";
-import { Box, Skeleton, Typography } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 
+import { LoadingBlock } from "../../shared/ui/InlineSpinner";
 import { NotificationItem } from "./notificationTypes";
 import { NotificationCard } from "./NotificationCard";
 
@@ -22,21 +23,7 @@ export function NotificationsList({
   onGroupInviteAction: (notification: NotificationItem, accept: boolean) => void;
 }) {
   if (isLoading) {
-    return (
-      <Box sx={{ display: "grid", gap: 1 }}>
-        {Array.from({ length: 3 }).map((_, index) => (
-          <Box key={index} sx={{ borderRadius: "var(--radius-md)", border: "1px solid var(--color-border)", p: 2 }}>
-            <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-              <Skeleton variant="circular" width={36} height={36} />
-              <Box sx={{ flex: 1 }}>
-                <Skeleton width="58%" />
-                <Skeleton width="34%" />
-              </Box>
-            </Box>
-          </Box>
-        ))}
-      </Box>
-    );
+    return <LoadingBlock label="Loading notifications…" minHeight={160} />;
   }
 
   if (notifications.length > 0) {

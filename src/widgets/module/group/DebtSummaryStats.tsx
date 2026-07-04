@@ -1,5 +1,6 @@
-import { Box, Skeleton, Typography } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 
+import { InlineSpinner } from "../../../shared/ui/InlineSpinner";
 import { microLabelSx, monoStatSx } from "./groupDebtWidgetHelpers";
 
 export function DebtSummaryStats({
@@ -26,15 +27,15 @@ export function DebtSummaryStats({
     >
       <Box>
         <Typography sx={microLabelSx}>Open</Typography>
-        <Typography sx={monoStatSx}>{isLoading ? <Skeleton width={48} /> : expenseCount}</Typography>
+        <Typography sx={monoStatSx}>{isLoading ? <InlineSpinner size={16} /> : expenseCount}</Typography>
       </Box>
       <Box>
         <Typography sx={microLabelSx}>Waiting</Typography>
-        <Typography sx={monoStatSx}>{isLoading ? <Skeleton width={48} /> : pendingMyPayment}</Typography>
+        <Typography sx={monoStatSx}>{isLoading ? <InlineSpinner size={16} /> : pendingMyPayment}</Typography>
       </Box>
       <Box>
         <Typography sx={microLabelSx}>Review</Typography>
-        <Typography sx={monoStatSx}>{isLoading ? <Skeleton width={48} /> : awaitingReview}</Typography>
+        <Typography sx={monoStatSx}>{isLoading ? <InlineSpinner size={16} /> : awaitingReview}</Typography>
       </Box>
     </Box>
   );

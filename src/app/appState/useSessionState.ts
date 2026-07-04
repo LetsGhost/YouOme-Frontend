@@ -42,12 +42,25 @@ const defaultNotice: Notice = {
   message: "",
 };
 
+const LOGIN_SPLASH_DURATION_MS = 2500;
+
 export function useSessionState(backendUrl: string) {
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [session, setSession] = useState<AuthSession | null>(() => readSession());
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(() => readSession()?.user ?? null);
   const [notice, setNotice] = useState<Notice>(defaultNotice);
   const [isBootstrapping, setIsBootstrapping] = useState(true);
+  const [isLoginSplashActive, setIsLoginSplashActive] = useState(false);
+
+  useEffect(() => {
+    if (!isLoginSplashActive) {
+      return;
+    }
+
+    const timer = setTimeout(() => setIsLoginSplashActive(false), LOGIN_SPLASH_DURATION_MS);
+
+    return () => clearTimeout(timer);
+  }, [isLoginSplashActive]);
 
   useEffect(() => {
     saveSession(session);
@@ -145,6 +158,7 @@ export function useSessionState(backendUrl: string) {
       setSession(result);
       setCurrentUser(result.user);
       setNotice({ tone: "success", message: `Signed in as ${result.user.email}.` });
+      setIsLoginSplashActive(true);
     },
     [backendUrl]
   );
@@ -279,6 +293,7 @@ export function useSessionState(backendUrl: string) {
     notice,
     setNotice,
     isBootstrapping,
+    isLoginSplashActive,
     login,
     register,
     refreshSession,
