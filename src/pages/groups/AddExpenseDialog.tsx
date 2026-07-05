@@ -1,5 +1,7 @@
 import type { FormEvent } from "react";
+import { FileText, Plus, Receipt, SplitSquareVertical, Users, X } from "lucide-react";
 import {
+  Avatar,
   Box,
   Button,
   Checkbox,
@@ -9,6 +11,8 @@ import {
   DialogContent,
   DialogTitle,
   FormControlLabel,
+  IconButton,
+  InputAdornment,
   MenuItem,
   TextField,
   Typography,
@@ -16,7 +20,26 @@ import {
 
 import type { CurrentUser, GroupMember } from "../../shared/api/backend";
 import { formatMoney } from "../../shared/lib/format";
+import { roundIconButtonSx } from "../../widgets/module/group/groupDebtWidgetHelpers";
 import { ExpenseDraft, SplitType, getMemberLabel } from "./groupDetailsHelpers";
+import { MemberAvatar } from "./MemberAvatar";
+
+const fieldLabelSx = {
+  fontFamily: "var(--font-mono)",
+  fontSize: "10px",
+  fontWeight: 600,
+  letterSpacing: "0.06em",
+  textTransform: "uppercase" as const,
+  color: "var(--color-muted)",
+  mb: 0.75,
+  display: "block",
+};
+
+const sectionHeaderSx = {
+  display: "flex",
+  alignItems: "center",
+  gap: 1,
+};
 
 export function AddExpenseDialog({
   open,
@@ -24,6 +47,8 @@ export function AddExpenseDialog({
   isPhoneScreen,
   members,
   currentUser,
+  backendUrl,
+  accessToken,
   expenseData,
   onTitleChange,
   onAmountChange,
@@ -43,6 +68,8 @@ export function AddExpenseDialog({
   isPhoneScreen: boolean;
   members: GroupMember[];
   currentUser: CurrentUser | null;
+  backendUrl: string;
+  accessToken?: string;
   expenseData: ExpenseDraft;
   onTitleChange: (value: string) => void;
   onAmountChange: (value: string) => void;
@@ -57,6 +84,8 @@ export function AddExpenseDialog({
   equalSplitHasRemainder: boolean;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 }) {
+  const payerMember = previewMembers.find((member) => member.id === expenseData.paidBy);
+
   return (
     <Dialog
       open={open}
@@ -70,55 +99,123 @@ export function AddExpenseDialog({
         },
       }}
     >
-      <DialogTitle sx={{ fontWeight: 700, fontSize: "1.25rem", color: "var(--color-ink)" }}>Add Expense</DialogTitle>
+      <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1.5 }}>
+        <Typography sx={{ fontWeight: 700, fontSize: "1.25rem", color: "var(--color-ink)" }}>Add Expense</Typography>
+        <IconButton title="Close" onClick={onClose} sx={roundIconButtonSx}>
+          <X size={16} strokeWidth={2} />
+        </IconButton>
+      </DialogTitle>
       <form onSubmit={onSubmit}>
         <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, py: 2 }}>
-          <TextField
-            label="Expense Title"
-            fullWidth
-            placeholder="e.g., Groceries, Rent"
-            value={expenseData.title}
-            onChange={(e) => onTitleChange(e.target.value)}
-            required
-          />
-          <TextField
-            label="Amount"
-            fullWidth
-            type="number"
-            placeholder="0.00"
-            slotProps={{ htmlInput: { step: "0.01", min: "0" } }}
-            value={expenseData.amount}
-            onChange={(e) => onAmountChange(e.target.value)}
-            required
-          />
-          <TextField
-            label="Paid By"
-            select
-            fullWidth
-            value={expenseData.paidBy}
-            onChange={(e) => onPaidByChange(e.target.value)}
-            variant="outlined"
-          >
-            <MenuItem value={currentUser?.id || ""}>You</MenuItem>
-            {members
-              .filter((member) => member.id !== currentUser?.id)
-              .map((member) => (
-                <MenuItem key={member.id} value={member.id}>
-                  {member.name}
-                </MenuItem>
-              ))}
-          </TextField>
-          <TextField
-            label="Split"
-            select
-            fullWidth
-            value={expenseData.splitType}
-            onChange={(e) => onSplitTypeChange(e.target.value as SplitType)}
-          >
-            <MenuItem value="equal">Equal split</MenuItem>
-            <MenuItem value="percentage">By percentage</MenuItem>
-            <MenuItem value="custom">Custom amounts</MenuItem>
-          </TextField>
+          <Box>
+            <Typography sx={fieldLabelSx}>Expense Title</Typography>
+            <TextField
+              fullWidth
+              placeholder="e.g., Groceries, Rent"
+              value={expenseData.title}
+              onChange={(e) => onTitleChange(e.target.value)}
+              required
+              aria-label="Expense Title"
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <FileText size={16} strokeWidth={2} color="var(--color-muted)" />
+                    </InputAdornment>
+                  ),
+                },
+              }}
+            />
+          </Box>
+          <Box>
+            <Typography sx={fieldLabelSx}>Amount</Typography>
+            <TextField
+              variant="standard"
+              fullWidth
+              type="number"
+              placeholder="0.00"
+              value={expenseData.amount}
+              onChange={(e) => onAmountChange(e.target.value)}
+              required
+              aria-label="Amount"
+              slotProps={{
+                htmlInput: {
+                  step: "0.01",
+                  min: "0",
+                  style: { fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: "1.5rem", color: "var(--color-ink)" },
+                },
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Typography sx={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: "1.25rem", color: "var(--color-muted)" }}>
+                        €
+                      </Typography>
+                    </InputAdornment>
+                  ),
+                },
+              }}
+            />
+          </Box>
+          <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1.5 }}>
+            <Box>
+              <Typography sx={fieldLabelSx}>Paid By</Typography>
+              <TextField
+                select
+                fullWidth
+                value={expenseData.paidBy}
+                onChange={(e) => onPaidByChange(e.target.value)}
+                variant="outlined"
+                aria-label="Paid by"
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        {payerMember ? (
+                          <MemberAvatar backendUrl={backendUrl} token={accessToken} member={payerMember} size={20} />
+                        ) : (
+                          <Avatar sx={{ width: 20, height: 20 }}>
+                            <Users size={12} strokeWidth={2} />
+                          </Avatar>
+                        )}
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+              >
+                <MenuItem value={currentUser?.id || ""}>You</MenuItem>
+                {members
+                  .filter((member) => member.id !== currentUser?.id)
+                  .map((member) => (
+                    <MenuItem key={member.id} value={member.id}>
+                      {member.name}
+                    </MenuItem>
+                  ))}
+              </TextField>
+            </Box>
+            <Box>
+              <Typography sx={fieldLabelSx}>Split</Typography>
+              <TextField
+                select
+                fullWidth
+                value={expenseData.splitType}
+                onChange={(e) => onSplitTypeChange(e.target.value as SplitType)}
+                aria-label="Split"
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SplitSquareVertical size={16} strokeWidth={2} color="var(--color-accent)" />
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+              >
+                <MenuItem value="equal">Equal split</MenuItem>
+                <MenuItem value="percentage">By percentage</MenuItem>
+                <MenuItem value="custom">Custom amounts</MenuItem>
+              </TextField>
+            </Box>
+          </Box>
           {equalSplitHasRemainder && (
             <FormControlLabel
               control={
@@ -143,9 +240,12 @@ export function AddExpenseDialog({
             />
           )}
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "var(--color-ink)" }}>
-              Who participated?
-            </Typography>
+            <Box sx={sectionHeaderSx}>
+              <Users size={16} strokeWidth={1.8} color="var(--color-accent)" />
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "var(--color-ink)" }}>
+                Who participated?
+              </Typography>
+            </Box>
             <Typography variant="caption" sx={{ color: "var(--color-muted)" }}>
               Pick everyone who should owe part of this expense. The payer's share is added automatically.
             </Typography>
@@ -156,6 +256,7 @@ export function AddExpenseDialog({
                 return (
                   <Chip
                     key={member.id}
+                    avatar={<MemberAvatar backendUrl={backendUrl} token={accessToken} member={member} size={22} />}
                     label={getMemberLabel(member)}
                     clickable
                     variant={selected ? "filled" : "outlined"}
@@ -171,9 +272,12 @@ export function AddExpenseDialog({
             </Box>
           </Box>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "var(--color-ink)" }}>
-              Split preview
-            </Typography>
+            <Box sx={sectionHeaderSx}>
+              <Receipt size={16} strokeWidth={1.8} color="var(--color-warning)" />
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "var(--color-ink)" }}>
+                Split preview
+              </Typography>
+            </Box>
             {previewMembers.length > 0 && Number(expenseData.amount) > 0 ? (
               <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
                 {expenseData.splitType === "equal" &&
@@ -279,22 +383,26 @@ export function AddExpenseDialog({
               </Typography>
             )}
           </Box>
-          <TextField
-            label="Description (optional)"
-            fullWidth
-            multiline
-            rows={3}
-            placeholder="Add notes..."
-            value={expenseData.description}
-            onChange={(e) => onDescriptionChange(e.target.value)}
-          />
+          <Box>
+            <Typography sx={fieldLabelSx}>Description (optional)</Typography>
+            <TextField
+              fullWidth
+              multiline
+              rows={3}
+              placeholder="Add any extra details…"
+              value={expenseData.description}
+              onChange={(e) => onDescriptionChange(e.target.value)}
+              aria-label="Description (optional)"
+            />
+          </Box>
         </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={onClose} sx={{ color: "var(--color-ink)" }}>
+        <DialogActions sx={{ p: 2, gap: 1 }}>
+          <Button onClick={onClose} variant="outlined" sx={{ color: "var(--color-ink)", borderColor: "var(--color-border-strong)" }}>
             Cancel
           </Button>
           <Button
             type="submit"
+            startIcon={<Plus size={16} strokeWidth={2.4} />}
             sx={{
               bgcolor: "var(--color-accent)",
               color: "var(--color-accent-contrast)",

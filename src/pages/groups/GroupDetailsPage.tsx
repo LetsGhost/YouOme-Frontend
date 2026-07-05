@@ -149,6 +149,8 @@ export function GroupDetailsPage() {
         isPhoneScreen={isPhoneScreen}
         members={members}
         currentUser={currentUser}
+        backendUrl={backendUrl}
+        accessToken={session?.accessToken}
         expenseData={expenseData}
         onTitleChange={(title) => setExpenseData((current) => ({ ...current, title }))}
         onAmountChange={(amount) => setExpenseData((current) => ({ ...current, amount }))}

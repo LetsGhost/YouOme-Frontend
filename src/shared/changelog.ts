@@ -15,6 +15,15 @@ export type ChangelogEntry = {
 // actually worth telling a user about.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "v0.11.1",
+    date: "2026-07-04",
+    title: "Add Expense dialog redesign",
+    highlights: [],
+    minor: [
+      "Redesigned the \"Add Expense\" dialog with avatars for the payer and participants, and icon-labeled fields.",
+    ],
+  },
+  {
     version: "v0.9.0",
     date: "2026-07-04",
     title: "Expense detail view",
