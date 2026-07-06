@@ -17,6 +17,10 @@ export type GroupSettlementRow = Settlement & {
   counterpartName: string;
 };
 
+export type WaitingSettlementRow = GroupSettlementRow & {
+  waitingOn: "their-approval" | "their-payment";
+};
+
 export type CounterpartBalance = {
   id: string;
   name: string;
@@ -24,9 +28,10 @@ export type CounterpartBalance = {
 };
 
 export function useGroupSettlementData(groupId: string | undefined) {
-  const { backendUrl, session } = useAppState();
+  const { backendUrl, session, currentUser } = useAppState();
   const [outgoing, setOutgoing] = useState<GroupSettlementRow[]>([]);
   const [incoming, setIncoming] = useState<GroupSettlementRow[]>([]);
+  const [waiting, setWaiting] = useState<WaitingSettlementRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -36,6 +41,7 @@ export function useGroupSettlementData(groupId: string | undefined) {
     if (!groupId || !session?.accessToken) {
       setOutgoing([]);
       setIncoming([]);
+      setWaiting([]);
       setIsLoading(false);
       return;
     }
@@ -66,12 +72,24 @@ export function useGroupSettlementData(groupId: string | undefined) {
           counterpartName: memberName(settlement.fromUserId),
         }))
       );
+      setWaiting(
+        settlements.waiting.map((settlement) => {
+          const isDebtor = settlement.fromUserId === currentUser?.id;
+          const counterpartId = isDebtor ? settlement.toUserId : settlement.fromUserId;
+          return {
+            ...settlement,
+            counterpartId,
+            counterpartName: memberName(counterpartId),
+            waitingOn: isDebtor ? "their-approval" : "their-payment",
+          };
+        })
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load settlements.");
     } finally {
       setIsLoading(false);
     }
-  }, [backendUrl, groupId, session?.accessToken]);
+  }, [backendUrl, groupId, session?.accessToken, currentUser?.id]);
 
   useEffect(() => {
     void load();
@@ -156,6 +174,7 @@ export function useGroupSettlementData(groupId: string | undefined) {
   return {
     outgoing,
     incoming,
+    waiting,
     balances,
     youOwe,
     owedToYou,

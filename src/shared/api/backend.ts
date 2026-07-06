@@ -187,6 +187,15 @@ export type UpsertSettlementScheduleInput = {
   autoApproveEnabled?: boolean;
 };
 
+export type SettlementExpenseDetail = {
+  expenseId: string;
+  title: string;
+  totalAmount: number;
+  expenseStatus: string;
+  participantStatus: "pending" | "payment-submitted" | "payment-confirmed" | string;
+  shareAmount: number;
+};
+
 export type Settlement = {
   _id: string;
   groupId: string;
@@ -197,6 +206,7 @@ export type Settlement = {
   status: "pending" | "completed" | "expired";
   runId?: string;
   expenseIds: string[];
+  expenses?: SettlementExpenseDetail[];
   completedAt?: string;
   createdAt?: string;
 };
@@ -223,6 +233,7 @@ export type SettlementRun = {
 export type SettlementsForGroup = {
   outgoing: Settlement[];
   incoming: Settlement[];
+  waiting: Settlement[];
 };
 
 export type FriendSummary = {
