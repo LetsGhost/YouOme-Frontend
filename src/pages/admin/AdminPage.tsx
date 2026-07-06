@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, CheckCircle2, Database, Megaphone, Radar, RefreshCcw, Server, TimerReset, Users, type LucideIcon } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Database, Megaphone, Radar, RefreshCcw, Server, TimerReset, Users, Wifi, type LucideIcon } from "lucide-react";
 
 import { useAppState } from "../../app/AppStateContext";
 import { formatSeconds, formatTimestamp } from "../../shared/lib/format";
@@ -12,7 +12,8 @@ type MongoStatus = {
 };
 
 export function AdminPage() {
-  const { backendUrl, session, health, admin, currentUser, reloadAdminState, notice, setNotice } = useAppState();
+  const { backendUrl, session, health, admin, currentUser, reloadAdminState, notice, setNotice, wsConnected, sendWsMessage } =
+    useAppState();
   const [isLoading, setIsLoading] = useState(false);
   const [broadcastTitle, setBroadcastTitle] = useState("");
   const [broadcastMessage, setBroadcastMessage] = useState("");
@@ -55,6 +56,11 @@ export function AdminPage() {
       detail: "Backend health is unavailable, so MongoDB status cannot be inferred.",
     };
   }, [health]);
+
+  const handleSendWsPing = () => {
+    sendWsMessage("ws.admin.ping", { at: new Date().toISOString() });
+    setNotice({ tone: "info", message: "Sent ws.admin.ping over the websocket connection." });
+  };
 
   const handleSendBroadcast = async () => {
     const title = broadcastTitle.trim();
@@ -115,6 +121,7 @@ export function AdminPage() {
           <StatusBadge label="Redis" value={health?.redis || "unknown"} tone={health?.redis === "connected" ? "success" : "warning"} />
           <StatusBadge label="MongoDB" value={mongoStatus.label} tone={mongoStatus.tone} />
           <StatusBadge label="Loaded" value={admin.loadedAt ? formatTimestamp(admin.loadedAt) : "not loaded"} tone={admin.loadedAt ? "success" : "warning"} />
+          <StatusBadge label="WebSocket" value={wsConnected ? "connected" : "disconnected"} tone={wsConnected ? "success" : "warning"} />
         </div>
 
         <div className={`callout callout-${mongoStatus.tone}`}>
@@ -191,6 +198,21 @@ export function AdminPage() {
                 {isBroadcasting ? "Sending..." : "Send to all users"}
               </button>
             </form>
+          </article>
+
+          <article className="subpanel">
+            <h5>
+              <Wifi size={16} style={{ verticalAlign: "middle", marginRight: 6 }} />
+              WebSocket connection
+            </h5>
+            <p>
+              Sends a <code>ws.admin.ping</code> message over the active websocket connection. Check
+              the backend logs for a matching <code>[ws:event] ws.admin.ping</code> line to confirm
+              the round trip.
+            </p>
+            <button type="button" className="button button-secondary" onClick={handleSendWsPing} disabled={!wsConnected}>
+              Send test ping
+            </button>
           </article>
         </div>
       </section>

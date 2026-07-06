@@ -17,6 +17,7 @@ export type ExpenseDraft = {
   participantIds: string[];
   participantShares: Record<string, string>;
   chargeSameAmount: boolean;
+  includeInNextSettlement: boolean;
 };
 
 export const microLabelSx = {

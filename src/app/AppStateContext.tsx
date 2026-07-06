@@ -5,6 +5,7 @@ import { AuthSession, CurrentUser, Group, HealthResponse } from "../shared/api/b
 import { AdminBundle, useAdminBundleState } from "./appState/useAdminBundleState";
 import { useApiBaseUrl } from "./appState/useApiBaseUrl";
 import { useGroupsState } from "./appState/useGroupsState";
+import { useWebsocketState } from "./appState/useWebsocketState";
 import {
   LoginInput,
   Notice,
@@ -28,6 +29,9 @@ type AppStateValue = {
   isBootstrapping: boolean;
   isLoginSplashActive: boolean;
   admin: AdminBundle;
+  wsConnected: boolean;
+  sendWsMessage: (type: string, payload?: Record<string, unknown>) => void;
+  subscribeWsEvent: (type: string, handler: (payload: unknown) => void) => () => void;
   setApiBaseUrl: (value: string) => void;
   setNotice: (value: Notice) => void;
   login: (input: LoginInput) => Promise<void>;
@@ -69,6 +73,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const { groups, reloadGroups } = useGroupsState(backendUrl, session?.accessToken);
   const { admin, reloadAdminState } = useAdminBundleState(backendUrl, session?.accessToken);
+  const { wsConnected, sendWsMessage, subscribeWsEvent } = useWebsocketState(backendUrl, session?.accessToken);
 
   const value = useMemo<AppStateValue>(
     () => ({
@@ -82,6 +87,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       isBootstrapping,
       isLoginSplashActive,
       admin,
+      wsConnected,
+      sendWsMessage,
+      subscribeWsEvent,
       setApiBaseUrl,
       setNotice,
       login,
@@ -107,6 +115,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       isBootstrapping,
       isLoginSplashActive,
       admin,
+      wsConnected,
+      sendWsMessage,
+      subscribeWsEvent,
       setApiBaseUrl,
       login,
       register,

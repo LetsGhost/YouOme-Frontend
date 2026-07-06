@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-import { createExpense, type CurrentUser, type GroupMember } from "../../shared/api/backend";
+import { createExpense, getSettlementSchedule, type CurrentUser, type GroupMember } from "../../shared/api/backend";
 import { ExpenseDraft, SplitType, getParticipantBreakdown, seedParticipantShares, toCents } from "./groupDetailsHelpers";
 
 const emptyDraft: ExpenseDraft = {
@@ -12,6 +12,7 @@ const emptyDraft: ExpenseDraft = {
   participantIds: [],
   participantShares: {},
   chargeSameAmount: false,
+  includeInNextSettlement: true,
 };
 
 export function useExpenseDraft({
@@ -33,6 +34,27 @@ export function useExpenseDraft({
 }) {
   const [showExpenseDialog, setShowExpenseDialog] = useState(false);
   const [expenseData, setExpenseData] = useState<ExpenseDraft>(emptyDraft);
+  const [nextSettlementDate, setNextSettlementDate] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!id) return;
+
+    let cancelled = false;
+
+    getSettlementSchedule(backendUrl, id, accessToken)
+      .then((schedule) => {
+        if (!cancelled) {
+          setNextSettlementDate(schedule?.isActive ? schedule.nextRunAt ?? null : null);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setNextSettlementDate(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [id, backendUrl, accessToken]);
 
   const participantMembers = members.filter((member) => expenseData.participantIds.includes(member.id) && member.id !== expenseData.paidBy);
   const payerMember = members.find((member) => member.id === expenseData.paidBy) ?? null;
@@ -86,6 +108,7 @@ export function useExpenseDraft({
       participantIds: defaultParticipantIds,
       participantShares: {},
       chargeSameAmount: false,
+      includeInNextSettlement: true,
     });
     setShowExpenseDialog(true);
   };
@@ -185,6 +208,7 @@ export function useExpenseDraft({
             paidByUserId: expenseData.paidBy || currentUser?.id,
             splitType: expenseData.splitType,
             note: expenseData.description.trim() || undefined,
+            includeInNextSettlement: expenseData.includeInNextSettlement,
             participants: participantIds.map((participantId) => ({
               userId: participantId,
               shareAmount: breakdown.shares.get(participantId) ?? 0,
@@ -204,6 +228,7 @@ export function useExpenseDraft({
           participantIds: [],
           participantShares: {},
           chargeSameAmount: false,
+          includeInNextSettlement: true,
         });
       } catch (error) {
         setErrorMessage(error instanceof Error ? error.message : "Failed to create expense.");
@@ -216,6 +241,7 @@ export function useExpenseDraft({
     setShowExpenseDialog,
     expenseData,
     setExpenseData,
+    nextSettlementDate,
     previewShares,
     previewMembers,
     equalSplitHasRemainder,

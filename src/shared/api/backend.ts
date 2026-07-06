@@ -53,6 +53,8 @@ export type GroupExpense = {
   splitType?: "equal" | "custom" | "percentage";
   title?: string;
   totalAmount?: number;
+  includeInNextSettlement?: boolean;
+  settlementLockedAt?: string | null;
 };
 
 export type GroupDebtParticipant = {
@@ -158,6 +160,71 @@ export type CreateGroupPolicyInput = GroupPolicyFields & {
 
 export type UpdateGroupPolicyInput = GroupPolicyFields;
 
+export type SettlementSchedule = {
+  _id: string;
+  groupId: string;
+  frequency: "weekly" | "monthly" | "quarterly";
+  dayOfWeek?: number;
+  dayOfMonth?: number;
+  time: string;
+  graceDays: number;
+  sendReminder: boolean;
+  autoApproveAfterDays: number;
+  autoApproveEnabled: boolean;
+  isActive: boolean;
+  nextRunAt?: string;
+  lastRunAt?: string;
+};
+
+export type UpsertSettlementScheduleInput = {
+  frequency: "weekly" | "monthly" | "quarterly";
+  dayOfWeek?: number;
+  dayOfMonth?: number;
+  time: string;
+  graceDays?: number;
+  sendReminder?: boolean;
+  autoApproveAfterDays?: number;
+  autoApproveEnabled?: boolean;
+};
+
+export type Settlement = {
+  _id: string;
+  groupId: string;
+  fromUserId: string;
+  toUserId: string;
+  amount: number;
+  settledAmount?: number;
+  status: "pending" | "completed" | "expired";
+  runId?: string;
+  expenseIds: string[];
+  completedAt?: string;
+  createdAt?: string;
+};
+
+export type SettlementRunSummary = {
+  totalAmount: number;
+  participantCount: number;
+  confirmedCount: number;
+  totalCount: number;
+};
+
+export type SettlementRun = {
+  _id: string;
+  groupId: string;
+  triggeredBy: "scheduled" | "manual";
+  triggeredByUserId?: string;
+  status: "open" | "partially_completed" | "completed";
+  graceDeadlineAt: string;
+  closedAt?: string;
+  createdAt?: string;
+  summary?: SettlementRunSummary;
+};
+
+export type SettlementsForGroup = {
+  outgoing: Settlement[];
+  incoming: Settlement[];
+};
+
 export type FriendSummary = {
   id: string;
   name: string;
@@ -240,6 +307,7 @@ export type CreateExpenseInput = {
   paidByUserId?: string;
   splitType?: "equal" | "custom" | "percentage";
   note?: string;
+  includeInNextSettlement?: boolean;
   participants?: ExpenseParticipantInput[];
 };
 
@@ -477,6 +545,99 @@ export async function updateGroupPolicy(
   return fetchJson<GroupPolicy>(`${backendUrl}/api/group-policys/group/${groupId}`, {
     method: "PATCH",
     json: input,
+    token,
+  });
+}
+
+export async function getSettlementSchedule(backendUrl: string, groupId: string, token?: string) {
+  return fetchJson<SettlementSchedule | null>(`${backendUrl}/api/settlement-schedules/group/${groupId}`, {
+    token,
+  });
+}
+
+export async function saveSettlementSchedule(
+  backendUrl: string,
+  groupId: string,
+  input: UpsertSettlementScheduleInput,
+  token?: string
+) {
+  return fetchJson<SettlementSchedule>(`${backendUrl}/api/settlement-schedules/group/${groupId}`, {
+    method: "PATCH",
+    json: input,
+    token,
+  });
+}
+
+export async function deactivateSettlementSchedule(backendUrl: string, groupId: string, token?: string) {
+  return fetchJson<SettlementSchedule>(`${backendUrl}/api/settlement-schedules/group/${groupId}/deactivate`, {
+    method: "POST",
+    token,
+  });
+}
+
+export async function getSettlementsForGroup(backendUrl: string, groupId: string, token?: string) {
+  return fetchJson<SettlementsForGroup>(`${backendUrl}/api/settlements/group/${groupId}`, {
+    token,
+  });
+}
+
+export async function getSettlementHistory(backendUrl: string, groupId: string, token?: string) {
+  return fetchJson<SettlementRun[]>(`${backendUrl}/api/settlements/group/${groupId}/history`, {
+    token,
+  });
+}
+
+export async function getSettlementRunDetail(backendUrl: string, groupId: string, runId: string, token?: string) {
+  return fetchJson<{ run: SettlementRun; settlements: Settlement[] }>(
+    `${backendUrl}/api/settlements/group/${groupId}/history/${runId}`,
+    { token }
+  );
+}
+
+export async function triggerSettlement(backendUrl: string, groupId: string, token?: string) {
+  return fetchJson<SettlementRun | null>(`${backendUrl}/api/settlements/group/${groupId}/trigger`, {
+    method: "POST",
+    token,
+  });
+}
+
+export async function markSettlementPaid(backendUrl: string, settlementId: string, token?: string) {
+  return fetchJson<Settlement>(`${backendUrl}/api/settlements/${settlementId}/mark-paid`, {
+    method: "POST",
+    token,
+  });
+}
+
+export async function approveSettlement(backendUrl: string, settlementId: string, token?: string) {
+  return fetchJson<Settlement>(`${backendUrl}/api/settlements/${settlementId}/approve`, {
+    method: "POST",
+    token,
+  });
+}
+
+export async function markAllSettlementsPaid(backendUrl: string, groupId: string, token?: string) {
+  return fetchJson<SettlementsForGroup>(`${backendUrl}/api/settlements/group/${groupId}/mark-all-paid`, {
+    method: "POST",
+    token,
+  });
+}
+
+export async function approveAllSettlements(backendUrl: string, groupId: string, token?: string) {
+  return fetchJson<SettlementsForGroup>(`${backendUrl}/api/settlements/group/${groupId}/approve-all`, {
+    method: "POST",
+    token,
+  });
+}
+
+export async function setExpenseIncludeInSettlement(
+  backendUrl: string,
+  expenseId: string,
+  include: boolean,
+  token?: string
+) {
+  return fetchJson<GroupExpense>(`${backendUrl}/api/expenses/${expenseId}/include-in-settlement`, {
+    method: "PATCH",
+    json: { include },
     token,
   });
 }

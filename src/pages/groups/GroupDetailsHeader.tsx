@@ -1,5 +1,5 @@
 import { ChevronLeft, Settings, Users } from "lucide-react";
-import { AvatarGroup, Box, IconButton, Typography } from "@mui/material";
+import { AvatarGroup, Box, IconButton, Link, Typography } from "@mui/material";
 
 import { resolveAvatarUrl, type Group, type GroupMember } from "../../shared/api/backend";
 import { InlineSpinner } from "../../shared/ui/InlineSpinner";
@@ -16,6 +16,7 @@ export function GroupDetailsHeader({
   onBack,
   onOpenSettings,
   onShowMembers,
+  onViewHistory,
 }: {
   isLoading: boolean;
   group: Group | null;
@@ -25,6 +26,7 @@ export function GroupDetailsHeader({
   onBack: () => void;
   onOpenSettings: () => void;
   onShowMembers: () => void;
+  onViewHistory: () => void;
 }) {
   return (
     <Box
@@ -102,24 +104,47 @@ export function GroupDetailsHeader({
         </Box>
       </Box>
 
-      {!isLoading && members.length > 0 && (
-        <AvatarGroup
-          max={3}
-          onClick={onShowMembers}
+      {!isLoading && (
+        <Box
           sx={{
-            cursor: "pointer",
-            "& .MuiAvatar-root": {
-              width: 32,
-              height: 32,
-              fontSize: "0.8rem",
-              border: "2px solid var(--color-surface)",
-            },
+            display: "flex",
+            flexDirection: { xs: "row", sm: "column" },
+            alignItems: { xs: "center", sm: "flex-end" },
+            justifyContent: { xs: "space-between", sm: "flex-start" },
+            width: { xs: "100%", sm: "auto" },
+            gap: 0.75,
           }}
         >
-          {members.map((member) => (
-            <MemberAvatar key={member.id} backendUrl={backendUrl} token={accessToken} member={member} size={32} />
-          ))}
-        </AvatarGroup>
+          {members.length > 0 && (
+            <AvatarGroup
+              max={3}
+              onClick={onShowMembers}
+              sx={{
+                cursor: "pointer",
+                "& .MuiAvatar-root": {
+                  width: 32,
+                  height: 32,
+                  fontSize: "0.8rem",
+                  border: "2px solid var(--color-surface)",
+                },
+              }}
+            >
+              {members.map((member) => (
+                <MemberAvatar key={member.id} backendUrl={backendUrl} token={accessToken} member={member} size={32} />
+              ))}
+            </AvatarGroup>
+          )}
+
+          <Link
+            component="button"
+            type="button"
+            onClick={onViewHistory}
+            underline="hover"
+            sx={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--color-accent-strong-ink)", whiteSpace: "nowrap" }}
+          >
+            View settlement history →
+          </Link>
+        </Box>
       )}
     </Box>
   );

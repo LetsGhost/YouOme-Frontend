@@ -19,7 +19,7 @@ import {
 } from "@mui/material";
 
 import type { CurrentUser, GroupMember } from "../../shared/api/backend";
-import { formatMoney } from "../../shared/lib/format";
+import { formatMoney, formatShortDate } from "../../shared/lib/format";
 import { roundIconButtonSx } from "../../widgets/module/group/groupDebtWidgetHelpers";
 import { ExpenseDraft, SplitType, getMemberLabel } from "./groupDetailsHelpers";
 import { MemberAvatar } from "./MemberAvatar";
@@ -61,6 +61,8 @@ export function AddExpenseDialog({
   previewMembers,
   previewShares,
   equalSplitHasRemainder,
+  nextSettlementDate,
+  onIncludeInNextSettlementChange,
   onSubmit,
 }: {
   open: boolean;
@@ -82,6 +84,8 @@ export function AddExpenseDialog({
   previewMembers: GroupMember[];
   previewShares: Map<string, number>;
   equalSplitHasRemainder: boolean;
+  nextSettlementDate: string | null;
+  onIncludeInNextSettlementChange: (value: boolean) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 }) {
   const payerMember = previewMembers.find((member) => member.id === expenseData.paidBy);
@@ -239,6 +243,27 @@ export function AddExpenseDialog({
               sx={{ alignItems: "flex-start", ml: 0 }}
             />
           )}
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={expenseData.includeInNextSettlement}
+                onChange={(e) => onIncludeInNextSettlementChange(e.target.checked)}
+              />
+            }
+            label={
+              <Box>
+                <Typography variant="body2" sx={{ fontWeight: 600, color: "var(--color-ink)" }}>
+                  Add to next scheduled settlement
+                </Typography>
+                <Typography variant="caption" sx={{ color: "var(--color-muted)" }}>
+                  {nextSettlementDate
+                    ? `Included in the settlement closing ${formatShortDate(nextSettlementDate)} instead of settled individually.`
+                    : "Included in the next scheduled settlement instead of settled individually."}
+                </Typography>
+              </Box>
+            }
+            sx={{ alignItems: "flex-start", ml: 0 }}
+          />
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
             <Box sx={sectionHeaderSx}>
               <Users size={16} strokeWidth={1.8} color="var(--color-accent)" />

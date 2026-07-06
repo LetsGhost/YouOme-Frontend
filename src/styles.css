@@ -420,15 +420,6 @@ textarea:focus {
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: 22px;
-  background: var(--color-warning-soft-bg);
-  border: 2px solid var(--color-warning);
-  color: var(--color-warning);
   transform-style: preserve-3d;
   animation: loading-coin-flip 1.2s linear infinite;
 }

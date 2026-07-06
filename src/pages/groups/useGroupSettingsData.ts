@@ -90,6 +90,8 @@ export function useGroupSettingsData(id: string | undefined) {
   );
 
   const isOwnerOrAdmin = currentMembership?.role === "owner" || currentMembership?.role === "admin";
+  const isOwnerAdminOrModerator =
+    isOwnerOrAdmin || currentMembership?.role === "moderator";
   const isOwner = currentMembership?.role === "owner";
 
   useEffect(() => {
@@ -252,6 +254,7 @@ export function useGroupSettingsData(id: string | undefined) {
     isPolicySaving,
     policyError,
     isOwnerOrAdmin,
+    isOwnerAdminOrModerator,
     isOwner,
     isDeleteDialogOpen,
     setIsDeleteDialogOpen,

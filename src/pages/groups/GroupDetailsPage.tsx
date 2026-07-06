@@ -12,6 +12,8 @@ import { GroupDetailsHeader } from "./GroupDetailsHeader";
 import { GroupMembersDialog } from "./GroupMembersDialog";
 import { GroupQuickStats } from "./GroupQuickStats";
 import { RecentExpensesCard } from "./RecentExpensesCard";
+import { ScheduledSettlementBanner } from "./ScheduledSettlementBanner";
+import { useActiveSettlementRun } from "./useActiveSettlementRun";
 import { useExpenseDraft } from "./useExpenseDraft";
 import { useGroupDetailsData } from "./useGroupDetailsData";
 
@@ -43,11 +45,14 @@ export function GroupDetailsPage() {
     refreshAfterExpenseCreated,
   } = useGroupDetailsData(id);
 
+  const { activeRun, pendingCount } = useActiveSettlementRun(id);
+
   const {
     showExpenseDialog,
     setShowExpenseDialog,
     expenseData,
     setExpenseData,
+    nextSettlementDate,
     previewShares,
     previewMembers,
     equalSplitHasRemainder,
@@ -80,7 +85,16 @@ export function GroupDetailsPage() {
         onBack={() => navigate("/groups")}
         onOpenSettings={() => navigate(`/groups/${id}/settings`)}
         onShowMembers={() => setShowMembersDialog(true)}
+        onViewHistory={() => navigate(`/settlements/history?groupId=${id}`)}
       />
+
+      {activeRun && (
+        <ScheduledSettlementBanner
+          run={activeRun}
+          pendingCount={pendingCount}
+          onClick={() => navigate(`/groups/${id}/settlement`)}
+        />
+      )}
 
       <GroupQuickStats youOwe={youOwe} owedToYou={owedToYou} />
 
@@ -163,6 +177,10 @@ export function GroupDetailsPage() {
         previewMembers={previewMembers}
         previewShares={previewShares}
         equalSplitHasRemainder={equalSplitHasRemainder}
+        nextSettlementDate={nextSettlementDate}
+        onIncludeInNextSettlementChange={(includeInNextSettlement) =>
+          setExpenseData((current) => ({ ...current, includeInNextSettlement }))
+        }
         onSubmit={handleCreateExpense}
       />
     </Box>

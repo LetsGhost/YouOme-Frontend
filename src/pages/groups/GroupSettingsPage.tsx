@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Alert, Box } from "@mui/material";
+import { CalendarClock } from "lucide-react";
+import { Alert, Box, Button, Card, CardContent, Typography } from "@mui/material";
 
 import { useAppState } from "../../app/AppStateContext";
 import { CurrentMembersCard } from "./CurrentMembersCard";
@@ -31,6 +32,7 @@ export function GroupSettingsPage() {
     isPolicySaving,
     policyError,
     isOwnerOrAdmin,
+    isOwnerAdminOrModerator,
     isOwner,
     isDeleteDialogOpen,
     setIsDeleteDialogOpen,
@@ -104,6 +106,37 @@ export function GroupSettingsPage() {
           onFieldChange={handlePolicyFieldChange}
           onSave={() => void handleSavePolicy()}
         />
+      )}
+
+      {isOwnerAdminOrModerator && (
+        <Card sx={{ borderRadius: "var(--radius-md)" }}>
+          <CardContent sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2, flexWrap: "wrap" }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <CalendarClock size={18} strokeWidth={2} color="var(--color-accent)" />
+              <Box>
+                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "var(--color-ink)" }}>
+                  Schedule settlement
+                </Typography>
+                <Typography variant="body2" sx={{ color: "var(--color-muted)" }}>
+                  Set up a recurring settlement or trigger one manually.
+                </Typography>
+              </Box>
+            </Box>
+
+            <Button
+              onClick={() => navigate(`/groups/${id}/settlement-schedule`)}
+              sx={{
+                textTransform: "none",
+                fontWeight: 700,
+                bgcolor: "var(--color-accent)",
+                color: "var(--color-accent-contrast)",
+                "&:hover": { bgcolor: "var(--color-accent)", filter: "brightness(0.92)" },
+              }}
+            >
+              Manage schedule
+            </Button>
+          </CardContent>
+        </Card>
       )}
 
       {isOwner && (

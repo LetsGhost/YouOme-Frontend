@@ -133,7 +133,12 @@ export function HomePage() {
     >
       <ChangelogDialog />
 
-      <HomeHeader name={currentUser?.name || "Friend"} />
+      <HomeHeader
+        name={currentUser?.name || "Friend"}
+        avatarUrl={currentUser?.avatarUrl}
+        backendUrl={backendUrl}
+        accessToken={session?.accessToken}
+      />
 
       <Box sx={{ px: { xs: 2.5, md: 3.5 }, py: { xs: 2.5, md: 3 }, display: "flex", flexDirection: "column", gap: { xs: 2.5, md: 3 } }}>
         <BalanceSummaryCard

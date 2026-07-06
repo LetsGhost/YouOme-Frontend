@@ -44,18 +44,7 @@ export function GroupSettingsHeader({
         </Box>
       </Box>
 
-      <IconButton
-        onClick={onBack}
-        aria-label="Back to group"
-        sx={{
-          border: "1px solid var(--color-border)",
-          borderRadius: "var(--radius-md)",
-          color: "var(--color-ink)",
-          flexShrink: 0,
-        }}
-      >
-        <ChevronLeft size={18} strokeWidth={2} />
-      </IconButton>
+      
     </Box>
   );
 }

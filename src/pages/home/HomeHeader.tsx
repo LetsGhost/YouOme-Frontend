@@ -1,8 +1,22 @@
-import { Box, Typography } from "@mui/material";
+import { Avatar, Box, Typography } from "@mui/material";
 
+import { resolveAvatarUrl } from "../../shared/api/backend";
+import { useAuthenticatedImage } from "../../shared/lib/useAuthenticatedImage";
 import { microLabelSx } from "./homeStyles";
 
-export function HomeHeader({ name }: { name: string }) {
+export function HomeHeader({
+  name,
+  avatarUrl,
+  backendUrl,
+  accessToken,
+}: {
+  name: string;
+  avatarUrl?: string | null;
+  backendUrl: string;
+  accessToken?: string;
+}) {
+  const imageUrl = useAuthenticatedImage(resolveAvatarUrl(backendUrl, avatarUrl), accessToken);
+
   return (
     <Box
       sx={{
@@ -21,14 +35,14 @@ export function HomeHeader({ name }: { name: string }) {
           {name}
         </Typography>
       </Box>
-      <Box
+      <Avatar
+        src={imageUrl ?? undefined}
+        variant="rounded"
         sx={{
           width: 48,
           height: 48,
           flexShrink: 0,
           borderRadius: "var(--radius-sm)",
-          display: "grid",
-          placeItems: "center",
           bgcolor: "var(--color-accent-soft-bg)",
           color: "var(--color-accent-soft-ink)",
           fontFamily: "var(--font-mono)",
@@ -37,7 +51,7 @@ export function HomeHeader({ name }: { name: string }) {
         }}
       >
         {name[0].toUpperCase()}
-      </Box>
+      </Avatar>
     </Box>
   );
 }

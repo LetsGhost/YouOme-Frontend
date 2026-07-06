@@ -24,6 +24,12 @@ const GroupDetailsPage = lazy(() =>
 const GroupSettingsPage = lazy(() =>
   import("./pages/groups/GroupSettingsPage").then((m) => ({ default: m.GroupSettingsPage }))
 );
+const ScheduleSettlementAdminPage = lazy(() =>
+  import("./pages/groups/ScheduleSettlementAdminPage").then((m) => ({ default: m.ScheduleSettlementAdminPage }))
+);
+const GroupSettlementPage = lazy(() =>
+  import("./pages/groups/GroupSettlementPage").then((m) => ({ default: m.GroupSettlementPage }))
+);
 const FriendsPage = lazy(() => import("./pages/friends/FriendsPage").then((m) => ({ default: m.FriendsPage })));
 const FriendProfilePage = lazy(() =>
   import("./pages/friends/FriendProfilePage").then((m) => ({ default: m.FriendProfilePage }))
@@ -31,6 +37,9 @@ const FriendProfilePage = lazy(() =>
 const ExpensesPage = lazy(() => import("./pages/expenses/ExpensesPage").then((m) => ({ default: m.ExpensesPage })));
 const SettlementsPage = lazy(() =>
   import("./pages/settlements/SettlementsPage").then((m) => ({ default: m.SettlementsPage }))
+);
+const SettlementHistoryPage = lazy(() =>
+  import("./pages/settlements/SettlementHistoryPage").then((m) => ({ default: m.SettlementHistoryPage }))
 );
 const NotificationsPage = lazy(() =>
   import("./pages/notifications/NotificationsPage").then((m) => ({ default: m.NotificationsPage }))
@@ -85,10 +94,13 @@ function ThemedApp() {
                 <Route path="/groups" element={<GroupsPage />} />
                 <Route path="/groups/:id" element={<GroupDetailsPage />} />
                 <Route path="/groups/:id/settings" element={<GroupSettingsPage />} />
+                <Route path="/groups/:id/settlement-schedule" element={<ScheduleSettlementAdminPage />} />
+                <Route path="/groups/:id/settlement" element={<GroupSettlementPage />} />
                 <Route path="/friends" element={<FriendsPage />} />
                 <Route path="/friends/:id" element={<FriendProfilePage />} />
                 <Route path="/expenses" element={<ExpensesPage />} />
                 <Route path="/settlements" element={<SettlementsPage />} />
+                <Route path="/settlements/history" element={<SettlementHistoryPage />} />
                 <Route path="/notifications" element={<NotificationsPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/profile" element={<ProfilePage />} />

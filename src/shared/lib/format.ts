@@ -53,3 +53,12 @@ export function formatMemberSince(value: string | null | undefined) {
 
   return date.toLocaleDateString("en-US", { month: "short", year: "numeric" });
 }
+
+export function formatShortDate(value: string | null | undefined) {
+  if (!value) return null;
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}

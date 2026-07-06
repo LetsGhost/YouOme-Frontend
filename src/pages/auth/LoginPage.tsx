@@ -13,10 +13,12 @@ import {
   FormControlLabel,
 } from "@mui/material";
 import { useAppState } from "../../app/AppStateContext";
+import { useThemeMode } from "../../app/ThemeModeContext";
 import { ThemeToggle } from "../../widgets/layout/ThemeToggle";
 
 export function LoginPage() {
   const { login } = useAppState();
+  const { mode } = useThemeMode();
   const [form, setForm] = useState({ email: "", password: "", rememberMe: false });
   const [isBusy, setIsBusy] = useState(false);
   const [loginError, setLoginError] = useState("");
@@ -77,6 +79,19 @@ export function LoginPage() {
             boxShadow: "var(--shadow-md)",
           }}
         >
+          <Box
+            component="img"
+            src={mode === "dark" ? "/AppIcon/Variant2Light.svg" : "/AppIcon/Variant2Dark.svg"}
+            alt="YouOme"
+            sx={{
+              display: "block",
+              width: 64,
+              height: 64,
+              mx: "auto",
+              mb: 2,
+              borderRadius: "50%",
+            }}
+          />
           <Typography
             variant="h3"
             component="h1"

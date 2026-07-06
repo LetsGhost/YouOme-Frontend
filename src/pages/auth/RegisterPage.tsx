@@ -16,10 +16,12 @@ import { Visibility, VisibilityOff, PersonAdd } from "@mui/icons-material";
 import { FormEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppState } from "../../app/AppStateContext";
+import { useThemeMode } from "../../app/ThemeModeContext";
 import { ThemeToggle } from "../../widgets/layout/ThemeToggle";
 
 export function RegisterPage() {
   const { register } = useAppState();
+  const { mode } = useThemeMode();
   const [form, setForm] = useState({ email: "", name: "", password: "" });
   const [isBusy, setIsBusy] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -69,6 +71,19 @@ export function RegisterPage() {
           }}
         >
           <CardContent sx={{ p: 4 }}>
+            <Box
+              component="img"
+              src={mode === "dark" ? "/AppIcon/Variant2Dark.svg" : "/AppIcon/Variant2Light.svg"}
+              alt="YouOme"
+              sx={{
+                display: "block",
+                width: 64,
+                height: 64,
+                mx: "auto",
+                mb: 2,
+                borderRadius: "50%",
+              }}
+            />
             <Typography
               variant="h3"
               component="h1"
