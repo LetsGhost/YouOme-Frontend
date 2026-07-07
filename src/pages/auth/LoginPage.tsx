@@ -15,16 +15,19 @@ import {
 import { useAppState } from "../../app/AppStateContext";
 import { useThemeMode } from "../../app/ThemeModeContext";
 import { ThemeToggle } from "../../widgets/layout/ThemeToggle";
+import { resendVerification } from "../../shared/api/backend";
 
 export function LoginPage() {
-  const { login } = useAppState();
+  const { login, backendUrl } = useAppState();
   const { mode } = useThemeMode();
   const [form, setForm] = useState({ email: "", password: "", rememberMe: false });
   const [isBusy, setIsBusy] = useState(false);
   const [loginError, setLoginError] = useState("");
+  const [resendState, setResendState] = useState<"idle" | "busy" | "sent">("idle");
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const locationState = location.state as { from?: string; email?: string } | null;
+  const isUnverified = loginError === "Email not verified";
 
   useEffect(() => {
     const email = searchParams.get("email") || locationState?.email;
@@ -47,7 +50,17 @@ export function LoginPage() {
       const message = error instanceof Error ? error.message : "Login failed.";
 
       setLoginError(message);
+      setResendState("idle");
       setIsBusy(false);
+    }
+  }
+
+  async function handleResend() {
+    setResendState("busy");
+    try {
+      await resendVerification(backendUrl, form.email);
+    } finally {
+      setResendState("sent");
     }
   }
 
@@ -145,20 +158,55 @@ export function LoginPage() {
               required
             />
 
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={form.rememberMe}
-                  onChange={(event) =>
-                    setForm((current) => ({ ...current, rememberMe: event.target.checked }))
-                  }
-                />
-              }
-              label="Remember me"
-              sx={{ color: "var(--color-muted)", mr: "auto" }}
-            />
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={form.rememberMe}
+                    onChange={(event) =>
+                      setForm((current) => ({ ...current, rememberMe: event.target.checked }))
+                    }
+                  />
+                }
+                label="Remember me"
+              />
+              <Link
+                href="/forgot-password"
+                sx={{
+                  color: "var(--color-accent-strong-ink)",
+                  fontWeight: 600,
+                  textDecoration: "none",
+                  cursor: "pointer",
+                  fontSize: "0.875rem",
+                  "&:hover": { textDecoration: "underline" },
+                }}
+              >
+                Forgot password?
+              </Link>
+            </Box>
 
-            {loginError && <Alert severity="error">{loginError}</Alert>}
+            {loginError && (
+              <Alert severity="error">
+                {loginError}
+                {isUnverified && (
+                  <Box sx={{ mt: 1 }}>
+                    {resendState === "sent" ? (
+                      "If that account still needs verification, a new link has been sent."
+                    ) : (
+                      <Link
+                        component="button"
+                        type="button"
+                        onClick={handleResend}
+                        disabled={resendState === "busy"}
+                        sx={{ fontWeight: 600, cursor: "pointer" }}
+                      >
+                        {resendState === "busy" ? "Sending..." : "Resend verification email"}
+                      </Link>
+                    )}
+                  </Box>
+                )}
+              </Alert>
+            )}
 
             <Button
               type="submit"

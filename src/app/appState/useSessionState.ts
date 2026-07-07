@@ -167,17 +167,11 @@ export function useSessionState(backendUrl: string) {
     async ({ email, name, password }: RegisterInput) => {
       const result = await registerUser(backendUrl, { email, name, password });
 
-      setSession({
-        user: result.user,
-        accessToken: result.accessToken,
-        refreshToken: result.refreshToken,
-      });
-      setCurrentUser(result.user);
-      setNotice({ tone: "success", message: `Registered and signed in as ${result.user.email}.` });
+      setNotice({ tone: "info", message: "Check your email to verify your account before signing in." });
 
       return {
-        message: result.message || `Registered and signed in as ${result.user.email}.`,
-        email: result.user.email,
+        message: result.message,
+        email: result.email,
       };
     },
     [backendUrl]

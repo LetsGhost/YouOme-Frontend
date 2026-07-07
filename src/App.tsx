@@ -17,6 +17,15 @@ const HomePage = lazy(() => import("./pages/home/HomePage").then((m) => ({ defau
 const AdminPage = lazy(() => import("./pages/admin/AdminPage").then((m) => ({ default: m.AdminPage })));
 const LoginPage = lazy(() => import("./pages/auth/LoginPage").then((m) => ({ default: m.LoginPage })));
 const RegisterPage = lazy(() => import("./pages/auth/RegisterPage").then((m) => ({ default: m.RegisterPage })));
+const VerifyEmailPage = lazy(() =>
+  import("./pages/auth/VerifyEmailPage").then((m) => ({ default: m.VerifyEmailPage }))
+);
+const ForgotPasswordPage = lazy(() =>
+  import("./pages/auth/ForgotPasswordPage").then((m) => ({ default: m.ForgotPasswordPage }))
+);
+const ResetPasswordPage = lazy(() =>
+  import("./pages/auth/ResetPasswordPage").then((m) => ({ default: m.ResetPasswordPage }))
+);
 const GroupsPage = lazy(() => import("./pages/groups/GroupsPage").then((m) => ({ default: m.GroupsPage })));
 const GroupDetailsPage = lazy(() =>
   import("./pages/groups/GroupDetailsPage").then((m) => ({ default: m.GroupDetailsPage }))
@@ -80,6 +89,30 @@ function ThemedApp() {
                 element={
                   <PublicOnlyRoute>
                     <RegisterPage />
+                  </PublicOnlyRoute>
+                }
+              />
+              <Route
+                path="/verify-email"
+                element={
+                  <PublicOnlyRoute>
+                    <VerifyEmailPage />
+                  </PublicOnlyRoute>
+                }
+              />
+              <Route
+                path="/forgot-password"
+                element={
+                  <PublicOnlyRoute>
+                    <ForgotPasswordPage />
+                  </PublicOnlyRoute>
+                }
+              />
+              <Route
+                path="/reset-password"
+                element={
+                  <PublicOnlyRoute>
+                    <ResetPasswordPage />
                   </PublicOnlyRoute>
                 }
               />

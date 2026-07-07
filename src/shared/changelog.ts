@@ -15,6 +15,19 @@ export type ChangelogEntry = {
 // actually worth telling a user about.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "v0.14.0",
+    date: "2026-07-07",
+    title: "Email verification & forgot password",
+    highlights: [
+      "New accounts now verify their email via a link before they can sign in.",
+      "Added \"Forgot password?\" on the sign-in page to reset your password by email.",
+    ],
+    minor: [
+      "Sign-in now offers to resend the verification email if your account isn't verified yet.",
+      "You'll get an email whenever your password changes.",
+    ],
+  },
+  {
     version: "v0.11.1",
     date: "2026-07-04",
     title: "Add Expense dialog redesign",

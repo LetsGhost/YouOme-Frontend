@@ -342,9 +342,16 @@ export type RegisterInput = {
 
 export type RegisterResponse = {
   message: string;
-  user: CurrentUser;
-  accessToken: string;
-  refreshToken: string;
+  email: string;
+};
+
+export type ForgotPasswordInput = {
+  email: string;
+};
+
+export type ResetPasswordInput = {
+  token: string;
+  newPassword: string;
 };
 
 export type UpdateProfileInput = {
@@ -448,6 +455,34 @@ export async function login(backendUrl: string, input: LoginInput) {
 
 export async function register(backendUrl: string, input: RegisterInput) {
   return fetchJson<RegisterResponse>(`${backendUrl}/api/auth/register`, {
+    method: "POST",
+    json: input,
+  });
+}
+
+export async function verifyEmail(backendUrl: string, token: string) {
+  return fetchJson<{ message: string }>(`${backendUrl}/api/auth/verify-email`, {
+    method: "POST",
+    json: { token },
+  });
+}
+
+export async function resendVerification(backendUrl: string, email: string) {
+  return fetchJson<{ message: string }>(`${backendUrl}/api/auth/resend-verification`, {
+    method: "POST",
+    json: { email },
+  });
+}
+
+export async function forgotPassword(backendUrl: string, input: ForgotPasswordInput) {
+  return fetchJson<{ message: string }>(`${backendUrl}/api/auth/forgot-password`, {
+    method: "POST",
+    json: input,
+  });
+}
+
+export async function resetPassword(backendUrl: string, input: ResetPasswordInput) {
+  return fetchJson<{ message: string }>(`${backendUrl}/api/auth/reset-password`, {
     method: "POST",
     json: input,
   });
