@@ -136,10 +136,11 @@ export type GroupPolicy = {
   canMembersInvite: boolean;
   canEditorsAddExpense: boolean;
   canModeratorsAddExpense: boolean;
-  visibilityMode: string;
+  visibilityMode: "private" | "global";
   canViewParticipatedExpenseDetails: boolean;
   requireReceiverConfirmationForSettlement: boolean;
   allowMemberRoleSelfLeave: boolean;
+  canModeratorsEditSettlementSchedule: boolean;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -148,10 +149,11 @@ export type GroupPolicyFields = {
   canMembersInvite?: boolean;
   canEditorsAddExpense?: boolean;
   canModeratorsAddExpense?: boolean;
-  visibilityMode?: string;
+  visibilityMode?: "private" | "global";
   canViewParticipatedExpenseDetails?: boolean;
   requireReceiverConfirmationForSettlement?: boolean;
   allowMemberRoleSelfLeave?: boolean;
+  canModeratorsEditSettlementSchedule?: boolean;
 };
 
 export type CreateGroupPolicyInput = GroupPolicyFields & {
@@ -166,6 +168,7 @@ export type SettlementSchedule = {
   frequency: "weekly" | "monthly" | "quarterly";
   dayOfWeek?: number;
   dayOfMonth?: number;
+  anchorMonth?: number;
   time: string;
   graceDays: number;
   sendReminder: boolean;
@@ -180,6 +183,7 @@ export type UpsertSettlementScheduleInput = {
   frequency: "weekly" | "monthly" | "quarterly";
   dayOfWeek?: number;
   dayOfMonth?: number;
+  anchorMonth?: number;
   time: string;
   graceDays?: number;
   sendReminder?: boolean;
@@ -560,6 +564,20 @@ export async function removeFriend(backendUrl: string, friendUserId: string, tok
 
 export async function listGroupMembers(backendUrl: string, groupId: string, token?: string) {
   return fetchJson<GroupMember[]>(`${backendUrl}/api/group-members/group/${groupId}`, {
+    token,
+  });
+}
+
+export async function updateGroupMemberRole(
+  backendUrl: string,
+  groupId: string,
+  userId: string,
+  role: "moderator" | "member",
+  token?: string
+) {
+  return fetchJson<GroupMember>(`${backendUrl}/api/group-members/group/${groupId}/members/${userId}/role`, {
+    method: "PATCH",
+    json: { role },
     token,
   });
 }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Check, Clock3, Info, ShieldCheck, X, Zap } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown, Clock3, Info, ShieldCheck, X, Zap } from "lucide-react";
 import { Alert, Box, IconButton, Typography } from "@mui/material";
 
 import { useAppState } from "../../app/AppStateContext";
@@ -9,7 +9,24 @@ import { LoadingBlock } from "../../shared/ui/InlineSpinner";
 import { formatTimestamp } from "../../shared/lib/format";
 import { useSettlementScheduleData } from "./useSettlementScheduleData";
 
-const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const WEEKDAY_BUTTONS = [
+  { label: "M", value: 1, name: "Monday" },
+  { label: "T", value: 2, name: "Tuesday" },
+  { label: "W", value: 3, name: "Wednesday" },
+  { label: "T", value: 4, name: "Thursday" },
+  { label: "F", value: 5, name: "Friday" },
+  { label: "S", value: 6, name: "Saturday" },
+  { label: "S", value: 0, name: "Sunday" },
+];
+
+const QUARTER_OPTIONS = [
+  { label: "Q1", months: "Jan-Mar", anchorMonth: 1 },
+  { label: "Q2", months: "Apr-Jun", anchorMonth: 4 },
+  { label: "Q3", months: "Jul-Sep", anchorMonth: 7 },
+  { label: "Q4", months: "Oct-Dec", anchorMonth: 10 },
+];
+
+const DAYS_OF_MONTH = Array.from({ length: 31 }, (_, index) => index + 1);
 
 const fieldLabelSx = {
   font: "500 10px 'IBM Plex Mono'",
@@ -29,6 +46,40 @@ const freqBtnSx = (active: boolean) => ({
   border: active ? "1.5px solid var(--color-accent)" : "1px solid var(--color-border)",
   background: active ? "var(--color-accent-soft-bg)" : "transparent",
   color: active ? "var(--color-accent-strong-ink)" : "var(--color-muted)",
+});
+
+const dayToggleSx = (active: boolean) => ({
+  flex: 1,
+  textAlign: "center" as const,
+  borderRadius: "9px",
+  padding: "9px 0",
+  font: "600 12px 'IBM Plex Sans'",
+  cursor: "pointer",
+  border: active ? "1.5px solid var(--color-accent)" : "1px solid var(--color-border)",
+  background: active ? "var(--color-accent-soft-bg)" : "transparent",
+  color: active ? "var(--color-accent-strong-ink)" : "var(--color-muted)",
+});
+
+const dayOfMonthSx = (active: boolean) => ({
+  height: 34,
+  borderRadius: "50%",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  cursor: "pointer",
+  font: active ? "700 12.5px 'IBM Plex Sans'" : "500 12.5px 'IBM Plex Sans'",
+  color: active ? "var(--color-accent-contrast)" : "var(--color-ink-soft)",
+  background: active ? "var(--color-accent)" : "transparent",
+});
+
+const quarterBtnSx = (active: boolean) => ({
+  flex: 1,
+  textAlign: "center" as const,
+  borderRadius: "10px",
+  padding: "10px 6px",
+  cursor: "pointer",
+  border: active ? "1.5px solid var(--color-accent)" : "1px solid var(--color-border)",
+  background: active ? "var(--color-accent-soft-bg)" : "transparent",
 });
 
 const selectBoxSx = {
@@ -99,37 +150,17 @@ export function ScheduleSettlementAdminPage() {
   } = useSettlementScheduleData(id, canManage === true);
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-        <IconButton onClick={() => navigate(`/groups/${id}/settings`)} title="Back to settings">
-          <ArrowLeft size={17} strokeWidth={2} color="var(--color-ink)" />
-        </IconButton>
-        <Box>
-          <Typography sx={{ font: "600 17px 'IBM Plex Sans'", color: "var(--color-ink)" }}>
-            Schedule settlement
-          </Typography>
-          <Typography sx={{ font: "400 11.5px 'IBM Plex Sans'", color: "var(--color-muted)", mt: "2px" }}>
-            {group?.name ?? "Group"} · owner, admin &amp; moderator only
-          </Typography>
-        </Box>
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 0.5,
-            font: "500 9.5px 'IBM Plex Mono'",
-            color: "var(--color-accent-strong-ink)",
-            border: "1px solid var(--color-accent)",
-            borderRadius: "14px",
-            padding: "3px 8px",
-            flex: "none",
-            marginLeft: "auto",
-          }}
-        >
-          <ShieldCheck size={11} strokeWidth={2.4} />
-          Admin
-        </Box>
-      </Box>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+      <Typography
+        sx={{
+          font: "500 10px 'IBM Plex Mono'",
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+          color: "var(--color-muted)",
+        }}
+      >
+        Schedule settlement · Admin
+      </Typography>
 
       {canManage === false && <Alert severity="warning">You don't have permission to manage this group's settlement schedule.</Alert>}
       {error && <Alert severity="warning">{error}</Alert>}
@@ -143,6 +174,45 @@ export function ScheduleSettlementAdminPage() {
             overflow: "hidden",
           }}
         >
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1.5,
+              padding: "18px 24px",
+              borderBottom: "1px solid var(--color-border)",
+            }}
+          >
+            <IconButton onClick={() => navigate(`/groups/${id}/settings`)} title="Back to settings">
+              <ArrowLeft size={17} strokeWidth={2} color="var(--color-ink)" />
+            </IconButton>
+            <Box>
+              <Typography sx={{ font: "700 18px 'IBM Plex Sans'", color: "var(--color-ink)" }}>
+                Schedule settlement
+              </Typography>
+              <Typography sx={{ font: "400 11.5px 'IBM Plex Sans'", color: "var(--color-muted)", mt: "2px" }}>
+                {group?.name ?? "Group"} · owner, admin &amp; moderator only
+              </Typography>
+            </Box>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 0.5,
+                font: "500 9.5px 'IBM Plex Mono'",
+                color: "var(--color-accent-strong-ink)",
+                border: "1px solid var(--color-accent)",
+                borderRadius: "14px",
+                padding: "3px 8px",
+                flex: "none",
+                marginLeft: "auto",
+              }}
+            >
+              <ShieldCheck size={11} strokeWidth={2.4} />
+              Admin
+            </Box>
+          </Box>
+
           <Box sx={{ padding: "20px 24px 24px", display: "flex", flexDirection: "column", gap: 2.5 }}>
             {isLoading || canManage === null ? (
               <LoadingBlock label="Loading schedule…" />
@@ -165,75 +235,109 @@ export function ScheduleSettlementAdminPage() {
                   </Box>
                 </Box>
 
-                <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1.5 }}>
+                {draft.frequency === "weekly" && (
                   <Box>
-                    <Typography sx={fieldLabelSx}>Day</Typography>
-                    <Box sx={selectBoxSx}>
-                      {draft.frequency === "weekly" ? (
+                    <Typography sx={fieldLabelSx}>Repeats on</Typography>
+                    <Box sx={{ display: "flex", gap: 1 }}>
+                      {WEEKDAY_BUTTONS.map(({ label, value, name }) => (
                         <Box
-                          component="select"
-                          value={draft.dayOfWeek ?? 1}
-                          onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
-                            updateDraft({ dayOfWeek: Number(event.target.value) })
-                          }
-                          sx={{
-                            flex: 1,
-                            font: "500 12px 'IBM Plex Sans'",
-                            color: "var(--color-ink)",
-                            border: "none",
-                            background: "transparent",
-                            outline: "none",
-                          }}
+                          key={name}
+                          component="button"
+                          type="button"
+                          title={name}
+                          onClick={() => updateDraft({ dayOfWeek: value })}
+                          sx={dayToggleSx((draft.dayOfWeek ?? 1) === value)}
                         >
-                          {WEEKDAYS.map((day, index) => (
-                            <Box key={day} component="option" value={index}>
-                              {day}
-                            </Box>
-                          ))}
+                          {label}
                         </Box>
-                      ) : (
-                        <Box
-                          component="input"
-                          type="number"
-                          value={draft.dayOfMonth ?? 1}
-                          onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                            updateDraft({ dayOfMonth: Number(event.target.value) })
-                          }
-                          min={1}
-                          max={31}
-                          sx={{
-                            flex: 1,
-                            font: "500 12px 'IBM Plex Sans'",
-                            color: "var(--color-ink)",
-                            border: "none",
-                            background: "transparent",
-                            outline: "none",
-                            width: "100%",
-                          }}
-                        />
-                      )}
+                      ))}
                     </Box>
                   </Box>
+                )}
 
+                {draft.frequency === "monthly" && (
                   <Box>
-                    <Typography sx={fieldLabelSx}>Time</Typography>
-                    <Box sx={selectBoxSx}>
-                      <Clock3 size={14} strokeWidth={1.8} color="var(--color-accent-soft-ink)" />
-                      <Box
-                        component="input"
-                        type="time"
-                        value={draft.time}
-                        onChange={(event: React.ChangeEvent<HTMLInputElement>) => updateDraft({ time: event.target.value })}
-                        sx={{
-                          flex: 1,
-                          font: "500 12px 'IBM Plex Sans'",
-                          color: "var(--color-ink)",
-                          border: "none",
-                          background: "transparent",
-                          outline: "none",
-                        }}
-                      />
+                    <Typography sx={fieldLabelSx}>Day of month</Typography>
+                    <Box
+                      sx={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(7, 1fr)",
+                        rowGap: "10px",
+                        columnGap: "4px",
+                      }}
+                    >
+                      {DAYS_OF_MONTH.map((day) => (
+                        <Box
+                          key={day}
+                          component="button"
+                          type="button"
+                          onClick={() => updateDraft({ dayOfMonth: day })}
+                          sx={dayOfMonthSx((draft.dayOfMonth ?? 1) === day)}
+                        >
+                          {day}
+                        </Box>
+                      ))}
                     </Box>
+                  </Box>
+                )}
+
+                {draft.frequency === "quarterly" && (
+                  <Box>
+                    <Typography sx={fieldLabelSx}>Settle at start of</Typography>
+                    <Box sx={{ display: "flex", gap: 1 }}>
+                      {QUARTER_OPTIONS.map(({ label, months, anchorMonth }) => {
+                        const active = (draft.anchorMonth ?? 1) === anchorMonth;
+                        return (
+                          <Box
+                            key={label}
+                            component="button"
+                            type="button"
+                            onClick={() => updateDraft({ anchorMonth })}
+                            sx={quarterBtnSx(active)}
+                          >
+                            <Typography
+                              sx={{
+                                font: "700 13px 'IBM Plex Sans'",
+                                color: active ? "var(--color-accent-strong-ink)" : "var(--color-ink)",
+                              }}
+                            >
+                              {label}
+                            </Typography>
+                            <Typography
+                              sx={{
+                                font: "500 10px 'IBM Plex Sans'",
+                                color: active ? "var(--color-accent-strong-ink)" : "var(--color-muted)",
+                                mt: "2px",
+                              }}
+                            >
+                              {months}
+                            </Typography>
+                          </Box>
+                        );
+                      })}
+                    </Box>
+                  </Box>
+                )}
+
+                <Box>
+                  <Typography sx={fieldLabelSx}>Time</Typography>
+                  <Box sx={selectBoxSx}>
+                    <Clock3 size={14} strokeWidth={1.8} color="var(--color-accent-soft-ink)" />
+                    <Box
+                      component="input"
+                      type="time"
+                      value={draft.time}
+                      onChange={(event: React.ChangeEvent<HTMLInputElement>) => updateDraft({ time: event.target.value })}
+                      sx={{
+                        flex: 1,
+                        font: "500 12px 'IBM Plex Sans'",
+                        color: "var(--color-ink)",
+                        border: "none",
+                        background: "transparent",
+                        outline: "none",
+                      }}
+                    />
+                    <ChevronDown size={14} strokeWidth={1.8} color="var(--color-muted)" />
                   </Box>
                 </Box>
 
@@ -316,7 +420,8 @@ export function ScheduleSettlementAdminPage() {
                         days
                       </Typography>
                       <Typography sx={{ font: "400 11px 'IBM Plex Sans'", color: "var(--color-muted)", mt: "4px", lineHeight: 1.5 }}>
-                        "I paid" claims left unreviewed this long get approved automatically.
+                        "I paid" claims left unreviewed for {draft.autoApproveAfterDays ?? 7} day
+                        {(draft.autoApproveAfterDays ?? 7) === 1 ? "" : "s"} get approved automatically.
                       </Typography>
                     </Box>
                   </Box>

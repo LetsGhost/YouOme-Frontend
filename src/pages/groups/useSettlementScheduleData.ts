@@ -13,6 +13,8 @@ import {
 const DEFAULT_DRAFT: UpsertSettlementScheduleInput = {
   frequency: "weekly",
   dayOfWeek: 1,
+  dayOfMonth: 1,
+  anchorMonth: 1,
   time: "09:00",
   graceDays: 2,
   sendReminder: true,
@@ -48,8 +50,9 @@ export function useSettlementScheduleData(id: string | undefined, enabled: boole
         if (existing) {
           setDraft({
             frequency: existing.frequency,
-            dayOfWeek: existing.dayOfWeek,
-            dayOfMonth: existing.dayOfMonth,
+            dayOfWeek: existing.dayOfWeek ?? 1,
+            dayOfMonth: existing.dayOfMonth ?? 1,
+            anchorMonth: existing.anchorMonth ?? 1,
             time: existing.time,
             graceDays: existing.graceDays,
             sendReminder: existing.sendReminder,

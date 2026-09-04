@@ -1,5 +1,5 @@
 import { ShieldCheck } from "lucide-react";
-import { Alert, Box, Button, Card, CardContent, Divider, FormControlLabel, Switch, TextField, Typography } from "@mui/material";
+import { Alert, Box, Button, Card, CardContent, Divider, FormControlLabel, MenuItem, Switch, TextField, Typography } from "@mui/material";
 
 import type { GroupPolicy, GroupPolicyFields } from "../../shared/api/backend";
 import { LoadingBlock } from "../../shared/ui/InlineSpinner";
@@ -73,6 +73,15 @@ export function GroupPolicyCard({
               <FormControlLabel
                 control={
                   <Switch
+                    checked={policy.canModeratorsEditSettlementSchedule}
+                    onChange={(event) => onFieldChange("canModeratorsEditSettlementSchedule", event.target.checked)}
+                  />
+                }
+                label="Moderators can edit the settlement schedule"
+              />
+              <FormControlLabel
+                control={
+                  <Switch
                     checked={policy.canViewParticipatedExpenseDetails}
                     onChange={(event) => onFieldChange("canViewParticipatedExpenseDetails", event.target.checked)}
                   />
@@ -100,13 +109,17 @@ export function GroupPolicyCard({
             </Box>
 
             <TextField
+              select
               label="Visibility mode"
               size="small"
               value={policy.visibilityMode}
               onChange={(event) => onFieldChange("visibilityMode", event.target.value)}
-              helperText="Free-text visibility mode used by this group (e.g. private, members)."
+              helperText="Controls group visibility (no discovery feature consumes this yet)."
               sx={{ maxWidth: 320 }}
-            />
+            >
+              <MenuItem value="private">Private</MenuItem>
+              <MenuItem value="global">Global</MenuItem>
+            </TextField>
 
             <Box>
               <Button

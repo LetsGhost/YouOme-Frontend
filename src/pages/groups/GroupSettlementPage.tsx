@@ -7,7 +7,7 @@ import type { SettlementExpenseDetail } from "../../shared/api/backend";
 import { formatMoney, formatShortDate } from "../../shared/lib/format";
 import { LoadingBlock } from "../../shared/ui/InlineSpinner";
 import { getStatusChipSx, getStatusLabel } from "../../widgets/module/group/groupDebtWidgetHelpers";
-import { useGroupSettlementData } from "./useGroupSettlementData";
+import { useGroupSettlementData, type PersonSettlementGroup } from "./useGroupSettlementData";
 import { useSettlementScheduleData } from "./useSettlementScheduleData";
 
 const AVATAR_COLORS = ["#5c6bb0", "#a35a41", "#3f7d8c", "#7a5aa3"];
@@ -57,6 +57,204 @@ function ExpenseBreakdown({ expenses }: { expenses?: SettlementExpenseDetail[] }
   );
 }
 
+const amountRowSx = {
+  display: "flex",
+  alignItems: "center",
+  gap: 1,
+  border: "1px solid var(--color-border)",
+  borderRadius: "9px",
+  padding: "8px 10px",
+};
+
+function PersonSettlementCard({
+  person,
+  index,
+  busyId,
+  onMarkPaid,
+  onApprove,
+}: {
+  person: PersonSettlementGroup;
+  index: number;
+  busyId: string | null;
+  onMarkPaid: (settlementId: string) => void;
+  onApprove: (settlementId: string) => void;
+}) {
+  const allExpenses = [...person.payItems, ...person.receiveItems, ...person.waitingItems].flatMap(
+    (item) => item.expenses ?? []
+  );
+
+  return (
+    <Box
+      sx={{
+        border: "1px solid var(--color-border)",
+        borderRadius: "var(--radius-md)",
+        padding: "12px 14px",
+      }}
+    >
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, mb: 1 }}>
+        <Box
+          sx={{
+            width: 28,
+            height: 28,
+            borderRadius: "50%",
+            bgcolor: colorFor(index),
+            color: "#fff",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontWeight: 700,
+            fontSize: "0.7rem",
+            flexShrink: 0,
+          }}
+        >
+          {person.name.charAt(0)}
+        </Box>
+        <Typography sx={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--color-ink)" }}>
+          {person.name}
+        </Typography>
+      </Box>
+
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
+        {person.payItems.length === 1 ? (
+          <Box sx={amountRowSx}>
+            <ArrowDownLeft size={13} strokeWidth={2.6} color="var(--color-warning)" style={{ flexShrink: 0 }} />
+            <Typography sx={{ flex: 1, fontSize: "0.78rem", fontWeight: 500, color: "var(--color-ink)" }}>
+              You pay
+            </Typography>
+            <Typography
+              sx={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: "0.82rem", color: "var(--color-warning)" }}
+            >
+              {formatMoney(person.youPay)}
+            </Typography>
+            <Button
+              size="small"
+              disabled={busyId === person.payItems[0]._id}
+              startIcon={<Check size={13} strokeWidth={2.6} />}
+              onClick={() => onMarkPaid(person.payItems[0]._id)}
+              sx={{
+                bgcolor: "var(--color-accent)",
+                color: "var(--color-accent-contrast)",
+                fontWeight: 700,
+                fontSize: "0.72rem",
+                textTransform: "none",
+                flexShrink: 0,
+                "&:hover": { bgcolor: "var(--color-accent)", opacity: 0.9 },
+              }}
+            >
+              I paid
+            </Button>
+          </Box>
+        ) : (
+          person.payItems.length > 1 &&
+          person.payItems.map((row) => (
+            <Box key={row._id} sx={amountRowSx}>
+              <ArrowDownLeft size={13} strokeWidth={2.6} color="var(--color-warning)" style={{ flexShrink: 0 }} />
+              <Typography sx={{ flex: 1, fontSize: "0.78rem", fontWeight: 500, color: "var(--color-ink)" }}>
+                You pay
+              </Typography>
+              <Typography
+                sx={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: "0.82rem", color: "var(--color-warning)" }}
+              >
+                {formatMoney(row.amount)}
+              </Typography>
+              <Button
+                size="small"
+                disabled={busyId === row._id}
+                startIcon={<Check size={13} strokeWidth={2.6} />}
+                onClick={() => onMarkPaid(row._id)}
+                sx={{
+                  bgcolor: "var(--color-accent)",
+                  color: "var(--color-accent-contrast)",
+                  fontWeight: 700,
+                  fontSize: "0.72rem",
+                  textTransform: "none",
+                  flexShrink: 0,
+                  "&:hover": { bgcolor: "var(--color-accent)", opacity: 0.9 },
+                }}
+              >
+                I paid
+              </Button>
+            </Box>
+          ))
+        )}
+
+        {person.receiveItems.length === 1 ? (
+          <Box sx={amountRowSx}>
+            <ArrowUpRight size={13} strokeWidth={2.6} color="var(--color-success)" style={{ flexShrink: 0 }} />
+            <Typography sx={{ flex: 1, fontSize: "0.78rem", fontWeight: 500, color: "var(--color-ink)" }}>
+              You receive
+            </Typography>
+            <Typography
+              sx={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: "0.82rem", color: "var(--color-success)" }}
+            >
+              {formatMoney(person.youReceive)}
+            </Typography>
+            <IconButton
+              size="small"
+              disabled={busyId === person.receiveItems[0]._id}
+              onClick={() => onApprove(person.receiveItems[0]._id)}
+              sx={{
+                bgcolor: "var(--color-accent)",
+                color: "var(--color-accent-contrast)",
+                borderRadius: "8px",
+                flexShrink: 0,
+                "&:hover": { bgcolor: "var(--color-accent)", opacity: 0.9 },
+              }}
+            >
+              <Check size={13} strokeWidth={2.6} />
+            </IconButton>
+          </Box>
+        ) : (
+          person.receiveItems.length > 1 &&
+          person.receiveItems.map((row) => (
+            <Box key={row._id} sx={amountRowSx}>
+              <ArrowUpRight size={13} strokeWidth={2.6} color="var(--color-success)" style={{ flexShrink: 0 }} />
+              <Typography sx={{ flex: 1, fontSize: "0.78rem", fontWeight: 500, color: "var(--color-ink)" }}>
+                You receive
+              </Typography>
+              <Typography
+                sx={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: "0.82rem", color: "var(--color-success)" }}
+              >
+                {formatMoney(row.amount)}
+              </Typography>
+              <IconButton
+                size="small"
+                disabled={busyId === row._id}
+                onClick={() => onApprove(row._id)}
+                sx={{
+                  bgcolor: "var(--color-accent)",
+                  color: "var(--color-accent-contrast)",
+                  borderRadius: "8px",
+                  flexShrink: 0,
+                  "&:hover": { bgcolor: "var(--color-accent)", opacity: 0.9 },
+                }}
+              >
+                <Check size={13} strokeWidth={2.6} />
+              </IconButton>
+            </Box>
+          ))
+        )}
+
+        {person.waitingItems.map((row) => (
+          <Box key={row._id} sx={{ ...amountRowSx, opacity: 0.85 }}>
+            <Clock3 size={13} strokeWidth={2} color="var(--color-muted)" style={{ flexShrink: 0 }} />
+            <Typography sx={{ flex: 1, fontSize: "0.78rem", fontWeight: 500, color: "var(--color-ink)" }}>
+              {row.waitingOn === "their-approval" ? "Waiting for approval" : "Waiting for payment"}
+            </Typography>
+            <Typography
+              sx={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: "0.82rem", color: "var(--color-muted)" }}
+            >
+              {formatMoney(row.amount)}
+            </Typography>
+          </Box>
+        ))}
+      </Box>
+
+      <ExpenseBreakdown expenses={allExpenses} />
+    </Box>
+  );
+}
+
 const microLabelSx = {
   fontFamily: "var(--font-mono)",
   fontSize: 9.5,
@@ -76,8 +274,7 @@ export function GroupSettlementPage() {
   const {
     outgoing,
     incoming,
-    waiting,
-    balances,
+    peopleGroups,
     youOwe,
     owedToYou,
     isLoading,
@@ -89,8 +286,6 @@ export function GroupSettlementPage() {
     handleMarkAllPaid,
     handleApproveAll,
   } = useGroupSettlementData(id);
-
-  const maxAbsBalance = Math.max(1, ...balances.map((balance) => Math.abs(balance.net)));
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
@@ -170,253 +365,63 @@ export function GroupSettlementPage() {
             </Box>
           </Box>
 
-          {balances.length > 0 && (
-            <Box>
-              <Typography sx={sectionTitleSx}>Balances</Typography>
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.75, mt: 1.5 }}>
-                {balances.map((balance) => {
-                  const isOwed = balance.net >= 0;
-                  const pct = Math.min(100, (Math.abs(balance.net) / maxAbsBalance) * 100);
-                  const color = isOwed ? "var(--color-success)" : "var(--color-warning)";
-
-                  return (
-                    <Box key={balance.id}>
-                      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
-                        <Typography sx={{ fontSize: "0.8rem", fontWeight: 500, color: "var(--color-ink)" }}>
-                          {balance.name}
-                        </Typography>
-                        <Typography sx={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: "0.8rem", color }}>
-                          {isOwed ? "+" : "−"}
-                          {formatMoney(Math.abs(balance.net))}
-                        </Typography>
-                      </Box>
-                      <Box sx={{ display: "flex", alignItems: "center", height: 8 }}>
-                        <Box sx={{ flex: 1, height: "100%", display: "flex", justifyContent: "flex-end", overflow: "hidden", borderRadius: "4px 0 0 0" }}>
-                          <Box
-                            sx={{
-                              width: isOwed ? 0 : `${pct}%`,
-                              height: "100%",
-                              bgcolor: "var(--color-warning)",
-                              borderRadius: "4px 0 0 4px",
-                            }}
-                          />
-                        </Box>
-                        <Box sx={{ width: "1.5px", height: 14, bgcolor: "var(--color-border-strong)", flexShrink: 0 }} />
-                        <Box sx={{ flex: 1, height: "100%", overflow: "hidden" }}>
-                          <Box
-                            sx={{
-                              width: isOwed ? `${pct}%` : 0,
-                              height: "100%",
-                              bgcolor: "var(--color-success)",
-                              borderRadius: "0 4px 4px 0",
-                            }}
-                          />
-                        </Box>
-                      </Box>
-                    </Box>
-                  );
-                })}
-              </Box>
-            </Box>
-          )}
-
-          {outgoing.length > 0 && (
-            <Box>
-              <Typography sx={sectionTitleSx}>You owe</Typography>
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 1, mt: 1.25 }}>
-                {outgoing.map((row, index) => (
-                  <Box
-                    key={row._id}
-                    sx={{
-                      border: "1px solid var(--color-border)",
-                      borderRadius: "var(--radius-md)",
-                      padding: "10px 13px",
-                    }}
-                  >
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                      <Box
-                        sx={{
-                          width: 28,
-                          height: 28,
-                          borderRadius: "50%",
-                          bgcolor: colorFor(index),
-                          color: "#fff",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontWeight: 700,
-                          fontSize: "0.7rem",
-                          flexShrink: 0,
-                        }}
-                      >
-                        {row.counterpartName.charAt(0)}
-                      </Box>
-                      <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Typography sx={{ fontSize: "0.8rem", fontWeight: 500, color: "var(--color-ink)" }}>
-                          {row.counterpartName}
-                        </Typography>
-                        <Typography sx={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: "0.82rem", color: "var(--color-warning)" }}>
-                          {formatMoney(row.amount)}
-                        </Typography>
-                      </Box>
-                      <Button
-                        size="small"
-                        disabled={busyId === row._id}
-                        startIcon={<Check size={13} strokeWidth={2.6} />}
-                        onClick={() => void handleMarkPaid(row._id)}
-                        sx={{
-                          bgcolor: "var(--color-accent)",
-                          color: "var(--color-accent-contrast)",
-                          fontWeight: 700,
-                          fontSize: "0.72rem",
-                          textTransform: "none",
-                          flexShrink: 0,
-                          "&:hover": { bgcolor: "var(--color-accent)", opacity: 0.9 },
-                        }}
-                      >
-                        I paid
-                      </Button>
-                    </Box>
-                    <ExpenseBreakdown expenses={row.expenses} />
-                  </Box>
-                ))}
-              </Box>
-            </Box>
-          )}
-
-          {incoming.length > 0 && (
+          {peopleGroups.length > 0 && (
             <Box>
               <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <Typography sx={sectionTitleSx}>Awaiting your approval</Typography>
-                <Button
-                  size="small"
-                  disabled={isBulkBusy}
-                  startIcon={<Check size={12} strokeWidth={2.6} />}
-                  onClick={() => void handleApproveAll()}
-                  sx={{
-                    border: "1px solid var(--color-success-border)",
-                    color: "var(--color-success)",
-                    fontWeight: 700,
-                    fontSize: "0.72rem",
-                    textTransform: "none",
-                  }}
-                >
-                  Approve all
-                </Button>
+                <Typography sx={sectionTitleSx}>By person</Typography>
+                <Box sx={{ display: "flex", gap: 1 }}>
+                  {outgoing.length > 0 && (
+                    <Button
+                      size="small"
+                      disabled={isBulkBusy}
+                      startIcon={<Check size={12} strokeWidth={2.6} />}
+                      onClick={() => void handleMarkAllPaid()}
+                      sx={{
+                        border: "1px solid var(--color-warning)",
+                        color: "var(--color-warning)",
+                        fontWeight: 700,
+                        fontSize: "0.72rem",
+                        textTransform: "none",
+                      }}
+                    >
+                      Mark all paid
+                    </Button>
+                  )}
+                  {incoming.length > 0 && (
+                    <Button
+                      size="small"
+                      disabled={isBulkBusy}
+                      startIcon={<Check size={12} strokeWidth={2.6} />}
+                      onClick={() => void handleApproveAll()}
+                      sx={{
+                        border: "1px solid var(--color-success-border)",
+                        color: "var(--color-success)",
+                        fontWeight: 700,
+                        fontSize: "0.72rem",
+                        textTransform: "none",
+                      }}
+                    >
+                      Approve all
+                    </Button>
+                  )}
+                </Box>
               </Box>
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 1, mt: 1.25 }}>
-                {incoming.map((row, index) => (
-                  <Box
-                    key={row._id}
-                    sx={{
-                      border: "1px solid var(--color-border)",
-                      borderRadius: "var(--radius-md)",
-                      padding: "10px 13px",
-                    }}
-                  >
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                      <Box
-                        sx={{
-                          width: 28,
-                          height: 28,
-                          borderRadius: "50%",
-                          bgcolor: colorFor(index + 2),
-                          color: "#fff",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontWeight: 700,
-                          fontSize: "0.7rem",
-                          flexShrink: 0,
-                        }}
-                      >
-                        {row.counterpartName.charAt(0)}
-                      </Box>
-                      <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Typography sx={{ fontSize: "0.8rem", fontWeight: 500, color: "var(--color-ink)" }}>
-                          {row.counterpartName} says paid
-                        </Typography>
-                        <Typography sx={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: "0.82rem", color: "var(--color-success)" }}>
-                          {formatMoney(row.amount)}
-                        </Typography>
-                      </Box>
-                      <IconButton
-                        size="small"
-                        disabled={busyId === row._id}
-                        onClick={() => void handleApprove(row._id)}
-                        sx={{
-                          bgcolor: "var(--color-accent)",
-                          color: "var(--color-accent-contrast)",
-                          borderRadius: "8px",
-                          flexShrink: 0,
-                          "&:hover": { bgcolor: "var(--color-accent)", opacity: 0.9 },
-                        }}
-                      >
-                        <Check size={13} strokeWidth={2.6} />
-                      </IconButton>
-                    </Box>
-                    <ExpenseBreakdown expenses={row.expenses} />
-                  </Box>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25, mt: 1.25 }}>
+                {peopleGroups.map((person, index) => (
+                  <PersonSettlementCard
+                    key={person.id}
+                    person={person}
+                    index={index}
+                    busyId={busyId}
+                    onMarkPaid={(settlementId) => void handleMarkPaid(settlementId)}
+                    onApprove={(settlementId) => void handleApprove(settlementId)}
+                  />
                 ))}
               </Box>
             </Box>
           )}
 
-          {waiting.length > 0 && (
-            <Box>
-              <Typography sx={sectionTitleSx}>Waiting</Typography>
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 1, mt: 1.25 }}>
-                {waiting.map((row, index) => (
-                  <Box
-                    key={row._id}
-                    sx={{
-                      border: "1px solid var(--color-border)",
-                      borderRadius: "var(--radius-md)",
-                      padding: "10px 13px",
-                      opacity: 0.85,
-                    }}
-                  >
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                      <Box
-                        sx={{
-                          width: 28,
-                          height: 28,
-                          borderRadius: "50%",
-                          bgcolor: colorFor(index + 1),
-                          color: "#fff",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontWeight: 700,
-                          fontSize: "0.7rem",
-                          flexShrink: 0,
-                        }}
-                      >
-                        {row.counterpartName.charAt(0)}
-                      </Box>
-                      <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Typography sx={{ fontSize: "0.8rem", fontWeight: 500, color: "var(--color-ink)" }}>
-                          {row.counterpartName}
-                        </Typography>
-                        <Typography sx={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: "0.82rem", color: "var(--color-muted)" }}>
-                          {formatMoney(row.amount)}
-                        </Typography>
-                      </Box>
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, flexShrink: 0, color: "var(--color-muted)" }}>
-                        <Clock3 size={13} strokeWidth={2} />
-                        <Typography variant="caption" sx={{ fontWeight: 600 }}>
-                          {row.waitingOn === "their-approval" ? "Waiting for approval" : "Waiting for payment"}
-                        </Typography>
-                      </Box>
-                    </Box>
-                    <ExpenseBreakdown expenses={row.expenses} />
-                  </Box>
-                ))}
-              </Box>
-            </Box>
-          )}
-
-          {outgoing.length === 0 && incoming.length === 0 && waiting.length === 0 && (
+          {peopleGroups.length === 0 && (
             <Typography variant="body2" sx={{ color: "var(--color-muted)" }}>
               Nothing to settle in this group right now.
             </Typography>

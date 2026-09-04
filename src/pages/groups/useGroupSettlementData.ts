@@ -21,10 +21,14 @@ export type WaitingSettlementRow = GroupSettlementRow & {
   waitingOn: "their-approval" | "their-payment";
 };
 
-export type CounterpartBalance = {
+export type PersonSettlementGroup = {
   id: string;
   name: string;
-  net: number;
+  youPay: number;
+  youReceive: number;
+  payItems: GroupSettlementRow[];
+  receiveItems: GroupSettlementRow[];
+  waitingItems: WaitingSettlementRow[];
 };
 
 export function useGroupSettlementData(groupId: string | undefined) {
@@ -150,24 +154,32 @@ export function useGroupSettlementData(groupId: string | undefined) {
   const youOwe = outgoing.reduce((sum, row) => sum + row.amount, 0);
   const owedToYou = incoming.reduce((sum, row) => sum + row.amount, 0);
 
-  const balances: CounterpartBalance[] = (() => {
-    const byId = new Map<string, CounterpartBalance>();
+  const peopleGroups: PersonSettlementGroup[] = (() => {
+    const byId = new Map<string, PersonSettlementGroup>();
+    const groupFor = (id: string, name: string) => {
+      let group = byId.get(id);
+      if (!group) {
+        group = { id, name, youPay: 0, youReceive: 0, payItems: [], receiveItems: [], waitingItems: [] };
+        byId.set(id, group);
+      }
+      return group;
+    };
+
     for (const row of outgoing) {
-      const existing = byId.get(row.counterpartId);
-      byId.set(row.counterpartId, {
-        id: row.counterpartId,
-        name: row.counterpartName,
-        net: (existing?.net ?? 0) - row.amount,
-      });
+      const group = groupFor(row.counterpartId, row.counterpartName);
+      group.youPay += row.amount;
+      group.payItems.push(row);
     }
     for (const row of incoming) {
-      const existing = byId.get(row.counterpartId);
-      byId.set(row.counterpartId, {
-        id: row.counterpartId,
-        name: row.counterpartName,
-        net: (existing?.net ?? 0) + row.amount,
-      });
+      const group = groupFor(row.counterpartId, row.counterpartName);
+      group.youReceive += row.amount;
+      group.receiveItems.push(row);
     }
+    for (const row of waiting) {
+      const group = groupFor(row.counterpartId, row.counterpartName);
+      group.waitingItems.push(row);
+    }
+
     return Array.from(byId.values()).sort((a, b) => a.name.localeCompare(b.name));
   })();
 
@@ -175,7 +187,7 @@ export function useGroupSettlementData(groupId: string | undefined) {
     outgoing,
     incoming,
     waiting,
-    balances,
+    peopleGroups,
     youOwe,
     owedToYou,
     isLoading,

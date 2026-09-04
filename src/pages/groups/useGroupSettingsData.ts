@@ -10,6 +10,7 @@ import {
   getGroupPolicy,
   listFriendSummaries,
   listGroupMembers,
+  updateGroupMemberRole,
   updateGroupPolicy,
   uploadGroupAvatar,
   type FriendSummary,
@@ -22,7 +23,7 @@ import { resolveFriendKey } from "./groupSettingsHelpers";
 
 export function useGroupSettingsData(id: string | undefined) {
   const navigate = useNavigate();
-  const { backendUrl, currentUser, session, setNotice, reloadGroups } = useAppState();
+  const { backendUrl, currentUser, session, setNotice, reloadGroups, subscribeWsEvent } = useAppState();
   const [group, setGroup] = useState<Group | null>(null);
   const [groupMembers, setGroupMembers] = useState<GroupMember[]>([]);
   const [friends, setFriends] = useState<FriendSummary[]>([]);
@@ -89,7 +90,7 @@ export function useGroupSettingsData(id: string | undefined) {
     [members, currentUser?.id, currentUser?.email]
   );
 
-  const isOwnerOrAdmin = currentMembership?.role === "owner" || currentMembership?.role === "admin";
+  const isOwnerOrAdmin = currentMembership?.role === "owner";
   const isOwnerAdminOrModerator =
     isOwnerOrAdmin || currentMembership?.role === "moderator";
   const isOwner = currentMembership?.role === "owner";
@@ -128,6 +129,37 @@ export function useGroupSettingsData(id: string | undefined) {
     };
   }, [backendUrl, id, isOwnerOrAdmin, session?.accessToken]);
 
+  useEffect(() => {
+    if (!id) {
+      return;
+    }
+
+    const unsubPolicy = subscribeWsEvent("ws.groupPolicy.updated", (payload) => {
+      const { groupId } = payload as { groupId: string };
+      if (groupId !== id || !session?.accessToken) {
+        return;
+      }
+
+      getGroupPolicy(backendUrl, id, session.accessToken)
+        .then(setPolicy)
+        .catch(() => {});
+    });
+
+    const unsubRole = subscribeWsEvent("ws.groupMember.roleUpdated", (payload) => {
+      const { groupId, userId, role } = payload as { groupId: string; userId: string; role: string };
+      if (groupId !== id) {
+        return;
+      }
+
+      setGroupMembers((current) => current.map((member) => (member.id === userId ? { ...member, role } : member)));
+    });
+
+    return () => {
+      unsubPolicy();
+      unsubRole();
+    };
+  }, [id, backendUrl, session?.accessToken, subscribeWsEvent]);
+
   const handlePolicyFieldChange = (field: keyof GroupPolicyFields, value: boolean | string) => {
     setPolicy((current) => (current ? { ...current, [field]: value } : current));
   };
@@ -152,6 +184,7 @@ export function useGroupSettingsData(id: string | undefined) {
           canViewParticipatedExpenseDetails: policy.canViewParticipatedExpenseDetails,
           requireReceiverConfirmationForSettlement: policy.requireReceiverConfirmationForSettlement,
           allowMemberRoleSelfLeave: policy.allowMemberRoleSelfLeave,
+          canModeratorsEditSettlementSchedule: policy.canModeratorsEditSettlementSchedule,
         },
         session.accessToken
       );
@@ -162,6 +195,20 @@ export function useGroupSettingsData(id: string | undefined) {
       setPolicyError(error instanceof Error ? error.message : "Failed to update group policy.");
     } finally {
       setIsPolicySaving(false);
+    }
+  };
+
+  const handleUpdateMemberRole = async (userId: string, role: "moderator" | "member") => {
+    if (!id || !session?.accessToken) {
+      return;
+    }
+
+    try {
+      await updateGroupMemberRole(backendUrl, id, userId, role, session.accessToken);
+      setGroupMembers((current) => current.map((member) => (member.id === userId ? { ...member, role } : member)));
+      setNotice({ tone: "success", message: "Member role updated." });
+    } catch (error) {
+      setNotice({ tone: "error", message: error instanceof Error ? error.message : "Failed to update member role." });
     }
   };
 
@@ -263,6 +310,7 @@ export function useGroupSettingsData(id: string | undefined) {
     setDeleteError,
     handlePolicyFieldChange,
     handleSavePolicy,
+    handleUpdateMemberRole,
     handleInviteFriend,
     handleDeleteGroup,
     handleUploadAvatar,

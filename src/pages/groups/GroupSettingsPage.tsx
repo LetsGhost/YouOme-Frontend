@@ -41,6 +41,7 @@ export function GroupSettingsPage() {
     setDeleteError,
     handlePolicyFieldChange,
     handleSavePolicy,
+    handleUpdateMemberRole,
     handleInviteFriend,
     handleDeleteGroup,
     handleUploadAvatar,
@@ -94,6 +95,8 @@ export function GroupSettingsPage() {
           backendUrl={backendUrl}
           accessToken={session?.accessToken}
           currentUser={currentUser}
+          isOwner={isOwner}
+          onChangeRole={(userId, role) => void handleUpdateMemberRole(userId, role)}
         />
       </Box>
 

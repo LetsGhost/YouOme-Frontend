@@ -1,5 +1,5 @@
 import { Users } from "lucide-react";
-import { Box, Card, CardContent, Chip, Divider, Typography } from "@mui/material";
+import { Box, Button, Card, CardContent, Chip, Divider, Typography } from "@mui/material";
 
 import { resolveAvatarUrl, type CurrentUser, type GroupMember } from "../../shared/api/backend";
 import { formatCount } from "../../shared/lib/format";
@@ -13,12 +13,16 @@ export function CurrentMembersCard({
   backendUrl,
   accessToken,
   currentUser,
+  isOwner = false,
+  onChangeRole,
 }: {
   isLoading: boolean;
   members: GroupMember[];
   backendUrl: string;
   accessToken?: string;
   currentUser: CurrentUser | null;
+  isOwner?: boolean;
+  onChangeRole?: (userId: string, role: "moderator" | "member") => void;
 }) {
   return (
     <Card sx={{ borderRadius: "var(--radius-md)" }}>
@@ -47,36 +51,62 @@ export function CurrentMembersCard({
                 sx={{
                   display: "flex",
                   alignItems: "center",
-                  gap: 1.5,
+                  flexWrap: "wrap",
+                  gap: 1,
+                  rowGap: 1,
                   p: 1.25,
                   borderRadius: "var(--radius-md)",
                   bgcolor: "var(--color-surface-2)",
                   border: "1px solid var(--color-border)",
                 }}
               >
-                <AvatarUploader
-                  src={resolveAvatarUrl(backendUrl, member.avatarUrl)}
-                  token={accessToken}
-                  fallback={member.avatar || member.name?.[0] || "?"}
-                  size={36}
-                  onUpload={noop}
-                  onRemove={noop}
-                />
-                <Box sx={{ minWidth: 0, flex: 1 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--color-ink)" }} noWrap>
-                    {member.name}
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: "var(--color-muted)" }} noWrap>
-                    {member.email || "No email available"}
-                  </Typography>
-                </Box>
-                {(member.id === currentUser?.id || member.email === currentUser?.email) && (
-                  <Chip
-                    label="You"
-                    size="small"
-                    sx={{ bgcolor: "var(--color-accent-soft-bg)", color: "var(--color-accent-soft-ink)" }}
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, minWidth: 0, flex: "1 1 180px" }}>
+                  <AvatarUploader
+                    src={resolveAvatarUrl(backendUrl, member.avatarUrl)}
+                    token={accessToken}
+                    fallback={member.avatar || member.name?.[0] || "?"}
+                    size={36}
+                    onUpload={noop}
+                    onRemove={noop}
                   />
-                )}
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--color-ink)" }} noWrap>
+                      {member.name}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: "var(--color-muted)" }} noWrap>
+                      {member.email || "No email available"}
+                    </Typography>
+                  </Box>
+                </Box>
+
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap", ml: "auto" }}>
+                  {member.role && member.role !== "owner" && (
+                    <Chip
+                      label={member.role}
+                      size="small"
+                      sx={{ textTransform: "capitalize", bgcolor: "var(--color-surface-2)" }}
+                    />
+                  )}
+                  {(member.id === currentUser?.id || member.email === currentUser?.email) && (
+                    <Chip
+                      label="You"
+                      size="small"
+                      sx={{ bgcolor: "var(--color-accent-soft-bg)", color: "var(--color-accent-soft-ink)" }}
+                    />
+                  )}
+                  {isOwner &&
+                    onChangeRole &&
+                    member.role !== "owner" &&
+                    member.id !== currentUser?.id && (
+                      <Button
+                        size="small"
+                        onClick={() => onChangeRole(member.id, member.role === "moderator" ? "member" : "moderator")}
+                        sx={{ textTransform: "none", fontWeight: 700, whiteSpace: "nowrap" }}
+                      >
+                        {member.role === "moderator" ? "Demote" : "Promote"}
+                      </Button>
+                    )}
+                </Box>
               </Box>
             ))}
           </Box>
